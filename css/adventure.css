@@ -1,0 +1,71 @@
+html {
+    font-family: monospace;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    height: 100%;
+    margin: 0;
+}
+
+#adventure {
+    /* display: inline; */
+    height: 100%;
+    width: 100%;
+    background-color: rgb(167, 167, 167);
+}
+
+#navigation {
+    display: grid;
+    grid-template-columns: auto auto;
+    height: 300px;
+    width: 300px;
+}
+
+#navButtonContainer {
+    display: inline-grid;
+    grid-template-columns: auto auto auto;
+    width: 300px;
+    padding: 20px;
+}
+
+.navButton {
+    display: inline;
+    background-color: rgb(83, 83, 83);
+    height: 1fr;
+    width: 1fr;
+    padding: 25px;
+    text-align: center;
+}
+
+#mapContainer {
+    background-color: #5c5c5c;
+    padding: 3px;
+    margin: 0;
+}
+
+#map {
+    font-size: 16px;
+    text-align: center;
+    height: 600px;
+    width: 600px;
+    display: grid;
+    gap: 0;
+    background-color: rgb(228, 228, 228);
+    padding: 5px;
+    padding-bottom: 10px;
+    gap: 0;
+    /* background-color: green; */
+    /* margin: auto; */
+}
+
+.mapCell {
+    background-color: rgb(228, 228, 228);
+    /* background-color: green; */
+    /* border: 1px solid #5c5c5c; */
+    height: 18px;
+    width: 18px;
+    padding: 0;
+    text-align: center;
+}
