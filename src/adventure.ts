@@ -50,6 +50,7 @@ function tick() {
 function calcCellLighting(cellCoords: string) {
     // let cell = locationMap[cellCoords];
 
+    // console.log(`calc cell lighting: ${cellCoords}`)
     const cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
 
     const x = cell.x;
@@ -63,9 +64,12 @@ function calcCellLighting(cellCoords: string) {
     let w = 0;
 
     // pipe operators are bandaids, change
-    if (locationMap[`${x},${y+1}`]) {
-        n = locationMap[`${x},${y+1}`].lightLevel;
-    }
+
+    n = locationMap[`${x},${y+1}`].lightLevel ?? 0;
+
+    // if (locationMap[`${x},${y+1}`]) {
+        // n = locationMap[`${x},${y+1}`].lightLevel;
+    // }
     // let n = locationMap[`${x},${y+1}`].lightLevel || 0;
     // console.log("north: " + n);
 
@@ -87,7 +91,8 @@ function calcCellLighting(cellCoords: string) {
     // console.log("west: " + w);
 
     // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    locationMap[cellCoords].lightLevel = (n + s + e + w) / 4;
+    locationMap[cellCoords].lightLevel = Math.floor((n + s + e + w) / 4);
+    // console.log(locationMap[cellCoords]);
     // return (n + w) / 2;
 };
 
@@ -111,27 +116,24 @@ function generateWorld(sideLengthWorld: number) {
 }
 
 function updateDisplay() {
-    for (let cellY = 0; cellY < 33; cellY++) { // 0 - 32 (screen length)
-        for (let cellX = 0; cellX < 33; cellX++) { // 0 - 32 (screen length)
+    for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
+        for (let cellX = 0; cellX < 33; cellX++) { // (screen length)
             displayCell(`${cellX},${cellY}`, `${cellX - 16 + player.x},${cellY - 16 + player.y}`);
-            // cellX and cellY passed to displaly element 0,0. cellY and cellX 
         }
     }
 }
 
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
-    // rename to screenElement when done refactoring 4 TS
     let displayElement = document.getElementById(displayElementCoords) ?? throwExpression(`invalid display coords ${displayElementCoords}`);
     // console.log(cellCoords);
-
     let cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
-    // console.log(locationCoords);
 
     // console.log(`${cellLocation} ${cellLocation.color}`);
 
-    // calcCellLighting(cellCoords);
+    // console.log(cellCoords);
+    calcCellLighting(cellCoords);
 
     // revisit lighting when done refactoring for TS
     // cellLocation.effectiveColor = cellLocation.color.map(x => x - cellLocation.lightLevel);
@@ -164,7 +166,7 @@ function setup() {
     time = 0;
     setupKeys();
 
-    locationMap = generateWorld(60);
+    locationMap = generateWorld(40);
 
     player = new Player(0, 0);
 
@@ -203,8 +205,6 @@ function convertListToString(someList: Array<string>, delimiter="") {
         return someString;
     }
 }
-
-
 
 class Mob {
     x: number;
@@ -326,6 +326,11 @@ interface TerrainFeature {
     symbol: string;
 }
 
+interface Weather {  // RECENT
+    name: string;
+    ambientLight: number;
+}
+
 const ___ = "\u00A0"; // non breaking space character
 
 let locationMap: { [key: string]: Cell };
@@ -340,15 +345,19 @@ let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
     "grass": {name: "grass", symbol: ""}
 }
 
+let weatherMap: { [key: string]: Weather} = { // RECENT
+    "sunny": {name: "sunny", ambientLight: 200},
+    "rainy": {name: "rainy", ambientLight: 100}
+}
+
 let player: Player;
 
 let ticker;
 
 let time: number;
 
-
 window.addEventListener("load", (event) => {
     // genMap(1024);
     setup();
-    ticker = setInterval(tick, 500);
+    ticker = setInterval(tick, 1000);
 });
