@@ -122,7 +122,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
 
     // revisit lighting when done refactoring for TS
     // FIX light level acts like "dark level" right now, which is weird
-    let effectiveColor = cell.color.map(x => x - cell.lightLevel);
+    let effectiveColor: number[] = cell.color.map(x => x - cell.lightLevel);
 
     for (let i = 0; i < 3; i++) {
         if (effectiveColor[i] > cell.color[i]) {
@@ -285,7 +285,7 @@ class Cell {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
-        this.lightLevel = Math.max(...this.allLuminescence());
+        this.lightLevel = Math.min(...this.allLuminescence());
         // console.log(this.contents);
         this.color = [228, 228, 228];
     }
@@ -346,7 +346,7 @@ let mobKindsMap: { [key: string]: MobKind } = {
 let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
     "tree": {name: "tree", symbol: "#", luminescence: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0},
-    "light": {name: "light", symbol: "o", luminescence: 255}
+    "light": {name: "light", symbol: "o", luminescence: 0}
 }
 
 let weatherMap: { [key: string]: Weather} = { // RECENT
