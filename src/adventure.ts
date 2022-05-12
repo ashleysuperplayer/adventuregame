@@ -111,19 +111,11 @@ function updateDisplay() {
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
     let displayElement = document.getElementById(displayElementCoords) ?? throwExpression(`invalid display coords ${displayElementCoords}`);
-    // console.log(cellCoords);
     let cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
-
-    // console.log(`${cellLocation} ${cellLocation.color}`);
-
-    // console.log(cellCoords);
     calcCellLighting(cellCoords);
 
-    // revisit lighting when done refactoring for TS
-    // FIX light level acts like "dark level" right now, which is weird
     let effectiveColor: number[] = cell.color.map(x => x - cell.lightLevel);
-
     for (let i = 0; i < 3; i++) {
         if (effectiveColor[i] > cell.color[i]) {
             effectiveColor[i] = cell.color[i];
@@ -148,6 +140,8 @@ function setPlayerDo(newAction: string) {
 
 function setup() {
     createGrid("map", 33, "mapCell");
+    createGrid("lightMap", 33, "lightMapCell");
+
     time = 0;
     setupKeys();
 
@@ -296,6 +290,10 @@ class Cell {
             cellContents.push(terrainFeaturesMap["tree"]); // CellContents type
         }
 
+        if (Math.random() < 0.3) {
+            cellContents.push(terrainFeaturesMap["rock"]);
+        }
+
         if (this.x === 0 && this.y === 0) {
             cellContents.push(terrainFeaturesMap["light"]);
         }
@@ -346,7 +344,8 @@ let mobKindsMap: { [key: string]: MobKind } = {
 let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
     "tree": {name: "tree", symbol: "#", luminescence: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0},
-    "light": {name: "light", symbol: "o", luminescence: 0}
+    "light": {name: "light", symbol: "o", luminescence: 0},
+    "rock": {name: "rock", symbol: ".", luminescence: 0}
 }
 
 let weatherMap: { [key: string]: Weather} = { // RECENT
