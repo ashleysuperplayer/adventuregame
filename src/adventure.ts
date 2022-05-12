@@ -3,16 +3,17 @@ function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
 }
 
-function createGrid(parentID: string, sideLength: number, cellClass: string) {
+function createGrid(parentID: string, sideLength: number, cellClass: string, elementDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
 
     for (let y = sideLength - 1; y > -1; y--) {
         for (let x = 0; x < sideLength; x++) {
             let cell = document.createElement("div");
 
-            cell.setAttribute("id", `${x},${y}`);
-            // cell.innerHTML = `#`;
+            cell.setAttribute("id", `${parentID}${x},${y}`);
             cell.classList.add(cellClass);
+
+            elementDict[`${x},${y}`] = cell;
 
             parent.appendChild(cell);
         }
@@ -139,8 +140,8 @@ function setPlayerDo(newAction: string) {
 }
 
 function setup() {
-    createGrid("map", 33, "mapCell");
-    createGrid("lightMap", 33, "lightMapCell");
+    createGrid("map", 33, "mapCell", mapElementsDict);
+    createGrid("lightMap", 33, "lightMapCell", lightMapElementsDict);
 
     time = 0;
     setupKeys();
@@ -336,6 +337,9 @@ const ___ = "\u00A0"; // non breaking space character
 
 let locationMap: { [key: string]: Cell };
 let mobsMap: { [key: string]: Mob };
+
+let mapElementsDict: { [key: string]: HTMLElement};
+let lightMapElementsDict: { [key: string]: HTMLElement};
 
 let mobKindsMap: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@"},
