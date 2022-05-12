@@ -75,7 +75,8 @@ function calcCellLighting(cellCoords: string) {
     // console.log("west: " + w);
 
     // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    cell.lightLevel = Math.floor((n + s + e + w) / 4);
+    cell.lightLevel = Math.abs(Math.floor((n + s + e + w) / 4 + 50));
+    cell.lightLevel = Math.max(...cell.allLuminescence());
     // console.log(locationMap[cellCoords]);
     // return (n + w) / 2;
 };
@@ -120,22 +121,22 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     calcCellLighting(cellCoords);
 
     // revisit lighting when done refactoring for TS
-    // cellLocation.effectiveColor = cellLocation.color.map(x => x - cellLocation.lightLevel);
+    // FIX light level acts like "dark level" right now, which is weird
+    let effectiveColor = cell.color.map(x => x - cell.lightLevel);
 
-    // for (let i = 0; i < 3; i++) {
-    //     if (cellLocation.effectiveColor[i] > cellLocation.color[i]) {
-    //         cellLocation.effectiveColor[i] = cellLocation.color[i];
-    //     }
-    // }
+    for (let i = 0; i < 3; i++) {
+        if (effectiveColor[i] > cell.color[i]) {
+            effectiveColor[i] = cell.color[i];
+        }
+    }
 
     // redo this, only allows for one kind of cell contents at a time
     for (let content of cell.contents) {
         displayElement.innerHTML = content.symbol;
     }
 
-    // cellElement.innerHTML = cellLocation.contents;
-    // cellElement.style.backgroundColor = `rgb(${convertListToString(cellLocation.effectiveColor, ",")})`;
-    // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${locationCoords} with light level ${cellLocation.lightLevel} and effective colour ${cellLocation.effectiveColor}`);
+    displayElement.style.backgroundColor = `rgb(${convertListToString(effectiveColor, ",")})`;
+    // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 
 }
 
@@ -176,7 +177,7 @@ function setupKeys() {
     });
 }
 
-function convertListToString(someList: Array<string>, delimiter="") {
+function convertListToString(someList: number[] | string[], delimiter="") {
     let someString = "";
     for (let i of someList) {
         someString += i + delimiter;
