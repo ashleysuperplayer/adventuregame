@@ -1,8 +1,10 @@
-// function creates a grid of even height and width.
+// TODO change all getElementByIds in relation to display cells to use their respective dicts instead
+
+// throw error when can't set variable
 function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
 }
-
+// creates a grid of even height and width.
 function createGrid(parentID: string, sideLength: number, cellClass: string, elementDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
 
@@ -42,7 +44,7 @@ function tick() {
 
 function calcCellLighting(cellCoords: string) {
     // console.log(`calc cell lighting: ${cellCoords}`)
-    const cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
+    const cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
 
     const x = cell.x;
     const y = cell.y;
@@ -54,23 +56,23 @@ function calcCellLighting(cellCoords: string) {
     let e = 0;
     let w = 0;
 
-    n = locationMap[`${x},${y+1}`].lightLevel ?? 0;
+    n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
 
     // console.log("north: " + n);
 
-    if (locationMap[`${x},${y-1}`]) {
-        s = locationMap[`${x},${y-1}`].lightLevel;
+    if (cellMap[`${x},${y-1}`]) {
+        s = cellMap[`${x},${y-1}`].lightLevel;
     }
     // console.log("south: " + s);
 
-    if (locationMap[`${x+1},${y}`]) {
-        s = locationMap[`${x+1},${y}`].lightLevel;
+    if (cellMap[`${x+1},${y}`]) {
+        s = cellMap[`${x+1},${y}`].lightLevel;
     }
     // e = locationMap[`${x-1},${y}`].lightLevel || 0;
     // console.log("east: " + e);
 
-    if (locationMap[`${x-1},${y}`]) {
-        s = locationMap[`${x-1},${y}`].lightLevel;
+    if (cellMap[`${x-1},${y}`]) {
+        s = cellMap[`${x-1},${y}`].lightLevel;
     }
     // w = locationMap[`${x+1},${y}`].lightLevel || 0;
     // console.log("west: " + w);
@@ -112,7 +114,7 @@ function updateDisplay() {
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
     let displayElement = document.getElementById(displayElementCoords) ?? throwExpression(`invalid display coords ${displayElementCoords}`);
-    let cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
+    let cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
     calcCellLighting(cellCoords);
 
@@ -146,7 +148,7 @@ function setup() {
     time = 0;
     setupKeys();
 
-    locationMap = generateWorld(40);
+    cellMap = generateWorld(40);
 
     player = new Player(0, 0);
 
@@ -198,7 +200,7 @@ class Mob {
         this.y = y;
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        locationMap[`${this.x},${this.y}`].contents.push(this);
+        cellMap[`${this.x},${this.y}`].contents.push(this);
         this.luminescence = 0;
     }
 
@@ -207,7 +209,7 @@ class Mob {
         console.log(direction);
 
         // remove from old location
-        locationMap[`${this.x},${this.y}`].contents = locationMap[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
+        cellMap[`${this.x},${this.y}`].contents = cellMap[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
         // console.log(`location before move: ${this.x},${this.y}`);
 
         switch(direction) {
@@ -225,7 +227,7 @@ class Mob {
                 break;
         }
 
-        locationMap[`${this.x},${this.y}`].contents.push(this);
+        cellMap[`${this.x},${this.y}`].contents.push(this);
         // console.log(`location after move: ${this.x},${this.y}`)
 
         this.currentAction = "moved";
@@ -335,7 +337,7 @@ interface Weather {  // RECENT // this is a placeholder system, in future weathe
 
 const ___ = "\u00A0"; // non breaking space character
 
-let locationMap: { [key: string]: Cell };
+let cellMap: { [key: string]: Cell };
 let mobsMap: { [key: string]: Mob };
 
 let mapElementsDict: { [key: string]: HTMLElement};
