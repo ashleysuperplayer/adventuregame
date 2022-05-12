@@ -326,7 +326,7 @@ interface TerrainFeature {
     symbol: string;
 }
 
-interface Weather {  // RECENT
+interface Weather {  // RECENT // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
     name: string;
     ambientLight: number;
 }
