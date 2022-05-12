@@ -39,17 +39,7 @@ function tick() {
     updateDisplay();
 }
 
-// function calculateLighting() {
-//     for (let [coords, location] of Object.entries(locationMap)) {
-//         // console.log(location);
-//         location.lightLevel = calcCellLighting(location);
-//     }
-//     // locationMap.map(x => calcCellLighting(x));
-// };
-
 function calcCellLighting(cellCoords: string) {
-    // let cell = locationMap[cellCoords];
-
     // console.log(`calc cell lighting: ${cellCoords}`)
     const cell = locationMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
 
@@ -63,14 +53,8 @@ function calcCellLighting(cellCoords: string) {
     let e = 0;
     let w = 0;
 
-    // pipe operators are bandaids, change
-
     n = locationMap[`${x},${y+1}`].lightLevel ?? 0;
 
-    // if (locationMap[`${x},${y+1}`]) {
-        // n = locationMap[`${x},${y+1}`].lightLevel;
-    // }
-    // let n = locationMap[`${x},${y+1}`].lightLevel || 0;
     // console.log("north: " + n);
 
     if (locationMap[`${x},${y-1}`]) {
@@ -91,7 +75,7 @@ function calcCellLighting(cellCoords: string) {
     // console.log("west: " + w);
 
     // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    locationMap[cellCoords].lightLevel = Math.floor((n + s + e + w) / 4);
+    cell.lightLevel = Math.floor((n + s + e + w) / 4);
     // console.log(locationMap[cellCoords]);
     // return (n + w) / 2;
 };
@@ -211,6 +195,7 @@ class Mob {
     y: number;
     currentAction: string;
     symbol: string;
+    luminescence: number;
 
     constructor(x: number, y: number, kind: MobKind) {
         this.x = x;
@@ -218,6 +203,7 @@ class Mob {
         this.currentAction = "wait";
         this.symbol = kind.symbol;
         locationMap[`${this.x},${this.y}`].contents.push(this);
+        this.luminescence = 0;
     }
 
 
@@ -298,8 +284,8 @@ class Cell {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
+        this.lightLevel = Math.max(...this.allLuminescence());
         // console.log(this.contents);
-        this.lightLevel = 200; // from 0 to 255?
         this.color = [228, 228, 228];
     }
 
@@ -309,7 +295,21 @@ class Cell {
             cellContents.push(terrainFeaturesMap["tree"]); // CellContents type
         }
 
+        if (this.x === 0 && this.y === 0) {
+            cellContents.push(terrainFeaturesMap["light"]);
+        }
+
         return cellContents;
+    }
+
+    // return list of luminescences of all content
+    allLuminescence(): number[] {
+        let lumList: number[] = [];
+        for (let content of this.contents) {
+            lumList.push(content.luminescence);
+        }
+
+        return lumList;
     }
 }
 
@@ -319,11 +319,13 @@ interface Item {
     name: string;
     weight: number;
     symbol: string;
+    luminescence: number;
 }
 
 interface TerrainFeature {
     name: string;
     symbol: string;
+    luminescence: number;
 }
 
 interface Weather {  // RECENT // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
@@ -341,8 +343,9 @@ let mobKindsMap: { [key: string]: MobKind } = {
 }
 
 let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#"},
-    "grass": {name: "grass", symbol: ""}
+    "tree": {name: "tree", symbol: "#", luminescence: 0},
+    "grass": {name: "grass", symbol: "", luminescence: 0},
+    "light": {name: "light", symbol: "o", luminescence: 255}
 }
 
 let weatherMap: { [key: string]: Weather} = { // RECENT
