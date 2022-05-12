@@ -5,7 +5,7 @@ function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
 }
 // creates a grid of even height and width.
-function createGrid(parentID: string, sideLength: number, cellClass: string, elementDict: { [key: string]: HTMLElement}) {
+function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
 
     for (let y = sideLength - 1; y > -1; y--) {
@@ -15,7 +15,7 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
             cell.setAttribute("id", `${parentID}${x},${y}`);
             cell.classList.add(cellClass);
 
-            elementDict[`${x},${y}`] = cell;
+            elementsDict[`${x},${y}`] = cell;
 
             parent.appendChild(cell);
         }
@@ -86,7 +86,7 @@ function calcCellLighting(cellCoords: string) {
 
 // generates key value pairs of locationMap as coordinates and Location objects
 function generateWorld(sideLengthWorld: number) {
-    let newLocationMap: { [key: string]: Cell } = {};
+    let newCellMap: { [key: string]: Cell } = {};
 
     // offset world gen to generate in a square around 0,0 instead of having 0,0 as the most southwestern point
     sideLengthWorld = Math.floor(sideLengthWorld / 2);
@@ -94,13 +94,13 @@ function generateWorld(sideLengthWorld: number) {
     for (let y = 0 - sideLengthWorld; y < sideLengthWorld; y++) {
         for (let x = 0 - sideLengthWorld; x < sideLengthWorld; x++) {
             // console.log(`genning ${x},${y}`)
-            newLocationMap[`${x},${y}`] = new Cell(x, y);
+            newCellMap[`${x},${y}`] = new Cell(x, y);
             // console.log(`genned ${x}, ${y} with color ${newLocationMap[x + "," + y].color}`)
 
         }
     }
 
-    return newLocationMap;
+    return newCellMap;
 }
 
 function updateDisplay() {
@@ -113,7 +113,7 @@ function updateDisplay() {
 
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
-    let displayElement = document.getElementById(displayElementCoords) ?? throwExpression(`invalid display coords ${displayElementCoords}`);
+    let displayElement = displayElementsDict[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
     let cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
     calcCellLighting(cellCoords);
@@ -142,8 +142,8 @@ function setPlayerDo(newAction: string) {
 }
 
 function setup() {
-    createGrid("map", 33, "mapCell", mapElementsDict);
-    createGrid("lightMap", 33, "lightMapCell", lightMapElementsDict);
+    createGrid("map", 33, "mapCell", displayElementsDict);
+    createGrid("lightMap", 33, "lightMapCell", lightElementsDict);
 
     time = 0;
     setupKeys();
@@ -340,8 +340,8 @@ const ___ = "\u00A0"; // non breaking space character
 let cellMap: { [key: string]: Cell };
 let mobsMap: { [key: string]: Mob };
 
-let mapElementsDict: { [key: string]: HTMLElement};
-let lightMapElementsDict: { [key: string]: HTMLElement};
+let displayElementsDict: { [key: string]: HTMLElement} = {};
+let lightElementsDict: { [key: string]: HTMLElement} = {};
 
 let mobKindsMap: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@"},
