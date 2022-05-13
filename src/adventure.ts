@@ -1,5 +1,9 @@
 // TODO change all getElementByIds in relation to display cells to use their respective dicts instead
 
+function printCellProperty(coords = "0,0", property: string) {
+    return cellMap[property];
+}
+
 // throw error when can't set variable
 function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
@@ -8,6 +12,16 @@ function throwExpression(errorMessage: string): never {
 function isPerfectSquare(x: number) {
     return x > 0 && Math.sqrt(x) % 1 === 0;
 }
+// function for faster debugging
+function ifZeroZero(a: number, b: number) {
+    if (a === 0 && b === 0) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 // creates a grid of even height and width.
 function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
@@ -44,28 +58,68 @@ function tick() {
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
     const cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
-    const maxLum = Math.max(...cell.allLuminescence());
-
-    const ambientLight = getWeather(cellCoords);
-
     const x = cell.x;
     const y = cell.y;
+    const ambientLight = cell.weather.ambientLight;
 
-    if (maxLum === 0) {
+    let newLightLevel = 0;
+
+    for (let content of cell.contents) {
+        newLightLevel += content.luminescence;
+    }
+
+    if (ifZeroZero(x, y)) {
+        console.log("after contents " + newLightLevel);
+    }
+
+    newLightLevel += cell.weather.ambientLight;
+
+    if (ifZeroZero(x, y)) {
+        console.log("after ambient light " + newLightLevel);
+    }
+
+
+    // const maxLum = Math.max(...cell.allLuminescence());
+
+    // const ambientLight = cell.weather.ambientLight;
+
+    // if (ifZeroZero(x, y)) {
+    // }
+
         // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
         // remind me to add cloud movement above player
-        let n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
-        let s = cellMap[`${x},${y-1}`].lightLevel ?? 0;
-        let e = cellMap[`${x+1},${y}`].lightLevel ?? 0;
-        let w = cellMap[`${x-1},${y}`].lightLevel ?? 0;
+    let n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
+    let s = cellMap[`${x},${y-1}`].lightLevel ?? 0;
+    let e = cellMap[`${x+1},${y}`].lightLevel ?? 0;
+    let w = cellMap[`${x-1},${y}`].lightLevel ?? 0;
 
         // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-        cell.lightLevel = Math.floor((n + s + e + w) / 4);
+    newLightLevel += Math.floor((n + s + e + w) / 4);
+    if (ifZeroZero(x, y)) {
+        console.log("after averaging " + newLightLevel);
+
     }
-    else {
-        cell.lightLevel = maxLum;
+
+    newLightLevel += -ambientLight - 1;
+
+    if (ifZeroZero(x, y)) {
+        console.log("after rest of maths " + newLightLevel);
     }
-    // console.log(locationMap[cellCoords]);
+
+    // upper limit on lightLevel
+    if (newLightLevel > 255) {
+        newLightLevel = 255;
+    }
+
+    if (newLightLevel < ambientLight) {
+        newLightLevel = ambientLight;
+    }
+
+    if (ifZeroZero(x, y)) {
+        console.log("after limiting and ambient light floor " + newLightLevel);
+    }
+
+    cell.lightLevel = newLightLevel;
 };
 
 // generates key value pairs of locationMap as coordinates and Location objects
@@ -255,14 +309,16 @@ class Cell {
     contents: CellContents[];
     lightLevel: number;
     color: number[];
+    weather: Weather;
 
-    constructor(x: number, y: number) {
+    constructor(x: number, y: number, weather = "dark") {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
-        this.lightLevel = Math.max(...this.allLuminescence());
+        this.lightLevel = 0;
         // console.log(this.contents);
         this.color = [228, 228, 228];
+        this.weather = weatherMap[weather];
     }
 
     genCell(): CellContents[] {
@@ -275,7 +331,7 @@ class Cell {
             cellContents.push(terrainFeaturesMap["rock"]);
         }
 
-        if (this.x === 0 && this.y === 0) {
+        if (this.x === 5 && this.y === 0) {
             cellContents.push(terrainFeaturesMap["light"]);
         }
 
@@ -314,7 +370,7 @@ interface TerrainFeature {
     luminescence: number;
 }
 
-interface Weather {  // RECENT // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
+interface Weather {  // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
     name: string;
     ambientLight: number;
 }
@@ -340,7 +396,8 @@ let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
 
 let weatherMap: { [key: string]: Weather} = { // RECENT
     "sunny": {name: "sunny", ambientLight: 200},
-    "rainy": {name: "rainy", ambientLight: 100}
+    "rainy": {name: "rainy", ambientLight: 100},
+    "dark": {name: "dark", ambientLight: 0}
 }
 
 let player: Player;
