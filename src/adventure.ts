@@ -376,6 +376,8 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     ambientLight: number;
 }
 
+// fail simpsons reference lol 
+
 const ___ = "\u00A0"; // non breaking space character
 
 const TICKDURATION = 100;
