@@ -1,9 +1,8 @@
 // TODO change all getElementByIds in relation to display cells to use their respective dicts instead
 
 function printCellProperty(coords = "0,0", property: string) {
-    return cellMap[property];
+    return CELLMAP[property];
 }
-
 // throw error when can't set variable
 function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
@@ -14,13 +13,15 @@ function isPerfectSquare(x: number) {
 }
 // function for faster debugging
 function ifZeroZero(a: number, b: number) {
-    if (a === 0 && b === 0) {
+    if (a === 0 && b === 0) { // i just hate writing this line out all the time it reminds me i'm still using js lol
         return true;
     }
     else {
         return false;
     }
 }
+
+// function getTimeOfDay(time)
 
 // creates a grid of even height and width.
 function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
@@ -49,15 +50,15 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 }
 
 function tick() {
-    time += 1;
-    player.executeAction();
+    TIME += 1;
+    PLAYER.executeAction();
     updateDisplay();
 }
 
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
-    const cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
+    const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const x = cell.x;
     const y = cell.y;
     const ambientLight = cell.weather.ambientLight;
@@ -88,10 +89,10 @@ function calcCellLighting(cellCoords: string) {
 
         // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
         // remind me to add cloud movement above player
-    let n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
-    let s = cellMap[`${x},${y-1}`].lightLevel ?? 0;
-    let e = cellMap[`${x+1},${y}`].lightLevel ?? 0;
-    let w = cellMap[`${x-1},${y}`].lightLevel ?? 0;
+    let n = CELLMAP[`${x},${y+1}`].lightLevel ?? 0;
+    let s = CELLMAP[`${x},${y-1}`].lightLevel ?? 0;
+    let e = CELLMAP[`${x+1},${y}`].lightLevel ?? 0;
+    let w = CELLMAP[`${x-1},${y}`].lightLevel ?? 0;
 
         // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
     newLightLevel += Math.floor((n + s + e + w) / 4);
@@ -144,16 +145,16 @@ function generateWorld(sideLengthWorld: number) {
 function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
         for (let cellX = 0; cellX < 33; cellX++) { // (screen length)
-            displayCell(`${cellX},${cellY}`, `${cellX - 16 + player.x},${cellY - 16 + player.y}`);
+            displayCell(`${cellX},${cellY}`, `${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`);
         }
     }
 }
 
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
-    let displayElement = displayElementsDict[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
-    let lightElement = lightElementsDict[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
-    let cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
+    let displayElement = DISPLAYELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
+    let lightElement = LIGHTELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
+    let cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
     calcCellLighting(cellCoords);
 
@@ -169,7 +170,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
 // why weird name ?
 function setPlayerDo(newAction: string) {
     console.log("click!");
-    player.currentAction = newAction;
+    PLAYER.currentAction = newAction;
 }
 
 function convertListToString(someList: number[] | string[], delimiter="") {
@@ -206,15 +207,15 @@ function setupKeys() {
 }
 
 function setup(worldSideLength: number, startTime: number, playerStartLocation: number[]) {
-    createGrid("map", 33, "mapCell", displayElementsDict);
-    createGrid("lightMap", 33, "lightMapCell", lightElementsDict);
+    createGrid("map", 33, "mapCell", DISPLAYELEMENTSDICT);
+    createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
 
-    cellMap = generateWorld(worldSideLength);
+    CELLMAP = generateWorld(worldSideLength);
 
-    time = startTime;
+    TIME = startTime;
     setupKeys();
 
-    player = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
 
     updateDisplay();
 }
@@ -231,7 +232,7 @@ class Mob {
         this.y = y;
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        cellMap[`${this.x},${this.y}`].contents.push(this);
+        CELLMAP[`${this.x},${this.y}`].contents.push(this);
         this.luminescence = kind.luminescence;
     }
 
@@ -240,7 +241,7 @@ class Mob {
         console.log(direction);
 
         // remove from old location
-        cellMap[`${this.x},${this.y}`].contents = cellMap[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
+        CELLMAP[`${this.x},${this.y}`].contents = CELLMAP[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
         // console.log(`location before move: ${this.x},${this.y}`);
 
         switch(direction) {
@@ -258,7 +259,7 @@ class Mob {
                 break;
         }
 
-        cellMap[`${this.x},${this.y}`].contents.push(this);
+        CELLMAP[`${this.x},${this.y}`].contents.push(this);
         // console.log(`location after move: ${this.x},${this.y}`)
 
         this.currentAction = "moved";
@@ -277,7 +278,7 @@ class Player extends Mob {
     currentAction: string;
 
     constructor(x: number, y: number) {
-        super(x, y, mobKindsMap["player"]);
+        super(x, y, MOBKINDSMAP["player"]);
         this.x = x; // idk why this needs to be defined here if it's already defined in parent
         this.y = y;
         this.currentAction = "wait";
@@ -318,21 +319,21 @@ class Cell {
         this.lightLevel = 0;
         // console.log(this.contents);
         this.color = [228, 228, 228];
-        this.weather = weatherMap[weather];
+        this.weather = WEATHERMAP[weather];
     }
 
     genCell(): CellContents[] {
-        let cellContents = [terrainFeaturesMap["grass"]];
+        let cellContents = [TERRAINFEATURESMAP["grass"]];
         if (Math.random() < 0.1) {
-            cellContents.push(terrainFeaturesMap["tree"]); // CellContents type
+            cellContents.push(TERRAINFEATURESMAP["tree"]); // CellContents type
         }
 
         if (Math.random() < 0.3) {
-            cellContents.push(terrainFeaturesMap["rock"]);
+            cellContents.push(TERRAINFEATURESMAP["rock"]);
         }
 
         if (this.x === 5 && this.y === 0) {
-            cellContents.push(terrainFeaturesMap["light"]);
+            cellContents.push(TERRAINFEATURESMAP["light"]);
         }
 
         return cellContents;
@@ -377,37 +378,40 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
 
 const ___ = "\u00A0"; // non breaking space character
 
-let cellMap: { [key: string]: Cell };
-let mobsMap: { [key: string]: Mob };
+const TICKDURATION = 100;
+const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
 
-let displayElementsDict: { [key: string]: HTMLElement} = {};
-let lightElementsDict: { [key: string]: HTMLElement} = {};
+let CELLMAP: { [key: string]: Cell };
+let MOBSMAP: { [key: string]: Mob };
 
-let mobKindsMap: { [key: string]: MobKind } = {
+let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};
+let LIGHTELEMENTSDICT: { [key: string]: HTMLElement} = {};
+
+let MOBKINDSMAP: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@", luminescence: 255},
 }
 
-let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
+let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
     "tree": {name: "tree", symbol: "#", luminescence: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0},
     "light": {name: "light", symbol: "o", luminescence: 125},
     "rock": {name: "rock", symbol: ".", luminescence: 0}
 }
 
-let weatherMap: { [key: string]: Weather} = { // RECENT
+let WEATHERMAP: { [key: string]: Weather} = { // RECENT
     "sunny": {name: "sunny", ambientLight: 200},
     "rainy": {name: "rainy", ambientLight: 100},
     "dark": {name: "dark", ambientLight: 0}
 }
 
-let player: Player;
+let PLAYER: Player;
 
-let ticker;
+let TICKER;
 
-let time: number;
+let TIME: number;
 
 window.addEventListener("load", (event) => {
     // genMap(1024);
     setup(1000, 0, [0,0]);
-    ticker = setInterval(tick, 10);
+    TICKER = setInterval(tick, TICKDURATION);
 });
