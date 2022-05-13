@@ -40,9 +40,13 @@ function tick() {
     updateDisplay();
 }
 
+// TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
+// calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
     const cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const maxLum = Math.max(...cell.allLuminescence());
+
+    const ambientLight = getWeather(cellCoords);
 
     const x = cell.x;
     const y = cell.y;
@@ -61,7 +65,6 @@ function calcCellLighting(cellCoords: string) {
     else {
         cell.lightLevel = maxLum;
     }
-
     // console.log(locationMap[cellCoords]);
 };
 
@@ -289,8 +292,8 @@ class Cell {
         return lumList;
     }
 
-    // i might be being stupid, maybe add up the light levels of all objects and work with that as "lightLevel" instead
-    // return highest luminesence item
+    // i might be being stupid, maybe add up the luminescence of all objects and work with that as "lightLevel" instead
+    // return highest luminesence item of Cell
     maxLum() {
         return Math.max(...this.allLuminescence());
     }
@@ -331,7 +334,7 @@ let mobKindsMap: { [key: string]: MobKind } = {
 let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
     "tree": {name: "tree", symbol: "#", luminescence: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0},
-    "light": {name: "light", symbol: "o", luminescence: 255},
+    "light": {name: "light", symbol: "o", luminescence: 125},
     "rock": {name: "rock", symbol: ".", luminescence: 0}
 }
 
