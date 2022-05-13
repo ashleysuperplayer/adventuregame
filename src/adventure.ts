@@ -4,6 +4,10 @@
 function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
 }
+// check if a number is perfect square
+function isPerfectSquare(x: number) {
+    return x > 0 && Math.sqrt(x) % 1 === 0;
+}
 // creates a grid of even height and width.
 function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
@@ -30,58 +34,35 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
     parent.style.gridTemplateColumns = gridAutoColumn;
 }
 
-// check if a number is perfect square
-function isPerfectSquare(x: number) {
-    return x > 0 && Math.sqrt(x) % 1 === 0;
-}
-
 function tick() {
     time += 1;
-    // calculateLighting();
     player.executeAction();
     updateDisplay();
 }
 
 function calcCellLighting(cellCoords: string) {
-    // console.log(`calc cell lighting: ${cellCoords}`)
     const cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
+    const maxLum = Math.max(...cell.allLuminescence());
 
     const x = cell.x;
     const y = cell.y;
 
-    // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
-    // remind me to add cloud movement above player
-    let n = 0;
-    let s = 0;
-    let e = 0;
-    let w = 0;
+    if (maxLum === 0) {
+        // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
+        // remind me to add cloud movement above player
+        let n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
+        let s = cellMap[`${x},${y-1}`].lightLevel ?? 0;
+        let e = cellMap[`${x+1},${y}`].lightLevel ?? 0;
+        let w = cellMap[`${x-1},${y}`].lightLevel ?? 0;
 
-    n = cellMap[`${x},${y+1}`].lightLevel ?? 0;
-
-    // console.log("north: " + n);
-
-    if (cellMap[`${x},${y-1}`]) {
-        s = cellMap[`${x},${y-1}`].lightLevel;
+        // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
+        cell.lightLevel = (n + s + e + w) / 4;
     }
-    // console.log("south: " + s);
-
-    if (cellMap[`${x+1},${y}`]) {
-        s = cellMap[`${x+1},${y}`].lightLevel;
+    else {
+        cell.lightLevel = maxLum;
     }
-    // e = locationMap[`${x-1},${y}`].lightLevel || 0;
-    // console.log("east: " + e);
 
-    if (cellMap[`${x-1},${y}`]) {
-        s = cellMap[`${x-1},${y}`].lightLevel;
-    }
-    // w = locationMap[`${x+1},${y}`].lightLevel || 0;
-    // console.log("west: " + w);
-
-    // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    cell.lightLevel = Math.abs(Math.floor((n + s + e + w) / 4 + 50));
-    cell.lightLevel = Math.max(...cell.allLuminescence());
     // console.log(locationMap[cellCoords]);
-    // return (n + w) / 2;
 };
 
 // generates key value pairs of locationMap as coordinates and Location objects
@@ -114,25 +95,18 @@ function updateDisplay() {
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
     let displayElement = displayElementsDict[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
+    let lightElement = lightElementsDict[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
     let cell = cellMap[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
     calcCellLighting(cellCoords);
 
-    let effectiveColor: number[] = cell.color.map(x => x - cell.lightLevel);
-    for (let i = 0; i < 3; i++) {
-        if (effectiveColor[i] > cell.color[i]) {
-            effectiveColor[i] = cell.color[i];
-        }
-    }
+    lightElement.style.opacity = `${1 - (cell.lightLevel / 255)}`;
 
     // redo this, only allows for one kind of cell contents at a time
     for (let content of cell.contents) {
         displayElement.innerHTML = content.symbol;
     }
-
-    displayElement.style.backgroundColor = `rgb(${convertListToString(effectiveColor, ",")})`;
     // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
-
 }
 
 // why weird name ?
@@ -141,18 +115,18 @@ function setPlayerDo(newAction: string) {
     player.currentAction = newAction;
 }
 
-function setup() {
-    createGrid("map", 33, "mapCell", displayElementsDict);
-    createGrid("lightMap", 33, "lightMapCell", lightElementsDict);
+function convertListToString(someList: number[] | string[], delimiter="") {
+    let someString = "";
+    for (let i of someList) {
+        someString += i + delimiter;
+    }
 
-    time = 0;
-    setupKeys();
-
-    cellMap = generateWorld(40);
-
-    player = new Player(0, 0);
-
-    updateDisplay();
+    if (delimiter) {
+        return someString.slice(0, -1);
+    }
+    else {
+        return someString;
+    }
 }
 
 function setupKeys() {
@@ -174,18 +148,18 @@ function setupKeys() {
     });
 }
 
-function convertListToString(someList: number[] | string[], delimiter="") {
-    let someString = "";
-    for (let i of someList) {
-        someString += i + delimiter;
-    }
+function setup(worldSideLength: number, startTime: number, playerStartLocation: number[]) {
+    createGrid("map", 33, "mapCell", displayElementsDict);
+    createGrid("lightMap", 33, "lightMapCell", lightElementsDict);
 
-    if (delimiter) {
-        return someString.slice(0, -1);
-    }
-    else {
-        return someString;
-    }
+    cellMap = generateWorld(worldSideLength);
+
+    time = startTime;
+    setupKeys();
+
+    player = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+
+    updateDisplay();
 }
 
 class Mob {
@@ -201,7 +175,7 @@ class Mob {
         this.currentAction = "wait";
         this.symbol = kind.symbol;
         cellMap[`${this.x},${this.y}`].contents.push(this);
-        this.luminescence = 0;
+        this.luminescence = kind.luminescence;
     }
 
 
@@ -237,6 +211,7 @@ class Mob {
 interface MobKind {
     name: string;
     symbol: string;
+    luminescence: number;
 }
 
 class Player extends Mob {
@@ -282,7 +257,7 @@ class Cell {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
-        this.lightLevel = Math.min(...this.allLuminescence());
+        this.lightLevel = Math.max(...this.allLuminescence());
         // console.log(this.contents);
         this.color = [228, 228, 228];
     }
@@ -312,6 +287,12 @@ class Cell {
         }
 
         return lumList;
+    }
+
+    // i might be being stupid, maybe add up the light levels of all objects and work with that as "lightLevel" instead
+    // return highest luminesence item
+    maxLum() {
+        return Math.max(...this.allLuminescence());
     }
 }
 
@@ -344,13 +325,13 @@ let displayElementsDict: { [key: string]: HTMLElement} = {};
 let lightElementsDict: { [key: string]: HTMLElement} = {};
 
 let mobKindsMap: { [key: string]: MobKind } = {
-    "player": {name: "player", symbol: "@"},
+    "player": {name: "player", symbol: "@", luminescence: 255},
 }
 
 let terrainFeaturesMap: { [key: string]: TerrainFeature } = {
     "tree": {name: "tree", symbol: "#", luminescence: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0},
-    "light": {name: "light", symbol: "o", luminescence: 0},
+    "light": {name: "light", symbol: "o", luminescence: 255},
     "rock": {name: "rock", symbol: ".", luminescence: 0}
 }
 
@@ -367,6 +348,6 @@ let time: number;
 
 window.addEventListener("load", (event) => {
     // genMap(1024);
-    setup();
-    ticker = setInterval(tick, 1000);
+    setup(1000, 0, [0,0]);
+    ticker = setInterval(tick, 50);
 });
