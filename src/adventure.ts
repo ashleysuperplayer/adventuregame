@@ -1,8 +1,4 @@
 // TODO change all getElementByIds in relation to display cells to use their respective dicts instead
-
-function printCellProperty(coords = "0,0", property: string) {
-    return CELLMAP[property];
-}
 // throw error when can't set variable
 function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
@@ -12,21 +8,15 @@ function isPerfectSquare(x: number) {
     return x > 0 && Math.sqrt(x) % 1 === 0;
 }
 // function for faster debugging
-function ifZeroZero(a: number, b: number) {
-    if (a === 0 && b === 0) { // i just hate writing this line out all the time it reminds me i'm still using js lol
-        return true;
-    }
-    else {
-        return false;
-    }
+function ZZ(a: number, b: number) {
+    // i just hate writing this line out all the time it reminds me i'm still using js lol
+    return a === 0 && b === 0;
 }
-
-const MINSPERDAY = 1440
-const TICKSPERMINUTE = 600
 // placeholder until i get better at maths lol
 // return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
-function getTimeOfDay(time: number) {
-    return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+function getLighting(time: number) {
+    return (Math.cos(2*Math.PI * time / MINSPERDAY) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
+    // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
 }
 
 // creates a grid of even height and width.
@@ -57,7 +47,9 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 
 function tick() {
     TIME += 1;
-    console.log(getTimeOfDay(TIME));
+    // console.log(getLighting(TIME));
+    console.log(`time: ${Math.floor(TIME/60)}:${Math.floor(TIME%60)}`);
+
     PLAYER.executeAction();
     updateDisplay();
 }
@@ -68,47 +60,71 @@ function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const x = cell.x;
     const y = cell.y;
-    const ambientLight = cell.weather.ambientLight;
+    const ambientLight = Math.floor(getLighting(TIME));
 
-    let newLightLevel = 0;
+    let newLightLevel = 0; // 0
 
     for (let content of cell.contents) {
         newLightLevel += content.luminescence;
     }
 
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after contents " + newLightLevel);
+    // if (ZZ(x, y)) {
+    //     console.log("------------");
+    //     console.log("after contents " + newLightLevel)
     // }
 
-    newLightLevel += cell.weather.ambientLight;
+    // if (ZZ(x, y)) {
 
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after ambient light " + newLightLevel);
     // }
 
-    // const maxLum = Math.max(...cell.allLuminescence());
+    // if (newLightLevel > 0) {
+    //     cell.lightLevel = newLightLevel;
+    //     return;
+    // }
 
-    // const ambientLight = cell.weather.ambientLight;
+    // if (ZZ(x, y)) {
+    //     console.log("ambient light level " + ambientLight);
+    // }
 
+    // newLightLevel += ambientLight;
+
+    // if (ZZ(x, y)) {
+    //     console.log("before ambient light " + newLightLevel);
+    // }
     // if (ifZeroZero(x, y)) {
     // }
 
-        // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
-        // remind me to add cloud movement above player
-    let n = CELLMAP[`${x},${y+1}`].lightLevel ?? 0;
-    let s = CELLMAP[`${x},${y-1}`].lightLevel ?? 0;
-    let e = CELLMAP[`${x+1},${y}`].lightLevel ?? 0;
-    let w = CELLMAP[`${x-1},${y}`].lightLevel ?? 0;
+    let cum = ambientLight * AMBIENTWEIGHT;
 
-        // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    newLightLevel += Math.floor((n + s + e + w) / 4);
-    // if (ifZeroZero(x, y)) {
+    for (let dY = -1; dY <= 1; dY++) {
+        for (let dX = -1; dX <= 1; dX++) {
+            const absOffsets = Math.abs(dX) + Math.abs(dY);
+            if (absOffsets === 0) {
+                // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
+            }
+            if (absOffsets === 1) {
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
+            }
+            else {
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
+            }
+        }
+    }
+
+    // if (ZZ(x,y)) {
+    //     console.log(`cum: ${cum}, LIGHTATTENUATION: ${LIGHTATTENUATION}, cum/LIGHTATTENUATION: ${cum/LIGHTATTENUATION}`)
+    // }
+
+    // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
+    newLightLevel += cum / LIGHTATTENUATION;
+
+    // if (ZZ(x, y)) {
     //     console.log("after averaging " + newLightLevel);
     // }
 
-    newLightLevel += -ambientLight - 1;
+    // newLightLevel += -ambientLight - 1;
 
-    // if (ifZeroZero(x, y)) {
+    // if (ZZ(x, y)) {
     //     console.log("after rest of maths " + newLightLevel);
     // }
 
@@ -117,11 +133,11 @@ function calcCellLighting(cellCoords: string) {
         newLightLevel = 255;
     }
 
-    if (newLightLevel < ambientLight) {
-        newLightLevel = ambientLight;
+    if (newLightLevel < 0) {
+        newLightLevel = 0;
     }
 
-    // if (ifZeroZero(x, y)) {
+    // if (ZZ(x, y)) {
     //     console.log("after limiting and ambient light floor " + newLightLevel);
     // }
 
@@ -383,6 +399,22 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
 
 const ___ = "\u00A0"; // non breaking space character
 
+// lighting constants
+let SELFWEIGHT = 3;
+let ORTHOGWEIGHT = 2;
+let DIAGWEIGHT = 1;
+let AMBIENTWEIGHT = 0.01;
+let AMBLIGHTAMP = 10000;
+
+let LIGHTATTENUATION = SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + AMBIENTWEIGHT;
+
+function recalcLA() {
+    LIGHTATTENUATION = SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + AMBIENTWEIGHT;
+}
+
+const MINSPERDAY = 60 * 24;
+// const TICKSPERMINUTE = 600;
+
 const TICKDURATION = 100;
 const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
 
@@ -417,6 +449,7 @@ let TIME: number;
 
 window.addEventListener("load", (event) => {
     // genMap(1024);
+    // world side, start time, player location
     setup(1000, 0, [0,0]);
     TICKER = setInterval(tick, TICKDURATION);
 });
