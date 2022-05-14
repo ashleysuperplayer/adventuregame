@@ -21,7 +21,13 @@ function ifZeroZero(a: number, b: number) {
     }
 }
 
-// function getTimeOfDay(time)
+const MINSPERDAY = 1440
+const TICKSPERMINUTE = 600
+// placeholder until i get better at maths lol
+// return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
+function getTimeOfDay(time: number) {
+    return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+}
 
 // creates a grid of even height and width.
 function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
@@ -51,6 +57,7 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 
 function tick() {
     TIME += 1;
+    console.log(getTimeOfDay(TIME));
     PLAYER.executeAction();
     updateDisplay();
 }
@@ -69,16 +76,15 @@ function calcCellLighting(cellCoords: string) {
         newLightLevel += content.luminescence;
     }
 
-    if (ifZeroZero(x, y)) {
-        console.log("after contents " + newLightLevel);
-    }
+    // if (ifZeroZero(x, y)) {
+    //     console.log("after contents " + newLightLevel);
+    // }
 
     newLightLevel += cell.weather.ambientLight;
 
-    if (ifZeroZero(x, y)) {
-        console.log("after ambient light " + newLightLevel);
-    }
-
+    // if (ifZeroZero(x, y)) {
+    //     console.log("after ambient light " + newLightLevel);
+    // }
 
     // const maxLum = Math.max(...cell.allLuminescence());
 
@@ -96,16 +102,15 @@ function calcCellLighting(cellCoords: string) {
 
         // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
     newLightLevel += Math.floor((n + s + e + w) / 4);
-    if (ifZeroZero(x, y)) {
-        console.log("after averaging " + newLightLevel);
-
-    }
+    // if (ifZeroZero(x, y)) {
+    //     console.log("after averaging " + newLightLevel);
+    // }
 
     newLightLevel += -ambientLight - 1;
 
-    if (ifZeroZero(x, y)) {
-        console.log("after rest of maths " + newLightLevel);
-    }
+    // if (ifZeroZero(x, y)) {
+    //     console.log("after rest of maths " + newLightLevel);
+    // }
 
     // upper limit on lightLevel
     if (newLightLevel > 255) {
@@ -116,9 +121,9 @@ function calcCellLighting(cellCoords: string) {
         newLightLevel = ambientLight;
     }
 
-    if (ifZeroZero(x, y)) {
-        console.log("after limiting and ambient light floor " + newLightLevel);
-    }
+    // if (ifZeroZero(x, y)) {
+    //     console.log("after limiting and ambient light floor " + newLightLevel);
+    // }
 
     cell.lightLevel = newLightLevel;
 };
@@ -375,8 +380,6 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     name: string;
     ambientLight: number;
 }
-
-// fail simpsons reference lol 
 
 const ___ = "\u00A0"; // non breaking space character
 
