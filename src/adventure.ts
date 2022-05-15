@@ -1,5 +1,3 @@
-// TODO change all getElementByIds in relation to display cells to use their respective dicts instead
-
 function printCellProperty(coords = "0,0", property: string) {
     return CELLMAP[property];
 }
@@ -12,21 +10,14 @@ function isPerfectSquare(x: number) {
     return x > 0 && Math.sqrt(x) % 1 === 0;
 }
 // function for faster debugging
-function ifZeroZero(a: number, b: number) {
-    if (a === 0 && b === 0) { // i just hate writing this line out all the time it reminds me i'm still using js lol
-        return true;
-    }
-    else {
-        return false;
-    }
+function ZZ(a: number, b: number) {
+    return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
 
-const MINSPERDAY = 1440
-const TICKSPERMINUTE = 600
 // placeholder until i get better at maths lol
 // return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
 function getTimeOfDay(time: number) {
-    return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+    return (Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2) * 0.1;
 }
 
 // creates a grid of even height and width.
@@ -68,7 +59,7 @@ function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const x = cell.x;
     const y = cell.y;
-    const ambientLight = cell.weather.ambientLight;
+    const ambientLight = getTimeOfDay(TIME);
 
     let newLightLevel = 0;
 
@@ -80,7 +71,7 @@ function calcCellLighting(cellCoords: string) {
     //     console.log("after contents " + newLightLevel);
     // }
 
-    newLightLevel += cell.weather.ambientLight;
+    // newLightLevel += ambientLight;
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after ambient light " + newLightLevel);
@@ -93,20 +84,35 @@ function calcCellLighting(cellCoords: string) {
     // if (ifZeroZero(x, y)) {
     // }
 
-        // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
-        // remind me to add cloud movement above player
+    // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
+    // remind me to add cloud movement above player
     let n = CELLMAP[`${x},${y+1}`].lightLevel ?? 0;
     let s = CELLMAP[`${x},${y-1}`].lightLevel ?? 0;
     let e = CELLMAP[`${x+1},${y}`].lightLevel ?? 0;
     let w = CELLMAP[`${x-1},${y}`].lightLevel ?? 0;
 
+    // dont even ask me about this crap im tired
+    // let adjCells = [n,s,e,w];
+
+    let highest = Math.max(n, s, e, w);
+
+    // for (let adjCell of adjCells) {
+    //     highest = adjCells[adjCell];
+    //     if (adjCells[adjCell]+1 > adjCells[adjCell]) {
+    //         highest = adjCells[adjCell]+1;
+    //     }
+    // }
+
         // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    newLightLevel += Math.floor((n + s + e + w) / 4);
+    // newLightLevel += Math.floor((n + s + e + w) / 4.28);
+
+    newLightLevel += Math.floor(highest * 0.8);
+
     // if (ifZeroZero(x, y)) {
     //     console.log("after averaging " + newLightLevel);
     // }
 
-    newLightLevel += -ambientLight - 1;
+    // newLightLevel += ambientLight - 1;
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after rest of maths " + newLightLevel);
@@ -243,11 +249,8 @@ class Mob {
 
 
     move(direction: string) {
-        console.log(direction);
-
         // remove from old location
         CELLMAP[`${this.x},${this.y}`].contents = CELLMAP[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
-        // console.log(`location before move: ${this.x},${this.y}`);
 
         switch(direction) {
             case "north":
@@ -265,9 +268,40 @@ class Mob {
         }
 
         CELLMAP[`${this.x},${this.y}`].contents.push(this);
-        // console.log(`location after move: ${this.x},${this.y}`)
 
         this.currentAction = "moved";
+    }
+}
+
+class NPCHuman extends Mob {
+    x: number;
+    y: number;
+    currentAction: string;
+    symbol: string;
+    luminescence: number;
+    constructor(x: number, y: number, mobKind: MobKind) {
+        super(x, y, mobKind);
+        this.x = x;
+        this.y = y;
+        this.currentAction = "wait";
+        this.symbol = mobKind.symbol;
+        this.luminescence = mobKind.luminescence;
+    }
+
+    tick(): void {
+        let rand = Math.random();
+        if (rand <= 0.2) {
+            this.move("north");
+        }
+        else if (rand <= 0.4 && rand > 0.2) {
+            this.move("south");
+        }
+        else if (rand <= 0.6 && rand > 0.4) {
+            this.move("east");
+        }
+        else if (rand <= 0.8 && rand > 0.6) {
+            this.move("west")
+        }
     }
 }
 
@@ -382,6 +416,9 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
 }
 
 const ___ = "\u00A0"; // non breaking space character
+
+const MINSPERDAY = 1440
+const TICKSPERMINUTE = 600
 
 const TICKDURATION = 100;
 const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
