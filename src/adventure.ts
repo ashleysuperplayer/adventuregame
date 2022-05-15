@@ -7,16 +7,19 @@ function throwExpression(errorMessage: string): never {
 function isPerfectSquare(x: number) {
     return x > 0 && Math.sqrt(x) % 1 === 0;
 }
-// function for faster debugging
+// check if cell is 0,0 lol
 function ZZ(a: number, b: number) {
-    // i just hate writing this line out all the time it reminds me i'm still using js lol
-    return a === 0 && b === 0;
+    return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
+
 }
 // placeholder until i get better at maths lol
 // return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
 function getLighting(time: number) {
     return (Math.cos(2*Math.PI * time / MINSPERDAY) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+}
+function printLightingWeights() {
+    console.log(`SELFWEIGHT: ${SELFWEIGHT}, AMBIENTWEIGHT: ${AMBIENTWEIGHT}, ORTHOGWEIGHT: ${ORTHOGWEIGHT}, DIAGWEIGHT: ${DIAGWEIGHT}, AMBAMPLIGHT: ${AMBLIGHTAMP}`);
 }
 
 // creates a grid of even height and width.
@@ -48,8 +51,8 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 function tick() {
     TIME += 1;
     // console.log(getLighting(TIME));
-    console.log(`time: ${Math.floor(TIME/60)}:${Math.floor(TIME%60)}`);
-
+    console.log(`time: ${Math.floor((TIME/24)/60)}:${Math.floor(TIME/60%60%24)}:${Math.floor(TIME%60)}`);
+    console.log(getLighting(TIME));
     PLAYER.executeAction();
     updateDisplay();
 }
@@ -62,10 +65,10 @@ function calcCellLighting(cellCoords: string) {
     const y = cell.y;
     const ambientLight = Math.floor(getLighting(TIME));
 
-    let newLightLevel = 0; // 0
+    let contentsLight = 0; // 0
 
     for (let content of cell.contents) {
-        newLightLevel += content.luminescence;
+        contentsLight += content.luminescence;
     }
 
     // if (ZZ(x, y)) {
@@ -94,13 +97,13 @@ function calcCellLighting(cellCoords: string) {
     // if (ifZeroZero(x, y)) {
     // }
 
-    let cum = ambientLight * AMBIENTWEIGHT;
+    let cum = ambientLight * AMBIENTWEIGHT + contentsLight;
 
     for (let dY = -1; dY <= 1; dY++) {
         for (let dX = -1; dX <= 1; dX++) {
             const absOffsets = Math.abs(dX) + Math.abs(dY);
             if (absOffsets === 0) {
-                // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
             }
             if (absOffsets === 1) {
                 cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
@@ -116,7 +119,7 @@ function calcCellLighting(cellCoords: string) {
     // }
 
     // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    newLightLevel += cum / LIGHTATTENUATION;
+    cum /= LIGHTATTENUATION;
 
     // if (ZZ(x, y)) {
     //     console.log("after averaging " + newLightLevel);
@@ -129,19 +132,19 @@ function calcCellLighting(cellCoords: string) {
     // }
 
     // upper limit on lightLevel
-    if (newLightLevel > 255) {
-        newLightLevel = 255;
+    if (cum > 255) {
+        cum = 255;
     }
 
-    if (newLightLevel < 0) {
-        newLightLevel = 0;
+    if (cum < 0) {
+        cum = 0;
     }
 
     // if (ZZ(x, y)) {
     //     console.log("after limiting and ambient light floor " + newLightLevel);
     // }
 
-    cell.lightLevel = newLightLevel;
+    cell.lightLevel = cum;
 };
 
 // generates key value pairs of locationMap as coordinates and Location objects
@@ -400,16 +403,25 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
 const ___ = "\u00A0"; // non breaking space character
 
 // lighting constants
-let SELFWEIGHT = 3;
-let ORTHOGWEIGHT = 2;
-let DIAGWEIGHT = 1;
-let AMBIENTWEIGHT = 0.01;
-let AMBLIGHTAMP = 10000;
+// right now i'm messing around with these to find some combination that makes nice lighting
+// NICE COMBOS:
+// SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
+// AMBLIGHTAMP = ~200 gives correct range
+// SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
+let SELFWEIGHT = 10;
+let ORTHOGWEIGHT = 0.5;
+let DIAGWEIGHT = 0.25;
+let AMBIENTWEIGHT = 1;
+let AMBLIGHTAMP = 200;
 
-let LIGHTATTENUATION = SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + AMBIENTWEIGHT;
+let LIGHTATTENUATION = getLA();
 
-function recalcLA() {
-    LIGHTATTENUATION = SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + AMBIENTWEIGHT;
+function getLA() {
+    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + AMBIENTWEIGHT;
+}
+
+function resetLA() {
+    LIGHTATTENUATION = getLA();
 }
 
 const MINSPERDAY = 60 * 24;
@@ -449,7 +461,126 @@ let TIME: number;
 
 window.addEventListener("load", (event) => {
     // genMap(1024);
-    // world side, start time, player location
+    // world side, start time, [player x, y]
     setup(1000, 0, [0,0]);
     TICKER = setInterval(tick, TICKDURATION);
 });
+
+// interface lightingPreset {
+//     ambientLight: number,
+//     contentsLight: number,
+//     orthogLight: number,
+//     diagLight: number,
+//     selfWeight: number,
+//     orthogWeight: number,
+//     diagWeight: number,
+//     ambientWeight: number,
+//     lightAttenutation: number
+// }
+
+class LightingPositionPreset {
+    ambientLight: number;
+    contentsLight: number;
+    orthogLight: number;
+    diagLight: number;
+    constructor(ambientLight: number, contentsLight: number, orthogLight: number, diagLight: number) {
+        this.ambientLight = ambientLight;
+        this.contentsLight = contentsLight;
+        this.orthogLight = orthogLight;
+        this.diagLight = diagLight;
+    }
+}
+
+class LWeights {
+    selfWeight: number;
+    orthogWeight: number;
+    diagWeight: number;
+    ambientWeight: number;
+    lightAttenuation: number;
+    constructor(selfWeight: number, orthogWeight: number, diagWeight: number, ambientWeight: number, lightAttenuation=0) {
+        this.selfWeight = selfWeight;
+        this.orthogWeight = orthogWeight;
+        this.diagWeight = diagWeight;
+        this.ambientWeight = ambientWeight;
+        this.lightAttenuation = lightAttenuation;
+    }
+}
+
+// isolating lighting and how it works to debug it
+function debugLighting(lightingPreset: LightingPositionPreset, lightingWeights = ) {
+    // const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
+    // const x = cell.x;
+    // const y = cell.y;
+
+    // ambientLight, global ambient light level 0-200
+    // contentsLight, total light level of all contents of cell
+
+    // cum, cumulative lighting level
+
+    // selfWeight, weight given to self light level (i.e. contents) when calculating light level
+    // orthogWeight, weight given to cells orthoganol to cell being calculated
+    // diagWeight, diagonal weight
+    // lightAttenuation, by default = selfWeight + ((orthogWeight + diagWeight) * 4) + ambientWeight
+
+    if (!lightingPreset.lightAttenuation) {
+        lightingPreset.lightAttenuation = lightingPreset.selfWeight + (lightingPreset.orthogWeight + lightingPreset.diagWeight) * 4 + lightingPreset.ambientWeight;
+    }
+
+    let cum = lightingPreset.ambientLight;
+    console.log(`after adding ambient light: ${cum}`);
+    cum = cum * lightingPreset.ambientWeight;
+    console.log(`after ambient weight mult: ${cum}`);
+    cum = cum + lightingPreset.contentsLight;
+    console.log(`after ambient light: ${cum}`);
+
+    cum += cum * lightingPreset.selfWeight;
+    console.log(`after self light: ${cum}`);
+
+    cum += lightingPreset.orthogLight * lightingPreset.orthogWeight;
+    console.log(`after orthog light: ${cum}`)
+
+    cum += lightingPreset.diagLight * lightingPreset.diagWeight;
+    console.log(`after diag light: ${cum}`)
+
+    cum /= lightingPreset.lightAttenuation;
+    console.log(`after attenuate light: ${cum}`)
+
+    return cum;
+
+
+    // for (let dY = -1; dY <= 1; dY++) {
+    //     for (let dX = -1; dX <= 1; dX++) {
+    //         const absOffsets = Math.abs(dX) + Math.abs(dY);
+    //         if (absOffsets === 0) {
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
+    //         }
+    //         if (absOffsets === 1) {
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
+    //         }
+    //         else {
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
+    //         }
+    //     }
+    // }
+    // // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
+    // cum /= LIGHTATTENUATION;
+
+    // // newLightLevel += -ambientLight - 1;
+
+    // // upper limit on lightLevel
+    // if (cum > 255) {
+    //     cum = 255;
+    // }
+
+    // if (cum < 0) {
+    //     cum = 0;
+    // }
+
+    // cell.lightLevel = cum;
+
+    // return lightLevel;
+}
+
+function printLightingPresetProps() {
+    console.log("ambientLight, contentsLight, orthogLight, diagLight, selfWeight, orthogWeight, diagWeight, ambientWeight, lightAttenuation=0");
+}
