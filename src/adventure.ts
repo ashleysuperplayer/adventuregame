@@ -94,7 +94,16 @@ function calcCellLighting(cellCoords: string) {
     // dont even ask me about this crap im tired
     // let adjCells = [n,s,e,w];
 
-    let highest = Math.max(n, s, e, w);
+    let cellList = [];
+
+    for (let dY = -1; dY <= 1; dY++) {
+        for (let dX = -1; dX <= 1; dX++) {
+            // const absOffsets = Math.abs(dX) + Math.abs(dY);
+            cellList.push(CELLMAP[`${x+dX},${y+dY}`].lightLevel);
+        }
+    }
+
+    let highest = Math.max(...cellList);
 
     // for (let adjCell of adjCells) {
     //     highest = adjCells[adjCell];
