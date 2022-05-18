@@ -13,11 +13,15 @@ function isPerfectSquare(x: number) {
 function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
-
 // placeholder until i get better at maths lol
 // return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
-function getTimeOfDay(time: number) {
-    return (Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2) * 0.1;
+function timeToLight(time: number) {
+    time = Math.floor(time);
+    return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
+    // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+}
+function printLightingWeights() {
+    console.log(`SELFWEIGHT: ${SELFWEIGHT}, ORTHOGWEIGHT: ${ORTHOGWEIGHT}, DIAGWEIGHT: ${DIAGWEIGHT}, AMBAMPLIGHT: ${AMBLIGHTAMP}`);
 }
 
 // creates a grid of even height and width.
@@ -48,8 +52,12 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 
 function tick() {
     TIME += 1;
-    console.log(getTimeOfDay(TIME));
+    console.log(`time: ${Math.floor((TIME/24)/60)}:${Math.floor(TIME/60%60%24)}:${Math.floor(TIME%60)}`);
+    console.log(timeToLight(TIME));
     PLAYER.executeAction();
+    for (let mob in MOBSMAP) {
+        MOBSMAP[mob].tick();
+    }
     updateDisplay();
 }
 
@@ -59,13 +67,10 @@ function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const x = cell.x;
     const y = cell.y;
-    const ambientLight = getTimeOfDay(TIME);
+    const currAmbientLight = timeToLight(TIME);
+    // const oldAmbientLight = timeToLight(TIME-1); // this feels hacky and dangerous
 
-    let newLightLevel = 0;
-
-    for (let content of cell.contents) {
-        newLightLevel += content.luminescence;
-    }
+    let cum = 0;
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after contents " + newLightLevel);
@@ -77,45 +82,32 @@ function calcCellLighting(cellCoords: string) {
     //     console.log("after ambient light " + newLightLevel);
     // }
 
-    // const maxLum = Math.max(...cell.allLuminescence());
-
-    // const ambientLight = cell.weather.ambientLight;
-
-    // if (ifZeroZero(x, y)) {
-    // }
-
     // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
     // remind me to add cloud movement above player
-    let n = CELLMAP[`${x},${y+1}`].lightLevel ?? 0;
-    let s = CELLMAP[`${x},${y-1}`].lightLevel ?? 0;
-    let e = CELLMAP[`${x+1},${y}`].lightLevel ?? 0;
-    let w = CELLMAP[`${x-1},${y}`].lightLevel ?? 0;
-
-    // dont even ask me about this crap im tired
-    // let adjCells = [n,s,e,w];
-
-    let cellList = [];
-
-    for (let dY = -1; dY <= 1; dY++) {
-        for (let dX = -1; dX <= 1; dX++) {
-            // const absOffsets = Math.abs(dX) + Math.abs(dY);
-            cellList.push(CELLMAP[`${x+dX},${y+dY}`].lightLevel);
-        }
-    }
-
-    let highest = Math.max(...cellList);
-
-    // for (let adjCell of adjCells) {
-    //     highest = adjCells[adjCell];
-    //     if (adjCells[adjCell]+1 > adjCells[adjCell]) {
-    //         highest = adjCells[adjCell]+1;
+    // for (let dY = -1; dY <= 1; dY++) {
+    //     for (let dX = -1; dX <= 1; dX++) {
+    //         const absOffsets = Math.abs(dX) + Math.abs(dY);
+    //         if (absOffsets === 0) {
+    //             // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
+    //         }
+    //         if (absOffsets === 1) {
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
+    //         }
+    //         else {
+    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
+    //         }
     //     }
     // }
 
-        // return (Math.floor(n) + Math.floor(s) + Math.floor(e) + Math.floor(w)) / 4;
-    // newLightLevel += Math.floor((n + s + e + w) / 4.28);
+    // SELFWEIGHT: 10, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.3, AMBAMPLIGHT: 200 sort of works but it still ßux
+    // cum /= LIGHTATTENUATION;
 
-    newLightLevel += Math.floor(highest * 0.8);
+    // cum -= oldAmbientLight;
+
+    // cum += currAmbientLight;
+
+    // cum *= 0.98;
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after averaging " + newLightLevel);
@@ -127,20 +119,31 @@ function calcCellLighting(cellCoords: string) {
     //     console.log("after rest of maths " + newLightLevel);
     // }
 
-    // upper limit on lightLevel
-    if (newLightLevel > 255) {
-        newLightLevel = 255;
-    }
+    // if (cum < currAmbientLight) {
+    //     cum += 5;
+    // }
+    // else if (cum > currAmbientLight) {
+    //     cum -= 5;
+    // }
 
-    if (newLightLevel < ambientLight) {
-        newLightLevel = ambientLight;
-    }
+    // upper limit on lightLevel
+    // if (cum > 255) {
+    //     cum = 255;
+    // }
+
+    // if (cum < currAmbientLight) {
+    //     cum = currAmbientLight;
+    // }
+
+    // if (cum < cell.maxLum()) {
+    //     cum = cell.maxLum();
+    // }
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after limiting and ambient light floor " + newLightLevel);
     // }
 
-    cell.lightLevel = newLightLevel;
+    cell.lightLevel = currAmbientLight;
 };
 
 // generates key value pairs of locationMap as coordinates and Location objects
@@ -187,10 +190,13 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
-// why weird name ?
-function setPlayerDo(newAction: string) {
+function setPlayerAction(newAction: string) {
     console.log("click!");
     PLAYER.currentAction = newAction;
+}
+
+function setMobAction(mobID: string, newAction: string) {
+    MOBSMAP[mobID].currentAction = newAction;
 }
 
 function convertListToString(someList: number[] | string[], delimiter="") {
@@ -211,16 +217,16 @@ function setupKeys() {
     window.addEventListener("keydown", (event) => {
         switch (event.key) {
             case "ArrowUp":
-                setPlayerDo("north");
+                setPlayerAction("north");
                 break;
             case "ArrowLeft":
-                setPlayerDo("west");
+                setPlayerAction("west");
                 break;
             case "ArrowDown":
-                setPlayerDo("south");
+                setPlayerAction("south");
                 break;
             case "ArrowRight":
-                setPlayerDo("east");
+                setPlayerAction("east");
                 break;
         }
     });
@@ -236,6 +242,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
     setupKeys();
 
     PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
     updateDisplay();
 }
@@ -280,57 +287,6 @@ class Mob {
 
         this.currentAction = "moved";
     }
-}
-
-class NPCHuman extends Mob {
-    x: number;
-    y: number;
-    currentAction: string;
-    symbol: string;
-    luminescence: number;
-    constructor(x: number, y: number, mobKind: MobKind) {
-        super(x, y, mobKind);
-        this.x = x;
-        this.y = y;
-        this.currentAction = "wait";
-        this.symbol = mobKind.symbol;
-        this.luminescence = mobKind.luminescence;
-    }
-
-    tick(): void {
-        let rand = Math.random();
-        if (rand <= 0.2) {
-            this.move("north");
-        }
-        else if (rand <= 0.4 && rand > 0.2) {
-            this.move("south");
-        }
-        else if (rand <= 0.6 && rand > 0.4) {
-            this.move("east");
-        }
-        else if (rand <= 0.8 && rand > 0.6) {
-            this.move("west")
-        }
-    }
-}
-
-interface MobKind {
-    name: string;
-    symbol: string;
-    luminescence: number;
-}
-
-class Player extends Mob {
-    x: number;
-    y: number;
-    currentAction: string;
-
-    constructor(x: number, y: number) {
-        super(x, y, MOBKINDSMAP["player"]);
-        this.x = x; // idk why this needs to be defined here if it's already defined in parent
-        this.y = y;
-        this.currentAction = "wait";
-    }
 
     executeAction() {
         switch(this.currentAction) {
@@ -347,7 +303,62 @@ class Player extends Mob {
                 this.move("west");
                 break;
         }
+        console.log("moved" + this.currentAction);
 
+        this.currentAction = "wait";
+    }
+
+    tick(): void {
+        let rand = Math.random();
+        console.log(rand);
+        if (rand <= 0.2) {
+            this.currentAction = "north";
+        }
+        else if (rand <= 0.4 && rand > 0.2) {
+            this.currentAction = "south";
+        }
+        else if (rand <= 0.6 && rand > 0.4) {
+            this.currentAction = "east";
+        }
+        else if (rand <= 0.8 && rand > 0.6) {
+            this.currentAction = "west";
+        }
+
+        this.executeAction();
+    }
+}
+
+interface MobKind {
+    name: string;
+    symbol: string;
+    luminescence: number;
+}
+
+class NPCHuman extends Mob {
+    x: number;
+    y: number;
+    currentAction: string;
+    symbol: string;
+    luminescence: number;
+    constructor(x: number, y: number, mobKind: MobKind) {
+        super(x, y, mobKind);
+        this.x = x;
+        this.y = y;
+        this.currentAction = "wait";
+        this.symbol = mobKind.symbol;
+        this.luminescence = mobKind.luminescence;
+    }
+}
+
+class Player extends Mob {
+    x: number;
+    y: number;
+    currentAction: string;
+
+    constructor(x: number, y: number) {
+        super(x, y, MOBKINDSMAP["player"]);
+        this.x = x; // idk why this needs to be defined here if it's already defined in parent
+        this.y = y;
         this.currentAction = "wait";
     }
 }
@@ -424,22 +435,37 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     ambientLight: number;
 }
 
-const ___ = "\u00A0"; // non breaking space character
+// right now i'm messing around with these to find some combination that makes nice lighting
+// NICE COMBOS:
+// SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
+// AMBLIGHTAMP = ~200 gives correct range
+// SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
+let SELFWEIGHT = 10;
+let ORTHOGWEIGHT = 0.5;
+let DIAGWEIGHT = 0.25;
+let AMBLIGHTAMP = 200;
 
-const MINSPERDAY = 1440
-const TICKSPERMINUTE = 600
+let LIGHTATTENUATION = getLA();
+
+function getLA() {
+    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4);
+}
+
+const MINSPERDAY = 1440;
+const TICKSPERMINUTE = 600;
 
 const TICKDURATION = 100;
 const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
 
 let CELLMAP: { [key: string]: Cell };
-let MOBSMAP: { [key: string]: Mob };
+let MOBSMAP: { [id: string]: Mob } = {};
 
 let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};
 let LIGHTELEMENTSDICT: { [key: string]: HTMLElement} = {};
 
 let MOBKINDSMAP: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@", luminescence: 255},
+    "npctest": {name: "npctest", symbol: "W", luminescence: 0}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
