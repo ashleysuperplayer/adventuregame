@@ -52,13 +52,26 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 
 function tick() {
     TIME += 1;
-    console.log(`time: ${Math.floor((TIME/24)/60)}:${Math.floor(TIME/60%60%24)}:${Math.floor(TIME%60)}`);
-    console.log(timeToLight(TIME));
+    // console.log(`time: ${Math.floor((TIME/24)/60)}:${Math.floor(TIME/60%60%24)}:${Math.floor(TIME%60)}`);
+    // console.log(timeToLight(TIME));
     PLAYER.executeAction();
     for (let mob in MOBSMAP) {
         MOBSMAP[mob].tick();
     }
+
+    for (let x = -2; x < 2; x+=0.05) {
+        for (let y = -2; y < 2; y+=0.05) {
+            RAYMAP[RAYIDCOUNTER] = new LightRay(RAYIDCOUNTER, PLAYER.x, PLAYER.y, Number(x.toFixed(2)), Number(y.toFixed(2)), 1);
+            console.log(`light ray created at ${PLAYER.x}, ${PLAYER.y}, trajectory ${x.toFixed(2)},${y.toFixed(2)}`);
+        }
+    }
+    for (let ray in RAYMAP) {
+        RAYMAP[ray].cast();
+        // console.log(`ray ${ray} cast`);
+    }
+    console.log("completed lighting pass");
     updateDisplay();
+    // clearInterval(TIMER);
 }
 
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
@@ -187,11 +200,20 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     for (let content of cell.contents) {
         displayElement.innerHTML = content.symbol;
     }
+
+    if (!cell.isVisible) {
+        displayElement.style.backgroundColor = "black";
+    }
+    else {
+        displayElement.style.backgroundColor = `rgb(${cell.color})`;
+    }
+
+    // cell.isVisible = false;
     // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
 function setPlayerAction(newAction: string) {
-    console.log("click!");
+    // console.log("click!");
     PLAYER.currentAction = newAction;
 }
 
@@ -303,14 +325,14 @@ class Mob {
                 this.move("west");
                 break;
         }
-        console.log("moved" + this.currentAction);
+        // console.log("moved" + this.currentAction);
 
         this.currentAction = "wait";
     }
 
     tick(): void {
         let rand = Math.random();
-        console.log(rand);
+        // console.log(rand);
         if (rand <= 0.2) {
             this.currentAction = "north";
         }
@@ -370,6 +392,7 @@ class Cell {
     lightLevel: number;
     color: number[];
     weather: Weather;
+    isVisible: Boolean;
 
     constructor(x: number, y: number, weather = "dark") {
         this.x = x;
@@ -379,6 +402,7 @@ class Cell {
         // console.log(this.contents);
         this.color = [228, 228, 228];
         this.weather = WEATHERMAP[weather];
+        this.isVisible = false;
     }
 
     genCell(): CellContents[] {
@@ -413,6 +437,75 @@ class Cell {
     maxLum() {
         return Math.max(...this.allLuminescence());
     }
+
+    sumOpacity() {
+        let cum = 0;
+        for (let content of this.contents) {
+            cum += content.luminescence;
+        }
+        return cum;
+    }
+}
+
+class LightRay {
+    id: number;
+    posX: number;
+    posY: number;
+    trajectoryX: number;
+    trajectoryY: number;
+    strength: number;
+    delOnNext: Boolean;
+    // carryX: number;
+    // carryY: number;
+    constructor(id: number, posX: number, posY: number, traX: number, traY: number, strength: number) {
+        this.id = id;
+        this.posX = posX;
+        this.posY = posY;
+        this.trajectoryX = traX;
+        this.trajectoryY = traY;
+        this.strength = strength;
+        this.delOnNext = false;
+        // this.carryX = 0;
+        // this.carryY = 0;
+        RAYIDCOUNTER += 1;
+    }
+
+    cast(carryX=0, carryY=0) { // this could be recursive i think
+        // console.log(`ray cast from ${this.posX},${this.posY} with carryX ${carryX}, carryY ${carryY}`);
+        let floorTX = Math.floor(this.trajectoryX);
+        let floorTY = Math.floor(this.trajectoryY);
+
+        CELLMAP[`${this.posX},${this.posY}`].isVisible = true;
+
+        if (carryX > 1) {
+            this.posY += floorTX;
+            carryX -= floorTX;
+            // console.log(`carryX now ${carryX}`);
+        }
+
+        if (carryY > 1) {
+            this.posX += floorTY;
+            carryY -= floorTY;
+            // console.log(`carryY now ${carryY}`);
+        }
+
+        if (this.delOnNext === true) {
+            delete RAYMAP[this.id];
+            return;
+        }
+
+        this.posX += floorTX;
+        this.posY += floorTY;
+
+        let cellOp = CELLMAP[`${this.posX},${this.posY}`].sumOpacity();
+        this.strength -= (cellOp + 0.1);
+        if (this.strength <= 0) {
+            this.delOnNext = true;
+        }
+
+        // console.log(`to ${this.posX},${this.posY}`);
+        this.cast(carryX + this.trajectoryX % 1, carryY + this.trajectoryY % 1);
+    }
 }
 
 type CellContents = TerrainFeature|Item|Mob;
@@ -428,6 +521,7 @@ interface TerrainFeature {
     name: string;
     symbol: string;
     luminescence: number;
+    opacity: number;
 }
 
 interface Weather {  // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
@@ -463,16 +557,19 @@ let MOBSMAP: { [id: string]: Mob } = {};
 let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};
 let LIGHTELEMENTSDICT: { [key: string]: HTMLElement} = {};
 
+let RAYMAP: { [id: string]: LightRay} = {};
+let RAYIDCOUNTER = 0;
+
 let MOBKINDSMAP: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@", luminescence: 255},
     "npctest": {name: "npctest", symbol: "W", luminescence: 0}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0},
-    "grass": {name: "grass", symbol: "", luminescence: 0},
-    "light": {name: "light", symbol: "o", luminescence: 125},
-    "rock": {name: "rock", symbol: ".", luminescence: 0}
+    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 1},
+    "grass": {name: "grass", symbol: "", luminescence: 0, opacity: 0},
+    "light": {name: "light", symbol: "o", luminescence: 125, opacity: 1},
+    "rock": {name: "rock", symbol: ".", luminescence: 0, opacity: 0.2}
 }
 
 let WEATHERMAP: { [key: string]: Weather} = { // RECENT
@@ -490,5 +587,6 @@ let TIME: number;
 window.addEventListener("load", (event) => {
     // genMap(1024);
     setup(1000, 0, [0,0]);
-    TICKER = setInterval(tick, TICKDURATION);
+    // TICKER = setInterval(tick, TICKDURATION);
+    tick();
 });
