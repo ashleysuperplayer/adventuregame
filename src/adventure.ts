@@ -1,3 +1,72 @@
+// bresenham shit I STOLE FROM WIKIPEDIA
+function changeColour(x:number, y:number) {
+    CELLMAP[`${x},${y}`].color = [0, 255, 0];
+}
+function plotLineLow(x0: number, y0: number, x1: number, y1: number) {
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+    let yi = 1;
+    if (dy < 0) {
+        yi = -1;
+        dy = -dy;
+    }
+
+    let D = (2 * dy) - dx;
+    let y = y0;
+
+    for (let x = dx; x < x1; x++) {
+        changeColour(x, y);
+        if (D > 0) {
+            y = y + yi;
+            D = D + (2 * (dy - dx));
+        }
+        else {
+            D = D + 2*dy;
+        }
+    }
+}
+function plotLineHigh(x0:number, y0:number, x1:number, y1:number) {
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+    let xi = 1;
+    if (dx < 0) {
+        xi = -1;
+        dx = -dx;
+    }
+
+    let D = (2 * dx) - dy;
+    let x = x0;
+
+    for (let y = dy; y < y1; y++) {
+        changeColour(x, y);
+        if (D > 0) {
+            x = x + xi;
+            D = D + (2 * (dx - dy));
+        }
+        else {
+            D = D + 2*dx;
+        }
+    }
+}
+function plotLine(x0:number, y0:number, x1:number, y1:number) {
+    if (Math.abs(y1 - y0) < Math.abs(x1 - x0)) {
+        if (x0 > x1) {
+            plotLineLow(x1, y1, x0, y0);
+        }
+        else {
+            plotLineLow(x0, y0, x1, y1);
+        }
+    }
+    else {
+        if (y0 > y1) {
+            plotLineHigh(x1, y1, x0, y0);
+        }
+        else {
+            plotLineHigh(x0, y0, x1, y1);
+        }
+    }
+}
+
 function printCellProperty(coords = "0,0", property: string) {
     return CELLMAP[property];
 }
@@ -14,7 +83,7 @@ function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
 // placeholder until i get better at maths lol
-// return makesAWave(time / (stops it from going too fast)) * This makes it go from -700ish to +700 ish + this makes the whole range positive
+// returns light level from 0 to AMBLIGHTAMP
 function timeToLight(time: number) {
     time = Math.floor(time);
     return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
@@ -59,19 +128,28 @@ function tick() {
         MOBSMAP[mob].tick();
     }
 
-    for (let x = -2; x < 2; x+=0.05) {
-        for (let y = -2; y < 2; y+=0.05) {
-            RAYMAP[RAYIDCOUNTER] = new LightRay(RAYIDCOUNTER, PLAYER.x, PLAYER.y, Number(x.toFixed(2)), Number(y.toFixed(2)), 1);
-            console.log(`light ray created at ${PLAYER.x}, ${PLAYER.y}, trajectory ${x.toFixed(2)},${y.toFixed(2)}`);
-        }
-    }
-    for (let ray in RAYMAP) {
-        RAYMAP[ray].cast();
-        // console.log(`ray ${ray} cast`);
-    }
-    console.log("completed lighting pass");
+    console.log(timeToLight(TIME));
+
+    // for (let x = -2; x < 2; x+=0.05) {
+    //     for (let y = -2; y < 2; y+=0.05) {
+    //         RAYMAP[RAYIDCOUNTER] = new LightRay(RAYIDCOUNTER, PLAYER.x, PLAYER.y, Number(x.toFixed(2)), Number(y.toFixed(2)), 1);
+    //         // console.log(`light ray created at ${PLAYER.x}, ${PLAYER.y}, trajectory ${x.toFixed(2)},${y.toFixed(2)}`);
+    //     }
+    // }
+    // for (let emitter in EMITTERMAP) {
+    //     EMITTERMAP[emitter].tick();
+    // }
+    // for (let ray in RAYMAP) {
+    //     RAYMAP[ray].cast();
+    //     // console.log(`ray ${ray} cast`);
+    // }
+    // console.log("completed lighting pass");
     updateDisplay();
     // clearInterval(TIMER);
+}
+
+function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
+    EMITTERMAP[`${posX},${posY},${trajX},${trajY}`] = new LightEmitter(posX, posY, trajX, trajY);
 }
 
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
@@ -97,24 +175,24 @@ function calcCellLighting(cellCoords: string) {
 
     // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
     // remind me to add cloud movement above player
-    // for (let dY = -1; dY <= 1; dY++) {
-    //     for (let dX = -1; dX <= 1; dX++) {
-    //         const absOffsets = Math.abs(dX) + Math.abs(dY);
-    //         if (absOffsets === 0) {
-    //             // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT
-    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
-    //         }
-    //         if (absOffsets === 1) {
-    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
-    //         }
-    //         else {
-    //             cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
-    //         }
-    //     }
-    // }
+    for (let dY = -1; dY <= 1; dY++) {
+        for (let dX = -1; dX <= 1; dX++) {
+            const absOffsets = Math.abs(dX) + Math.abs(dY);
+            if (absOffsets === 0) {
+                // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
+            }
+            if (absOffsets === 1) {
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
+            }
+            else {
+                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
+            }
+        }
+    }
 
     // SELFWEIGHT: 10, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.3, AMBAMPLIGHT: 200 sort of works but it still ßux
-    // cum /= LIGHTATTENUATION;
+    cum /= LIGHTATTENUATION;
 
     // cum -= oldAmbientLight;
 
@@ -140,23 +218,23 @@ function calcCellLighting(cellCoords: string) {
     // }
 
     // upper limit on lightLevel
-    // if (cum > 255) {
-    //     cum = 255;
-    // }
+    if (cum > 255) {
+        cum = 255;
+    }
 
     // if (cum < currAmbientLight) {
     //     cum = currAmbientLight;
     // }
 
-    // if (cum < cell.maxLum()) {
-    //     cum = cell.maxLum();
-    // }
+    if (cum < cell.maxLum()) {
+        cum = cell.maxLum();
+    }
 
     // if (ifZeroZero(x, y)) {
     //     console.log("after limiting and ambient light floor " + newLightLevel);
     // }
 
-    cell.lightLevel = currAmbientLight;
+    cell.lightLevel = Math.floor(cum);
 };
 
 // generates key value pairs of locationMap as coordinates and Location objects
@@ -171,7 +249,6 @@ function generateWorld(sideLengthWorld: number) {
             // console.log(`genning ${x},${y}`)
             newCellMap[`${x},${y}`] = new Cell(x, y);
             // console.log(`genned ${x}, ${y} with color ${newLocationMap[x + "," + y].color}`)
-
         }
     }
 
@@ -194,21 +271,34 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
 
     calcCellLighting(cellCoords);
 
-    lightElement.style.opacity = `${1 - (cell.lightLevel / 255)}`;
+    let lightElementColourAmbient = `${1 - ((cell.lightLevel / 255) + (timeToLight(TIME) / 255))}`;
+    // +lightElementColourAmbient += ;
+
+    if (+lightElementColourAmbient < 0) {
+        lightElementColourAmbient = `0`;
+    }
+
+    if (+lightElementColourAmbient > 1) {
+        lightElementColourAmbient = `1`;
+    }
+    // all works
+
+    // console.log("lightElementColourAmbient " + lightElementColourAmbient);
+    lightElement.style.opacity = lightElementColourAmbient;
 
     // redo this, only allows for one kind of cell contents at a time
     for (let content of cell.contents) {
         displayElement.innerHTML = content.symbol;
     }
 
-    if (!cell.isVisible) {
-        displayElement.style.backgroundColor = "black";
-    }
-    else {
-        displayElement.style.backgroundColor = `rgb(${cell.color})`;
-    }
+    // if (!cell.isVisible) {
+    //     displayElement.style.backgroundColor = "black";
+    // }
+    // else {
+    //     displayElement.style.backgroundColor = `rgb(${cell.color})`;
+    // }
 
-    // cell.isVisible = false;
+    cell.isVisible = false;
     // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
@@ -275,6 +365,7 @@ class Mob {
     currentAction: string;
     symbol: string;
     luminescence: number;
+    facing: string;
 
     constructor(x: number, y: number, kind: MobKind) {
         this.x = x;
@@ -283,6 +374,7 @@ class Mob {
         this.symbol = kind.symbol;
         CELLMAP[`${this.x},${this.y}`].contents.push(this);
         this.luminescence = kind.luminescence;
+        this.facing = "n";
     }
 
 
@@ -293,15 +385,19 @@ class Mob {
         switch(direction) {
             case "north":
                 this.y += 1;
+                this.facing = "n";
                 break;
             case "south":
                 this.y -= 1;
+                this.facing = "s";
                 break;
             case "east":
                 this.x += 1;
+                this.facing = "e";
                 break;
             case "west":
                 this.x -= 1;
+                this.facing = "w";
                 break;
         }
 
@@ -447,6 +543,23 @@ class Cell {
     }
 }
 
+class LightEmitter {
+    posX: number;
+    posY: number;
+    trajX: number;
+    trajY: number;
+    constructor(posX: number, posY: number, trajX: number, trajY: number) {
+        this.posX = posX;
+        this.posY = posY;
+        this.trajX = trajX;
+        this.trajY = trajY;
+    }
+
+    tick() {
+        RAYMAP[RAYIDCOUNTER] = new LightRay(RAYIDCOUNTER, this.posX, this.posY, this.trajX, this.trajY, 1);
+    }
+}
+
 class LightRay {
     id: number;
     posX: number;
@@ -504,7 +617,7 @@ class LightRay {
         }
 
         // console.log(`to ${this.posX},${this.posY}`);
-        this.cast(carryX + this.trajectoryX % 1, carryY + this.trajectoryY % 1);
+        this.cast(carryX + Math.abs(this.trajectoryX) % 1, carryY + Math.abs(this.trajectoryY) % 1);
     }
 }
 
@@ -534,15 +647,16 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
 // SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
 // AMBLIGHTAMP = ~200 gives correct range
 // SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
+// SELFWEIGHT: 10, ORTHOGWEIGHT: 20, DIAGWEIGHT: 1, AMBAMPLIGHT: 200
 let SELFWEIGHT = 10;
-let ORTHOGWEIGHT = 0.5;
-let DIAGWEIGHT = 0.25;
+let ORTHOGWEIGHT = 20;
+let DIAGWEIGHT = 1;
 let AMBLIGHTAMP = 200;
 
 let LIGHTATTENUATION = getLA();
 
 function getLA() {
-    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4);
+    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
 }
 
 const MINSPERDAY = 1440;
@@ -558,6 +672,7 @@ let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};
 let LIGHTELEMENTSDICT: { [key: string]: HTMLElement} = {};
 
 let RAYMAP: { [id: string]: LightRay} = {};
+let EMITTERMAP: { [key: string]: LightEmitter} = {};
 let RAYIDCOUNTER = 0;
 
 let MOBKINDSMAP: { [key: string]: MobKind } = {
@@ -566,10 +681,10 @@ let MOBKINDSMAP: { [key: string]: MobKind } = {
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 1},
+    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0},
     "grass": {name: "grass", symbol: "", luminescence: 0, opacity: 0},
     "light": {name: "light", symbol: "o", luminescence: 125, opacity: 1},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, opacity: 0.2}
+    "rock": {name: "rock", symbol: ".", luminescence: 0, opacity: 0}
 }
 
 let WEATHERMAP: { [key: string]: Weather} = { // RECENT
@@ -587,6 +702,6 @@ let TIME: number;
 window.addEventListener("load", (event) => {
     // genMap(1024);
     setup(1000, 0, [0,0]);
-    // TICKER = setInterval(tick, TICKDURATION);
-    tick();
+    TICKER = setInterval(tick, TICKDURATION);
+    // tick(); for debugging
 });
