@@ -66,6 +66,31 @@ body {
     text-align: center;
 }
 
+#itemsMapContainer {
+    font-size: 8px;
+    position: absolute;
+    padding: 3px;
+    margin: 0;
+}
+
+#itemsMap {
+    display: grid;
+    height: 600px;
+    width: 600px;
+    gap: 0;
+    padding: 5px;
+    padding-bottom: 10px;
+}
+
+.itemsMapCell {
+    height: 18px;
+    width: 18px;
+    padding: 0;
+    background-color: black;
+    opacity: 0.5;
+}
+
+
 #lightMapContainer {
     position: absolute;
     padding: 3px;

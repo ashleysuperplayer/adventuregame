@@ -250,7 +250,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     //     displayElement.style.backgroundColor = `rgb(${cell.color})`;
     // }
 
-    cell.isVisible = false;
+    // cell.isVisible = false;
     // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
@@ -281,15 +281,31 @@ function setupKeys() {
     window.addEventListener("keydown", (event) => {
         switch (event.key) {
             case "ArrowUp":
+                if (event.shiftKey) { // this is jank af TODO FIX IT!
+                    setPlayerAction("northKD");
+                    break;
+                }
                 setPlayerAction("north");
                 break;
             case "ArrowLeft":
+                if (event.shiftKey) {
+                    setPlayerAction("westKD");
+                    break;
+                }
                 setPlayerAction("west");
                 break;
             case "ArrowDown":
+                if (event.shiftKey) {
+                    setPlayerAction("southKD");
+                    break;
+                }
                 setPlayerAction("south");
                 break;
             case "ArrowRight":
+                if (event.shiftKey) {
+                    setPlayerAction("eastKD");
+                    break;
+                }
                 setPlayerAction("east");
                 break;
         }
@@ -331,26 +347,34 @@ class Mob {
     }
 
 
-    move(direction: string) {
+    move(direction: string, changeFacing: boolean) {
         // remove from old location
         CELLMAP[`${this.x},${this.y}`].contents = CELLMAP[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
 
         switch(direction) {
             case "north":
                 this.y += 1;
-                this.facing = "n";
+                if (changeFacing) {
+                    this.facing = "n";
+                }
                 break;
             case "south":
                 this.y -= 1;
-                this.facing = "s";
+                if (changeFacing) {
+                    this.facing = "s";
+                }
                 break;
             case "east":
                 this.x += 1;
-                this.facing = "e";
+                if (changeFacing) {
+                    this.facing = "e";
+                }
                 break;
             case "west":
                 this.x -= 1;
-                this.facing = "w";
+                if (changeFacing) {
+                    this.facing = "w";
+                }
                 break;
         }
 
@@ -362,16 +386,28 @@ class Mob {
     executeAction() {
         switch(this.currentAction) {
             case "north":
-                this.move("north");
+                this.move("north", true);
                 break;
             case "south":
-                this.move("south");
+                this.move("south", true);
                 break;
             case "east":
-                this.move("east");
+                this.move("east", true);
                 break;
             case "west":
-                this.move("west");
+                this.move("west", true);
+                break;
+            case "northKD": // "KD" as in "Keep Direction"
+                this.move("north", false);
+                break;
+            case "southKD":
+                this.move("south", false);
+                break;
+            case "eastKD":
+                this.move("east", false);
+                break;
+            case "westKD":
+                this.move("west", false);
                 break;
         }
         // console.log("moved" + this.currentAction);
