@@ -1,4 +1,6 @@
-// bresenham shit I STOLE FROM WIKIPEDIA
+// NEXT TASK: clean up lighting code and calculate lighting AROUND where the player can see.
+
+// bresenham stuff i STOLE FROM WIKIPEDIA
 function changeColour(x:number, y:number) {
     CELLMAP[`${x},${y}`].color = [0, 255, 0];
 }
@@ -113,7 +115,7 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
     let gridAutoColumn = "auto";
 
     for (let i = 1; i < sideLength; i++) {
-        gridAutoColumn += " auto"; // gridAutoColumn.concat(" auto");
+        gridAutoColumn += " auto";
     }
 
     parent.style.gridTemplateColumns = gridAutoColumn;
@@ -121,31 +123,12 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 
 function tick() {
     TIME += 1;
-    // console.log(`time: ${Math.floor((TIME/24)/60)}:${Math.floor(TIME/60%60%24)}:${Math.floor(TIME%60)}`);
-    // console.log(timeToLight(TIME));
     PLAYER.executeAction();
     for (let mob in MOBSMAP) {
         MOBSMAP[mob].tick();
     }
 
-    console.log(timeToLight(TIME));
-
-    // for (let x = -2; x < 2; x+=0.05) {
-    //     for (let y = -2; y < 2; y+=0.05) {
-    //         RAYMAP[RAYIDCOUNTER] = new LightRay(RAYIDCOUNTER, PLAYER.x, PLAYER.y, Number(x.toFixed(2)), Number(y.toFixed(2)), 1);
-    //         // console.log(`light ray created at ${PLAYER.x}, ${PLAYER.y}, trajectory ${x.toFixed(2)},${y.toFixed(2)}`);
-    //     }
-    // }
-    // for (let emitter in EMITTERMAP) {
-    //     EMITTERMAP[emitter].tick();
-    // }
-    // for (let ray in RAYMAP) {
-    //     RAYMAP[ray].cast();
-    //     // console.log(`ray ${ray} cast`);
-    // }
-    // console.log("completed lighting pass");
     updateDisplay();
-    // clearInterval(TIMER);
 }
 
 function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
@@ -158,20 +141,8 @@ function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
     const x = cell.x;
     const y = cell.y;
-    const currAmbientLight = timeToLight(TIME);
-    // const oldAmbientLight = timeToLight(TIME-1); // this feels hacky and dangerous
 
     let cum = 0;
-
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after contents " + newLightLevel);
-    // }
-
-    // newLightLevel += ambientLight;
-
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after ambient light " + newLightLevel);
-    // }
 
     // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
     // remind me to add cloud movement above player
@@ -179,7 +150,6 @@ function calcCellLighting(cellCoords: string) {
         for (let dX = -1; dX <= 1; dX++) {
             const absOffsets = Math.abs(dX) + Math.abs(dY);
             if (absOffsets === 0) {
-                // cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT
                 cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
             }
             if (absOffsets === 1) {
@@ -191,48 +161,16 @@ function calcCellLighting(cellCoords: string) {
         }
     }
 
-    // SELFWEIGHT: 10, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.3, AMBAMPLIGHT: 200 sort of works but it still ßux
     cum /= LIGHTATTENUATION;
-
-    // cum -= oldAmbientLight;
-
-    // cum += currAmbientLight;
-
-    // cum *= 0.98;
-
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after averaging " + newLightLevel);
-    // }
-
-    // newLightLevel += ambientLight - 1;
-
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after rest of maths " + newLightLevel);
-    // }
-
-    // if (cum < currAmbientLight) {
-    //     cum += 5;
-    // }
-    // else if (cum > currAmbientLight) {
-    //     cum -= 5;
-    // }
 
     // upper limit on lightLevel
     if (cum > 255) {
         cum = 255;
     }
 
-    // if (cum < currAmbientLight) {
-    //     cum = currAmbientLight;
-    // }
-
     if (cum < cell.maxLum()) {
         cum = cell.maxLum();
     }
-
-    // if (ifZeroZero(x, y)) {
-    //     console.log("after limiting and ambient light floor " + newLightLevel);
-    // }
 
     cell.lightLevel = Math.floor(cum);
 };
@@ -528,7 +466,6 @@ class Cell {
         return lumList;
     }
 
-    // i might be being stupid, maybe add up the luminescence of all objects and work with that as "lightLevel" instead
     // return highest luminesence item of Cell
     maxLum() {
         return Math.max(...this.allLuminescence());
@@ -642,11 +579,11 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     ambientLight: number;
 }
 
-// right now i'm messing around with these to find some combination that makes nice lighting
 // NICE COMBOS:
 // SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
 // AMBLIGHTAMP = ~200 gives correct range
 // SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
+// ^ old
 // SELFWEIGHT: 10, ORTHOGWEIGHT: 20, DIAGWEIGHT: 1, AMBAMPLIGHT: 200
 let SELFWEIGHT = 10;
 let ORTHOGWEIGHT = 20;
@@ -659,7 +596,7 @@ function getLA() {
     return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
 }
 
-const MINSPERDAY = 1440;
+const MINSPERDAY = 1440; // 1440
 const TICKSPERMINUTE = 600;
 
 const TICKDURATION = 100;
