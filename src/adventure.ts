@@ -128,6 +128,7 @@ function tick() {
         MOBSMAP[mob].tick();
     }
 
+    updateLighting();
     updateDisplay();
 }
 
@@ -201,14 +202,27 @@ function updateDisplay() {
     }
 }
 
+function updateLighting() {
+    for (let cellY = -11; cellY < 44; cellY++) { // (screen length) // TODO remove these magical numbers lol
+        for (let cellX = -5; cellX < 44; cellX++) { // (screen length)
+            calcCellLighting(`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`);
+            // definitely a better way to do all this
+            // place "seen" cells into a register and then calc their lighting
+            // until it drops to/below ambient light and then stop tracking them?
+        }
+    }
+}
+
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
     let displayElement = DISPLAYELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
     let lightElement = LIGHTELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
     let cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
-    calcCellLighting(cellCoords);
-
+    // under the current system, ambient light is purely cosmetic for the player
+    // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
+    // this will require reworking the whole lighting system to use rays
+    // for now this "works" though
     let lightElementColourAmbient = `${1 - ((cell.lightLevel / 255) + (timeToLight(TIME) / 255))}`;
     // +lightElementColourAmbient += ;
 
@@ -294,6 +308,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
     PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
+    updateLighting();
     updateDisplay();
 }
 
