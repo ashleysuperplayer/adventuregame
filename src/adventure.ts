@@ -216,15 +216,32 @@ function updateLighting() {
 function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log(`displayCell: ${displayElementCoords},${cellCoords}`);
     let displayElement = DISPLAYELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid display coords ${displayElementCoords}`);
+    let itemsElement = ITEMSELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid item element coords ${displayElementCoords}`);
     let lightElement = LIGHTELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
     let cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
+
+    let itemsDisplay: string = "";
+    for (let content of cell.contents) {
+        if ("displaySmall" in content) {
+            if (!content.displaySmall) {
+                displayElement.innerHTML = content.symbol;
+            }
+            else {
+                itemsDisplay += content.symbol;
+            }
+        }
+        else {
+            displayElement.innerHTML = content.symbol;
+        }
+    }
+
+    itemsElement.innerHTML = itemsDisplay;
 
     // under the current system, ambient light is purely cosmetic for the player
     // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
     // this will require reworking the whole lighting system to use rays
     // for now this "works" though
     let lightElementColourAmbient = `${1 - ((cell.lightLevel / 255) + (timeToLight(TIME) / 255))}`;
-    // +lightElementColourAmbient += ;
 
     if (+lightElementColourAmbient < 0) {
         lightElementColourAmbient = `0`;
@@ -239,9 +256,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     lightElement.style.opacity = lightElementColourAmbient;
 
     // redo this, only allows for one kind of cell contents at a time
-    for (let content of cell.contents) {
-        displayElement.innerHTML = content.symbol;
-    }
+
 
     // if (!cell.isVisible) {
     //     displayElement.style.backgroundColor = "black";
@@ -315,14 +330,19 @@ function setupKeys() {
 function setup(worldSideLength: number, startTime: number, playerStartLocation: number[]) {
     createGrid("map", 33, "mapCell", DISPLAYELEMENTSDICT);
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
+    createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
     CELLMAP = generateWorld(worldSideLength);
 
     TIME = startTime;
     setupKeys();
 
+    CELLMAP["1,0"].contents = CELLMAP["1,0"].contents.concat(ITEMSMAP["oil lamp"]); // add a lamp
+
     PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
+
+    // debug stuff
 
     updateLighting();
     updateDisplay();
@@ -476,17 +496,15 @@ class Cell {
     contents: CellContents[];
     lightLevel: number;
     color: number[];
-    weather: Weather;
     isVisible: Boolean;
 
-    constructor(x: number, y: number, weather = "dark") {
+    constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
         this.lightLevel = 0;
         // console.log(this.contents);
         this.color = [228, 228, 228];
-        this.weather = WEATHERMAP[weather];
         this.isVisible = false;
     }
 
@@ -497,12 +515,12 @@ class Cell {
         }
 
         if (Math.random() < 0.3) {
-            cellContents.push(TERRAINFEATURESMAP["rock"]);
+            cellContents.push(ITEMSMAP["rock"]);
         }
 
-        if (this.x === 5 && this.y === 0) {
-            cellContents.push(TERRAINFEATURESMAP["light"]);
-        }
+        // if (this.x === 5 && this.y === 0) {
+        //     cellContents.push(TERRAINFEATURESMAP["light"]);
+        // }
 
         return cellContents;
     }
@@ -616,6 +634,8 @@ interface Item {
     weight: number;
     symbol: string;
     luminescence: number;
+    opacity: number;
+    displaySmall: boolean;
 }
 
 interface TerrainFeature {
@@ -623,6 +643,7 @@ interface TerrainFeature {
     symbol: string;
     luminescence: number;
     opacity: number;
+    displaySmall: boolean;
 }
 
 interface Weather {  // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
@@ -658,6 +679,7 @@ let MOBSMAP: { [id: string]: Mob } = {};
 
 let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};
 let LIGHTELEMENTSDICT: { [key: string]: HTMLElement} = {};
+let ITEMSELEMENTSDICT: { [key: string]: HTMLElement} = {};
 
 let RAYMAP: { [id: string]: LightRay} = {};
 let EMITTERMAP: { [key: string]: LightEmitter} = {};
@@ -668,17 +690,15 @@ let MOBKINDSMAP: { [key: string]: MobKind } = {
     "npctest": {name: "npctest", symbol: "W", luminescence: 0}
 }
 
-let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0},
-    "grass": {name: "grass", symbol: "", luminescence: 0, opacity: 0},
-    "light": {name: "light", symbol: "o", luminescence: 125, opacity: 1},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, opacity: 0}
+// the displaySmall boolean might be dumb jank but i feel dirty checking for Item or TerrainFeature type so
+let ITEMSMAP: { [key: string]: Item} = {
+    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, displaySmall: true},
+    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, displaySmall: true}
 }
 
-let WEATHERMAP: { [key: string]: Weather} = { // RECENT
-    "sunny": {name: "sunny", ambientLight: 200},
-    "rainy": {name: "rainy", ambientLight: 100},
-    "dark": {name: "dark", ambientLight: 0}
+let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
+    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, displaySmall: false},
+    "grass": {name: "grass", symbol: "", luminescence: 0, opacity: 0, displaySmall: false},
 }
 
 let PLAYER: Player;
