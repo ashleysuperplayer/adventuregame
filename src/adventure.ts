@@ -149,6 +149,10 @@ function calcCellLighting(cellCoords: string) {
 
     let cum = 0;
 
+    // if (cell.isBlocked()) {
+    //     cum = -200;
+    // }
+
     // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
     // remind me to add cloud movement above player
     for (let dY = -1; dY <= 1; dY++) {
@@ -166,7 +170,12 @@ function calcCellLighting(cellCoords: string) {
         }
     }
 
-    cum /= LIGHTATTENUATION;
+    if (!cell.isBlocked()) {
+        cum /= LIGHTATTENUATION;
+    }
+    else {
+        cum /= (LIGHTATTENUATION * 1.2);
+    }
 
     // upper limit on lightLevel
     if (cum > 255) {
@@ -398,7 +407,6 @@ class Mob {
                     }
                     this.y += 1;
                 }
-
                 break;
             case "south":
                 if (!checkIfCellBlocked(this.x, this.y - 1)) {
@@ -407,7 +415,6 @@ class Mob {
                     }
                     this.y -= 1;
                 }
-
                 break;
             case "east":
                 if (!checkIfCellBlocked(this.x + 1, this.y)) {
@@ -416,7 +423,6 @@ class Mob {
                     }
                     this.x += 1;
                 }
-
                 break;
             case "west":
                 if (!checkIfCellBlocked(this.x - 1, this.y)) {
@@ -425,7 +431,6 @@ class Mob {
                     }
                     this.x -= 1;
                 }
-
                 break;
         }
 
@@ -467,19 +472,19 @@ class Mob {
     }
 
     tick(): void {
-        // let rand = Math.random();
-        // if (rand <= 0.2) {
-        //     this.currentAction = "north";
-        // }
-        // else if (rand <= 0.4 && rand > 0.2) {
-        //     this.currentAction = "south";
-        // }
-        // else if (rand <= 0.6 && rand > 0.4) {
-        //     this.currentAction = "east";
-        // }
-        // else if (rand <= 0.8 && rand > 0.6) {
-        //     this.currentAction = "west";
-        // }
+        let rand = Math.random();
+        if (rand <= 0.2) {
+            this.currentAction = "north";
+        }
+        else if (rand <= 0.4 && rand > 0.2) {
+            this.currentAction = "south";
+        }
+        else if (rand <= 0.6 && rand > 0.4) {
+            this.currentAction = "east";
+        }
+        else if (rand <= 0.8 && rand > 0.6) {
+            this.currentAction = "west";
+        }
 
         this.executeAction();
     }
