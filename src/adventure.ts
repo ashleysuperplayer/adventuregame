@@ -1,5 +1,3 @@
-// NEXT TASK: clean up lighting code and calculate lighting AROUND where the player can see.
-
 // bresenham stuff i STOLE FROM WIKIPEDIA
 function changeColour(x:number, y:number) {
     CELLMAP[`${x},${y}`].color = [0, 255, 0];
@@ -226,7 +224,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     let lightElement = LIGHTELEMENTSDICT[displayElementCoords] ?? throwExpression(`invalid light element coords ${displayElementCoords}`);
     let cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
-    let itemsDisplay: string = "";
+    let itemsDisplay = "";
     for (let content of cell.contents) {
         if ("displaySmall" in content) {
             if (!content.displaySmall) {
@@ -282,6 +280,17 @@ function setPlayerAction(newAction: string) {
 
 function setMobAction(mobID: string, newAction: string) {
     MOBSMAP[mobID].currentAction = newAction;
+}
+
+// pass individual x and y values as numbers or the whole XY as a string to check if a cell is blocked
+function checkIfCellBlocked(x?: number, y?: number, XY?: string) {
+    if (XY) {
+        return CELLMAP[XY].isBlocked();
+    }
+    else if (x && y || x == 0 || y == 0) {
+        return CELLMAP[`${x},${y}`].isBlocked();
+    }
+    else throw new Error(`missing parameters, x: ${x}, y; ${y}, XY: ${XY}`);
 }
 
 function convertListToString(someList: number[] | string[], delimiter="") {
@@ -361,6 +370,8 @@ class Mob {
     symbol: string;
     luminescence: number;
     facing: string;
+    blocking: boolean;
+    inventory: { [key: string]: InventoryEntry};
 
     constructor(x: number, y: number, kind: MobKind) {
         this.x = x;
@@ -370,37 +381,51 @@ class Mob {
         CELLMAP[`${this.x},${this.y}`].contents.push(this);
         this.luminescence = kind.luminescence;
         this.facing = "n";
+        this.blocking = true;
+        this.inventory = {};
     }
 
     move(direction: string, changeFacing: boolean) {
         // remove from old location
-        let contents = CELLMAP[`${this.x},${this.y}`].contents;
-        contents.splice(contents.indexOf(this),1);
+        let oldContents = CELLMAP[`${this.x},${this.y}`].contents;
+        oldContents.splice(oldContents.indexOf(this),1);
 
         switch(direction) {
             case "north":
-                this.y += 1;
-                if (changeFacing) {
-                    this.facing = "n";
+                if (!checkIfCellBlocked(this.x, this.y + 1)) {
+                    if (changeFacing) {
+                        this.facing = "n";
+                    }
+                    this.y += 1;
                 }
+
                 break;
             case "south":
-                this.y -= 1;
-                if (changeFacing) {
-                    this.facing = "s";
+                if (!checkIfCellBlocked(this.x, this.y - 1)) {
+                    if (changeFacing) {
+                        this.facing = "s";
+                    }
+                    this.y -= 1;
                 }
+
                 break;
             case "east":
-                this.x += 1;
-                if (changeFacing) {
-                    this.facing = "e";
+                if (!checkIfCellBlocked(this.x + 1, this.y)) {
+                    if (changeFacing) {
+                        this.facing = "e";
+                    }
+                    this.x += 1;
                 }
+
                 break;
             case "west":
-                this.x -= 1;
-                if (changeFacing) {
-                    this.facing = "w";
+                if (!checkIfCellBlocked(this.x - 1, this.y)) {
+                    if (changeFacing) {
+                        this.facing = "w";
+                    }
+                    this.x -= 1;
                 }
+
                 break;
         }
 
@@ -442,19 +467,19 @@ class Mob {
     }
 
     tick(): void {
-        let rand = Math.random();
-        if (rand <= 0.2) {
-            this.currentAction = "north";
-        }
-        else if (rand <= 0.4 && rand > 0.2) {
-            this.currentAction = "south";
-        }
-        else if (rand <= 0.6 && rand > 0.4) {
-            this.currentAction = "east";
-        }
-        else if (rand <= 0.8 && rand > 0.6) {
-            this.currentAction = "west";
-        }
+        // let rand = Math.random();
+        // if (rand <= 0.2) {
+        //     this.currentAction = "north";
+        // }
+        // else if (rand <= 0.4 && rand > 0.2) {
+        //     this.currentAction = "south";
+        // }
+        // else if (rand <= 0.6 && rand > 0.4) {
+        //     this.currentAction = "east";
+        // }
+        // else if (rand <= 0.8 && rand > 0.6) {
+        //     this.currentAction = "west";
+        // }
 
         this.executeAction();
     }
@@ -464,6 +489,11 @@ interface MobKind {
     name: string;
     symbol: string;
     luminescence: number;
+}
+
+interface InventoryEntry {
+    item: Item;
+    quantity: number;
 }
 
 class NPCHuman extends Mob {
@@ -486,7 +516,6 @@ class Player extends Mob {
     x: number;
     y: number;
     currentAction: string;
-
     constructor(x: number, y: number) {
         super(x, y, MOBKINDSMAP["player"]);
         this.x = x; // idk why this needs to be defined here if it's already defined in parent
@@ -502,51 +531,63 @@ class Cell {
     lightLevel: number;
     color: number[];
     isVisible: Boolean;
-
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
         this.contents = this.genCell() ?? []; // CellContents type
         this.lightLevel = 0;
         // console.log(this.contents);
-        this.color = [228, 228, 228];
+        this.color = [240, 240, 240];
         this.isVisible = false;
     }
 
     genCell(): CellContents[] {
-        let cellContents = [TERRAINFEATURESMAP["grass"]];
+        let cellContents = [TERRAINFEATURESMAP["snow"]];
         if (Math.random() < 0.1) {
             cellContents.push(TERRAINFEATURESMAP["tree"]); // CellContents type
-        }
-
-        if (Math.random() < 0.3) {
-            cellContents.push(ITEMSMAP["rock"]);
         }
 
         return cellContents;
     }
 
+    isBlocked(): boolean {
+        for (let content of this.contents) {
+            if (content.blocking) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // return list of luminescences of all content
     allLuminescence(): number[] {
         let lumList: number[] = [];
-        for (let content of this.contents) {
-            lumList.push(content.luminescence);
+        if (this.contents) {
+            for (let content of this.contents) {
+                lumList.push(content.luminescence);
+            }
+        }
+        else {
+            throw new Error(`cell without any contents at ${this.x},${this.y}`);
         }
 
         return lumList;
     }
 
     // return highest luminesence item of Cell
-    maxLum() {
+    maxLum(): number {
         return Math.max(...this.allLuminescence());
     }
 
-    sumOpacity() {
-        let cum = 0;
-        for (let content of this.contents) {
-            cum += content.luminescence;
+    sumOpacity(): number {
+        let sum = 0;
+        if (this.contents) {
+            for (let content of this.contents) {
+                sum += content.luminescence;
+            }
         }
-        return cum;
+
+        return sum;
     }
 }
 
@@ -637,6 +678,7 @@ interface Item {
     luminescence: number;
     opacity: number;
     displaySmall: boolean;
+    blocking: boolean;
 }
 
 interface TerrainFeature {
@@ -645,6 +687,7 @@ interface TerrainFeature {
     luminescence: number;
     opacity: number;
     displaySmall: boolean;
+    blocking: boolean;
 }
 
 interface Weather {  // this is a placeholder system, in future weather and light will be determined by temperature and humidity etc
@@ -687,19 +730,19 @@ let EMITTERMAP: { [key: string]: LightEmitter} = {};
 let RAYIDCOUNTER = 0;
 
 let MOBKINDSMAP: { [key: string]: MobKind } = {
-    "player": {name: "player", symbol: "@", luminescence: 255},
+    "player": {name: "player", symbol: "@", luminescence: 200},
     "npctest": {name: "npctest", symbol: "W", luminescence: 0}
 }
 
 // the displaySmall boolean might be dumb jank but i feel dirty checking for Item or TerrainFeature type so
 let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, displaySmall: true},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, displaySmall: true}
+    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, displaySmall: true, blocking: false},
+    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, displaySmall: true, blocking: false}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, displaySmall: false},
-    "grass": {name: "grass", symbol: "", luminescence: 0, opacity: 0, displaySmall: false},
+    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, displaySmall: false, blocking: true},
+    "snow": {name: "snow", symbol: "", luminescence: 0, opacity: 0, displaySmall: false, blocking: false}, // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
 }
 
 let PLAYER: Player;
