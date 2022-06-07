@@ -69,6 +69,12 @@ function plotLine(x0:number, y0:number, x1:number, y1:number) {
     }
 }
 
+// function i stole from stackoverflow
+function getKeyByValue(object: object, value: any) {
+    // @ts-ignore // come back to this later
+    return Object.keys(object).find(key => object[key] === value);
+}
+
 function printCellProperty(coords = "0,0", property: string) {
     return CELLMAP[property];
 }
@@ -366,10 +372,10 @@ class Mob {
         this.facing = "n";
     }
 
-
     move(direction: string, changeFacing: boolean) {
         // remove from old location
-        CELLMAP[`${this.x},${this.y}`].contents = CELLMAP[`${this.x},${this.y}`].contents.slice(0, -1); // bad implementation fix so it SEEKS AND DESTROYS the mob from contents
+        let contents = CELLMAP[`${this.x},${this.y}`].contents;
+        contents.splice(contents.indexOf(this),1);
 
         switch(direction) {
             case "north":
@@ -437,7 +443,6 @@ class Mob {
 
     tick(): void {
         let rand = Math.random();
-        // console.log(rand);
         if (rand <= 0.2) {
             this.currentAction = "north";
         }
@@ -517,10 +522,6 @@ class Cell {
         if (Math.random() < 0.3) {
             cellContents.push(ITEMSMAP["rock"]);
         }
-
-        // if (this.x === 5 && this.y === 0) {
-        //     cellContents.push(TERRAINFEATURESMAP["light"]);
-        // }
 
         return cellContents;
     }
