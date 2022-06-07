@@ -353,6 +353,18 @@ function setupKeys() {
                 case "ArrowRight":
                     setPlayerAction("eastKD");
                     break;
+                case "W":
+                    setPlayerAction("northKD");
+                    break;
+                case "A":
+                    setPlayerAction("westKD");
+                    break;
+                case "S":
+                    setPlayerAction("southKD");
+                    break;
+                case "D":
+                    setPlayerAction("eastKD");
+                    break;
             }
         }
         else {
@@ -367,6 +379,18 @@ function setupKeys() {
                     setPlayerAction("south");
                     break;
                 case "ArrowRight":
+                    setPlayerAction("east");
+                    break;
+                case "w":
+                    setPlayerAction("north");
+                    break;
+                case "a":
+                    setPlayerAction("west");
+                    break;
+                case "s":
+                    setPlayerAction("south");
+                    break;
+                case "d":
                     setPlayerAction("east");
                     break;
             }
