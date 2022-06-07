@@ -171,10 +171,10 @@ function calcCellLighting(cellCoords: string) {
     }
 
     if (!cell.isBlocked()) {
-        cum /= LIGHTATTENUATION;
+        cum /= LIGHTATTENUATION * 0.97;
     }
     else {
-        cum /= (LIGHTATTENUATION * 1.2);
+        cum /= (LIGHTATTENUATION * 2);
     }
 
     // upper limit on lightLevel
@@ -316,41 +316,6 @@ function convertListToString(someList: number[] | string[], delimiter="") {
     }
 }
 
-function setupKeys() {
-    window.addEventListener("keydown", (event) => {
-        switch (event.key) {
-            case "ArrowUp":
-                if (event.shiftKey) { // this is jank af TODO FIX IT!
-                    setPlayerAction("northKD");
-                    break;
-                }
-                setPlayerAction("north");
-                break;
-            case "ArrowLeft":
-                if (event.shiftKey) {
-                    setPlayerAction("westKD");
-                    break;
-                }
-                setPlayerAction("west");
-                break;
-            case "ArrowDown":
-                if (event.shiftKey) {
-                    setPlayerAction("southKD");
-                    break;
-                }
-                setPlayerAction("south");
-                break;
-            case "ArrowRight":
-                if (event.shiftKey) {
-                    setPlayerAction("eastKD");
-                    break;
-                }
-                setPlayerAction("east");
-                break;
-        }
-    });
-}
-
 function setup(worldSideLength: number, startTime: number, playerStartLocation: number[]) {
     createGrid("map", 33, "mapCell", DISPLAYELEMENTSDICT);
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
@@ -370,6 +335,71 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
 
     updateLighting();
     updateDisplay();
+}
+
+function setupKeys() {
+    window.addEventListener("keydown", (event) => {
+        if (event.shiftKey) {
+            switch (event.key) {
+                case "ArrowUp":
+                    setPlayerAction("northKD");
+                    break;
+                case "ArrowLeft":
+                    setPlayerAction("westKD");
+                    break;
+                case "ArrowDown":
+                    setPlayerAction("southKD");
+                    break;
+                case "ArrowRight":
+                    setPlayerAction("eastKD");
+                    break;
+            }
+        }
+        else {
+            switch (event.key) {
+                case "ArrowUp":
+                    setPlayerAction("north");
+                    break;
+                case "ArrowLeft":
+                    setPlayerAction("west");
+                    break;
+                case "ArrowDown":
+                    setPlayerAction("south");
+                    break;
+                case "ArrowRight":
+                    setPlayerAction("east");
+                    break;
+            }
+        }
+    });
+}
+
+function clickTopBar(menuItemName: string) {
+    let element = document.getElementById(menuItemName);
+    if (element) {
+        if (+element.style.height.slice(0, 2) > 0) {
+            minimizeMenuItem(menuItemName);
+        }
+        else {
+            maximizeMenuItem(menuItemName);
+        }
+    }
+}
+
+function minimizeMenuItem(menuItemName: string) {
+    let element = document.getElementById(menuItemName);
+    if (element) {
+        element.style.height = "0";
+    }
+    console.log("minimized " + menuItemName);
+}
+
+function maximizeMenuItem(menuItemName: string) {
+    let element = document.getElementById(menuItemName);
+    if (element) {
+        element.style.height = "400px";
+    }
+    console.log("maximized " + menuItemName);
 }
 
 class Mob {
@@ -674,6 +704,17 @@ class LightRay {
     }
 }
 
+class ControlState {
+    state: string;
+    constructor() {
+        this.state = "setup";
+    }
+
+    inventory() {
+        this.state = "inventory";
+    }
+}
+
 type CellContents = TerrainFeature|Item|Mob;
 
 interface Item {
@@ -717,6 +758,10 @@ function getLA() {
     return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
 }
 
+// control states will influence the behaviour of keyboard controls
+// they will be things like "navigation", "menu", "inventory" etc
+let CONTROLSTATE = new ControlState();
+
 const MINSPERDAY = 1440; // 1440
 const TICKSPERMINUTE = 600;
 
@@ -736,7 +781,7 @@ let RAYIDCOUNTER = 0;
 
 let MOBKINDSMAP: { [key: string]: MobKind } = {
     "player": {name: "player", symbol: "@", luminescence: 200},
-    "npctest": {name: "npctest", symbol: "W", luminescence: 0}
+    "npctest": {name: "npctest", symbol: "T", luminescence: 0}
 }
 
 // the displaySmall boolean might be dumb jank but i feel dirty checking for Item or TerrainFeature type so
