@@ -207,6 +207,21 @@ function generateWorld(sideLengthWorld: number) {
     return newCellMap;
 }
 
+function getMapCellAtDisplayCell(x: number, y: number): Cell
+function getMapCellAtDisplayCell(xy: string): Cell
+function getMapCellAtDisplayCell(xyOrX: number|string, y?: number): Cell {
+    if (typeof xyOrX === "number") {
+        if (y || y === 0) {
+            return CELLMAP[`${xyOrX - 18 + PLAYER.x},${y - 18 + PLAYER.y}`];
+        }
+        return throwExpression("xyOrX is a number but y doesn't exist (you missed an argument)")
+    }
+    else {
+        let splitXY = xyOrX.split(","); // tried defining with x, y = xyOrX.split(",") but x sometimes "didnt exist"
+        return CELLMAP[`${+splitXY[0] - 18 + PLAYER.x},${+splitXY[1] - 18 + PLAYER.y}`];
+    }
+}
+
 function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
         for (let cellX = 0; cellX < 33; cellX++) { // (screen length)
@@ -268,6 +283,8 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log("lightElementColourAmbient " + lightElementColourAmbient);
     lightElement.style.opacity = lightElementColourAmbient;
 
+    displayElement.style.backgroundColor = `RGB(${cell.color[0]},${cell.color[1]},${cell.color[2]})` // band aid
+
     // redo this, only allows for one kind of cell contents at a time
 
 
@@ -321,10 +338,13 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
+    NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone") // for the context menus
+
     CELLMAP = generateWorld(worldSideLength);
 
     TIME = startTime;
     setupKeys();
+    setupClicks();
 
     CELLMAP["1,0"].contents = CELLMAP["1,0"].contents.concat(ITEMSMAP["oil lamp"]); // add a lamp
 
@@ -398,6 +418,20 @@ function setupKeys() {
     });
 }
 
+// this function works!
+function setupClicks() {
+    NAVIGATIONELEMENT.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+        let displayCellCoords = document.elementFromPoint(e.clientX + 36, e.clientY - 36)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
+        if (displayCellCoords) {
+            if (CTX) {
+                CTX.element.remove();
+            }
+            CTX = new CellCtxMenu(e.clientX, e.clientY, "navigationParent", getMapCellAtDisplayCell(displayCellCoords)) // cell should point to whichever cell is clicked, if that's how this works
+        }
+    },false);
+}
+
 function clickTopBar(menuItemName: string) {
     let element = document.getElementById(menuItemName);
     if (element) {
@@ -426,7 +460,146 @@ function maximizeMenuItem(menuItemName: string) {
     console.log("maximized " + menuItemName);
 }
 
+// function contextMenuClick(displayX: number, displayY: number, kind: string, mouseX?: number, mouseY?: number) {
+//     let cell = getMapCellAtDisplayCell(displayX, displayY)
+//     if (mouseX && mouseY) {
+//         if (kind === "navigation") {
+
+//         }
+//         }
+//     }
+// }
+
+
+function getCellContents(x:number, y:number) {
+    return CELLMAP[`${x},${y}`].contents;
+}
+
+// take function takes in the name of an item, moves item from cell contents to mob inventory
+// final syntax for context menu take function will look like:
+
+// okay how about you supply a list of functions to the ctxMenu Constructor
+// if list[0]:
+//  context menu has multiple layers
+//  list[1] is the function called by buttons in lower layer
+//  list[2] is a function that returns the arguments AND NAMES of those buttons
+
+// for example: {"take": [true, take, getCellContents(cell)]}
+
+// for item in cellContents where takeable, gen a button that has onclick=take(item.name)
+
+function newCtxParent(x: number, y: number, id: string, cls: string, parentID: string) {
+    let parent = document.getElementById(parentID);
+    if (parent) {
+        return new CtxMenuParent(x, y, id, cls, parent);
+    }
+    else {
+        throw new Error("invalid parentID");
+    }
+}
+
+class CtxMenuComponent {
+    x: number;
+    y: number;
+    id: string;
+    constructor(x: number, y: number, id: string) {
+        this.x = x;
+        this.y = y;
+        this.id = id;
+    }
+}
+
+class CtxMenuParent extends CtxMenuComponent {
+    cls: string;
+    parent: HTMLElement;
+    element: HTMLElement;
+    constructor(x: number, y: number, id: string, cls: string, parent: HTMLElement) {
+        super(x, y, id);
+        console.log(this.x);
+        this.cls = cls;
+        this.parent = parent;
+        this.element = this.createContainer();
+    }
+
+    createContainer() {
+        let element = document.createElement("div");
+        element.classList.add(this.cls);
+        element.style.top = `${this.y}px`;
+        element.style.left = `${this.x}px`;
+        element.id = "ctxMenu";
+        this.parent.appendChild(element);
+        return element;
+    }
+}
+
+interface CtxHoverMenuChildren {
+    action: Function;
+    args: string[];
+}
+
+class CtxMenuHover extends CtxMenuComponent {
+    parent: CtxMenuParent;
+    body: string;
+    children: CtxMenuButton[];
+    element: HTMLElement;
+    constructor(x: number, y: number, id: string, body: string, parent: CtxMenuParent, children: CtxHoverMenuChildren) {
+        super(x, y, id);
+        this.parent = parent;
+        this.body = body;
+        this.element = this.createElement();
+        this.children = this.createChildren(children.action, children.args);
+    }
+
+    createElement() {
+        let element = document.createElement("div");
+        element.classList.add("ctxMenuHover"); // temporary implementation
+        element.innerHTML = this.body;
+        this.parent.element.appendChild(element);
+        return element;
+    }
+
+    createChildren(action: Function, args: string[]): CtxMenuButton[] {
+        let buttonList: CtxMenuButton[] = [];
+        for (let arg of args) {
+            buttonList.push(new CtxMenuButton(this.x+10, this.y+10, `${arg}Take`, this, action, arg))
+        }
+        return buttonList;
+    }
+}
+
+class CtxMenuButton extends CtxMenuComponent {
+    parent: CtxMenuParent|CtxMenuHover;
+    constructor(x: number, y: number, id: string, parent: CtxMenuParent|CtxMenuHover, action: Function, body: string) {
+        super(x, y, id);
+        this.parent = parent;
+    }
+}
+
+class CellCtxMenu extends CtxMenuParent {
+    takeHover: CtxMenuHover;
+    cellCtx: Cell;
+    element: HTMLElement;
+    constructor(x: number, y: number, id: string, cellCtx: Cell) {
+        super(x, y, id, "ctxMenuParent", NAVIGATIONELEMENT);
+        this.cellCtx = cellCtx;
+        this.element = this.createContainer();
+        let takeHoverChildren = this.getTakeHoverChildren()
+        this.takeHover = new CtxMenuHover(this.x+10, this.y+10, "takeHover", "take", this, takeHoverChildren);
+        this.element.style.height = "20px"; // TEMPORARY. better solution is to take number of user-defined members and multiply by that - ones that arent children
+    }
+
+    getTakeHoverChildren() {
+        let args = [];
+        for (let content of this.cellCtx.contents) {
+            args.push(content.name);
+        }
+        return {"action": PLAYER.take,
+                "args": args}
+    }
+}
+
 class Mob {
+    name: string;
     x: number;
     y: number;
     currentAction: string;
@@ -437,6 +610,7 @@ class Mob {
     inventory: { [key: string]: InventoryEntry};
 
     constructor(x: number, y: number, kind: MobKind) {
+        this.name = kind.name;
         this.x = x;
         this.y = y;
         this.currentAction = "wait";
@@ -446,6 +620,10 @@ class Mob {
         this.facing = "n";
         this.blocking = true;
         this.inventory = {};
+    }
+
+    currentCell() {
+        return CELLMAP[`${this.x},${this.y}`];
     }
 
     move(direction: string, changeFacing: boolean) {
@@ -491,6 +669,26 @@ class Mob {
         CELLMAP[`${this.x},${this.y}`].contents.push(this);
 
         this.currentAction = "moved";
+    }
+
+    take(name: string, cell: Cell) {
+        for (let content of cell.contents) {
+            if (content.name === name) {
+                cell.contents.splice(cell.contents.indexOf(content), 1);
+                this.addToInventory(name, 1);
+                break;
+            }
+        }
+    }
+
+    addToInventory(itemName: string, quantity: number) {
+        if (!this.inventory[itemName]) {
+            this.inventory[itemName].item = ITEMSMAP[itemName];
+            this.inventory[itemName].quantity = 1;
+        }
+        else {
+            this.inventory[itemName].quantity += 1;
+        }
     }
 
     executeAction() {
@@ -593,7 +791,7 @@ class Cell {
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contents = this.genCell() ?? []; // CellContents type
+        this.contents = this.genCell() ?? [];
         this.lightLevel = 0;
         // console.log(this.contents);
         this.color = [240, 240, 240];
@@ -603,7 +801,7 @@ class Cell {
     genCell(): CellContents[] {
         let cellContents = [TERRAINFEATURESMAP["snow"]];
         if (Math.random() < 0.1) {
-            cellContents.push(TERRAINFEATURESMAP["tree"]); // CellContents type
+            cellContents.push(TERRAINFEATURESMAP["tree"]);
         }
 
         return cellContents;
@@ -782,6 +980,8 @@ function getLA() {
     return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
 }
 
+let NAVIGATIONELEMENT: HTMLElement;
+
 // control states will influence the behaviour of keyboard controls
 // they will be things like "navigation", "menu", "inventory" etc
 let CONTROLSTATE = new ControlState();
@@ -822,6 +1022,8 @@ let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
 let PLAYER: Player;
 
 let TICKER;
+
+let CTX: CtxMenuParent|CellCtxMenu;
 
 let TIME: number;
 
