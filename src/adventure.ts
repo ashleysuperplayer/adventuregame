@@ -475,29 +475,6 @@ function getCellContents(x:number, y:number) {
     return CELLMAP[`${x},${y}`].contents;
 }
 
-// take function takes in the name of an item, moves item from cell contents to mob inventory
-// final syntax for context menu take function will look like:
-
-// okay how about you supply a list of functions to the ctxMenu Constructor
-// if list[0]:
-//  context menu has multiple layers
-//  list[1] is the function called by buttons in lower layer
-//  list[2] is a function that returns the arguments AND NAMES of those buttons
-
-// for example: {"take": [true, take, getCellContents(cell)]}
-
-// for item in cellContents where takeable, gen a button that has onclick=take(item.name)
-
-function newCtxParent(x: number, y: number, id: string, cls: string, parentID: string) {
-    let parent = document.getElementById(parentID);
-    if (parent) {
-        return new CtxMenuParent(x, y, id, cls, parent);
-    }
-    else {
-        throw new Error("invalid parentID");
-    }
-}
-
 class CtxMenuComponent {
     x: number;
     y: number;
@@ -515,7 +492,6 @@ class CtxMenuParent extends CtxMenuComponent {
     element: HTMLElement;
     constructor(x: number, y: number, id: string, cls: string, parent: HTMLElement) {
         super(x, y, id);
-        console.log(this.x);
         this.cls = cls;
         this.parent = parent;
         this.element = this.createContainer();
@@ -533,8 +509,9 @@ class CtxMenuParent extends CtxMenuComponent {
 }
 
 interface CtxHoverMenuChildren {
+    name: string;
     action: Function;
-    args: string[];
+    args: string|Function[];
 }
 
 class CtxMenuHover extends CtxMenuComponent {
@@ -542,15 +519,33 @@ class CtxMenuHover extends CtxMenuComponent {
     body: string;
     children: CtxMenuButton[];
     element: HTMLElement;
-    constructor(x: number, y: number, id: string, body: string, parent: CtxMenuParent, children: CtxHoverMenuChildren) {
+    childHolder: HTMLElement;
+    behaviour: CtxHoverMenuChildren[];
+    constructor(x: number, y: number, id: string, body: string, parent: CtxMenuParent, behaviour: CtxHoverMenuChildren[]) {
         super(x, y, id);
         this.parent = parent;
         this.body = body;
+        this.behaviour = behaviour;
         this.element = this.createElement();
-        this.children = this.createChildren(children.action, children.args);
+        this.childHolder = this.createChildHolder();
+        this.children = this.createChildren();
+
+        this.element.addEventListener("mouseover", function(e) {
+            let childHolder = document.getElementById("childHolder1");
+            if (childHolder) {
+                childHolder.style.display = "block"; // apparently "this" is HTMLElement. cool?
+            }
+        },false);
+        this.element.addEventListener("mouseout", function(e) {
+            let childHolder = document.getElementById("childHolder1");
+            if (childHolder) {
+                childHolder.style.display = "none";
+            }
+        },false);
     }
 
     createElement() {
+        console.log("creating ctxMenuHover");
         let element = document.createElement("div");
         element.classList.add("ctxMenuHover"); // temporary implementation
         element.innerHTML = this.body;
@@ -558,20 +553,54 @@ class CtxMenuHover extends CtxMenuComponent {
         return element;
     }
 
-    createChildren(action: Function, args: string[]): CtxMenuButton[] {
+    createChildren(): CtxMenuButton[] {
         let buttonList: CtxMenuButton[] = [];
-        for (let arg of args) {
-            buttonList.push(new CtxMenuButton(this.x+10, this.y+10, `${arg}Take`, this, action, arg))
+        // console.log(typeof action);
+        for (let bhvr of this.behaviour) {
+            console.log(bhvr.args);
+            buttonList.push(new CtxMenuButton(this.x, this.y, `${bhvr.name}Take`, this.childHolder, bhvr.action, bhvr.name, bhvr.args));
         }
         return buttonList;
+    }
+
+    createChildHolder() {
+        let element = document.createElement("div");
+        // for (let child of this.children) {
+        //     this.childHolder.appendChild(child.element);
+        // }
+        element.classList.add("ctxHoverChildHolder");
+        element.id = "childHolder1"; // temporary
+        this.element.appendChild(element);
+        return element;
     }
 }
 
 class CtxMenuButton extends CtxMenuComponent {
-    parent: CtxMenuParent|CtxMenuHover;
-    constructor(x: number, y: number, id: string, parent: CtxMenuParent|CtxMenuHover, action: Function, body: string) {
+    parent: HTMLElement;
+    element: HTMLElement;
+    action: Function;
+    body: string;
+    args: string|Cell[]; // could change to numbers
+    constructor(x: number, y: number, id: string, parent: HTMLElement, action: Function, body: string, args: string|Cell[]) {
         super(x, y, id);
         this.parent = parent;
+        this.action = action;
+        console.log("ctxmenu button args " + args);
+        // console.log("ctxMenuButton constructor "+ typeof action);
+        this.body = body;
+        this.args = args;
+        this.element = this.createElement();
+        // console.log(typeof this.action);
+    }
+
+    createElement() {
+        let element = document.createElement("div");
+        element.classList.add("ctxMenuButton");
+        // console.log("createElement " + typeof this.action)
+        element.onclick = () => {this.action(this.args[0],this.args[1]).bind(PLAYER)};
+        element.innerHTML = this.body;
+        this.parent.appendChild(element);
+        return element;
     }
 }
 
@@ -584,17 +613,19 @@ class CellCtxMenu extends CtxMenuParent {
         this.cellCtx = cellCtx;
         this.element = this.createContainer();
         let takeHoverChildren = this.getTakeHoverChildren()
-        this.takeHover = new CtxMenuHover(this.x+10, this.y+10, "takeHover", "take", this, takeHoverChildren);
-        this.element.style.height = "20px"; // TEMPORARY. better solution is to take number of user-defined members and multiply by that - ones that arent children
+        this.takeHover = new CtxMenuHover(this.x, this.y, "takeHover", "take", this, takeHoverChildren);
+        this.element.style.height = "20px"; // TEMPORARY. better solution is to take number of user-defined members and multiply 20 by that - ones that arent children
     }
 
-    getTakeHoverChildren() {
-        let args = [];
+    getTakeHoverChildren(): CtxHoverMenuChildren[] {
+        let childrenParameters = [];
         for (let content of this.cellCtx.contents) {
-            args.push(content.name);
+            childrenParameters.push({"name":   content.name,
+                                     "action": PLAYER.take,
+                                     "args": [content.name, this.cellCtx]});
         }
-        return {"action": PLAYER.take,
-                "args": args}
+        // console.log("cellCtxMenu" + typeof PLAYER.take);
+        return childrenParameters; // number of args returned must be the same as required by action function
     }
 }
 
