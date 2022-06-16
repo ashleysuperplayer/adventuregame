@@ -66,6 +66,32 @@ body {
     text-align: center;
 }
 
+#itemsMapContainer {
+    font-size: 9px;
+    word-wrap: break-word;
+    line-height: 80%;
+    position: absolute;
+    padding: 3px;
+    margin: 0;
+}
+
+#itemsMap {
+    display: grid;
+    height: 600px;
+    width: 600px;
+    gap: 0;
+    padding: 5px;
+    padding-bottom: 10px;
+}
+
+.itemsMapCell {
+    height: 18px;
+    width: 18px;
+    padding: 0;
+    /* background-color: black; */
+    opacity: 1;
+}
+
 #lightMapContainer {
     position: absolute;
     padding: 3px;
@@ -87,4 +113,81 @@ body {
     padding: 0;
     background-color: black;
     opacity: 0.5;
+}
+
+#menus {
+    font-size: 18px;
+    position: absolute;
+    top: 0;
+    right: 6px;
+    background-color: rgb(41, 41, 41);
+    color: white;
+    width: 54%;
+}
+
+.topBar {
+    color: white;
+    margin-right: 10px;
+}
+
+.title {
+    display: inline-block;
+    padding-left: 2px;
+}
+
+#invSpaceLimit {
+    padding-right: 50px;
+    float: right;
+}
+
+#invWeightLimit {
+    float: right;
+    padding-right: 4px;
+}
+
+#inventoryGridContainer {
+    background-color: rgb(85, 85, 85);
+    border:rgb(41, 41, 41);
+    border-style: solid;
+    padding-left: 3px;
+    height: 0;
+}
+
+#ctx {
+    position: fixed;
+    z-index: 100;
+}
+
+.ctxParentMenu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: black;
+    color: white;
+    height: 0px;
+    z-index: 100;
+}
+
+.ctxHoverMenu {
+    position: fixed;
+    background-color: black;
+    /* top: 20px; */
+    height: 20px;
+    width: 100px;
+}
+
+.ctxHoverChildHolder {
+    position: fixed;
+    /* left: 100px; */
+    /* height: 100px; */
+    /* width: 100px; */
+    /* display: block; */
+    background-color: black;
+}
+
+.ctxButton {
+    padding-left: 1px;
+    position: fixed;
+    background-color: black;
+    border:1px solid rgb(82, 76, 76);
 }
