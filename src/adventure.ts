@@ -438,7 +438,7 @@ function setupClicks() {
             if (CTX) {
                 CTX.HTMLElement.remove();
             }
-            CTX = new CtxCellParentMenu("ctxCellParentMenu", e.clientX, e.clientY, getMapCellAtDisplayCell(displayCellCoords)); // cell should point to whichever cell is clicked, if that's how this works
+            CTX = new CtxCellParentMenu(e.clientX, e.clientY, getMapCellAtDisplayCell(displayCellCoords)); // cell should point to whichever cell is clicked, if that's how this works
         }
     },false);
 }
@@ -498,21 +498,19 @@ interface Dim2 {
 }
 
 // create own element > create children > calculate dimensions to fit children > reshape element to accomodate children
-class CtxMenuComponent {
+abstract class CtxMenuComponent {
     id:     string;
     x:      number;
     y:      number;
     ownCls: string;
-    parentElement: HTMLElement;
     dimensions: Dim2;
     HTMLELement: HTMLElement;
     countChildren: number;
-    constructor(id: string, x: number, y: number, ownCls: string, parentElementID: string) {
+    constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
         this.x      = x;
         this.y      = y;
         this.ownCls = ownCls;
-        this.parentElement = getElementFromID(parentElementID);
         this.dimensions = {"height": 0, "width": 0};
         this.HTMLELement = this.createBaseElement();
         this.countChildren = 0;
@@ -545,18 +543,17 @@ class CtxMenuComponent {
         element.style.left   = `${this.x}px`;
         element.style.top    = `${this.y}px`;
 
-        this.parentElement.appendChild(this.HTMLELement);
-
         return element;
     }
 }
 
-// do not create instance
-class CtxParentMenu extends CtxMenuComponent {
+abstract class CtxParentMenu extends CtxMenuComponent {
+    parentElement:     HTMLElement;
     HTMLElement:       HTMLElement;
     constructor(id: string, x: number, y: number, ownCls: string) {
         super(id, x, y, ownCls);
-        this.HTMLElement = this.createBaseElement();
+        this.parentElement = getElementFromID("ctx");
+        this.HTMLElement   = this.createBaseElement();
     }
 
     retouchDimensions() { // oh lord
@@ -569,8 +566,8 @@ class CtxCellParentMenu extends CtxParentMenu {
     cellCtx:       Cell;
     HTMLElement:   HTMLElement;
     takeHoverMenu: CtxCellHoverMenu;
-    constructor(id: string, x: number, y: number, cellCtx: Cell) {
-        super(id, x, y, "ctxMenuParent", "navigation");
+    constructor(x: number, y: number, cellCtx: Cell) {
+        super("ctxCellParentMenu", x, y, "ctxMenuParent");
         this.cellCtx       = cellCtx;
         this.HTMLElement   = this.createElement();
         this.takeHoverMenu = this.createTakeHoverMenu();
@@ -598,7 +595,7 @@ class CtxCellParentMenu extends CtxParentMenu {
     }
 }
 
-class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
+abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
     parent: CtxParentMenu;
     constructor(id: string, x: number, y: number, ownCls: string, parent: CtxParentMenu) {
         super(id, x, y, ownCls);
