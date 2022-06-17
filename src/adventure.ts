@@ -504,7 +504,7 @@ abstract class CtxMenuComponent {
     y:      number;
     ownCls: string;
     dimensions: Dim2;
-    HTMLELement: HTMLElement;
+    HTMLElement: HTMLElement;
     countChildren: number;
     constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
@@ -512,7 +512,7 @@ abstract class CtxMenuComponent {
         this.y      = y;
         this.ownCls = ownCls;
         this.dimensions = {"height": 0, "width": 0};
-        this.HTMLELement = this.createBaseElement();
+        this.HTMLElement = this.createBaseElement();
         this.countChildren = 0;
     }
 
@@ -585,7 +585,7 @@ class CtxParentMenu_Cell extends CtxParentMenu {
     }
 
     createElement() {
-        let element = this.createBaseElement();
+        let element = this.HTMLElement;
         this.parentElement.appendChild(element);
         return element;
     }
@@ -613,65 +613,43 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Cell) {
         super(id, x, y, "ctxHoverMenu", parent);
         this.parent      = parent;
-        this.children    = this.createChildren();
         this.dimensions  = {"height": 20, "width": 60};
+        this.children    = this.createChildren();
         this.HTMLElement = this.createElement();
     }
 
     createChildren(): CtxButton_Cell[] {
         let children: CtxButton_Cell[] = [];
-        let childItemIdCounter = 1;
+        let childItemIdCounter = 0;
         for (let content of this.parent.cellCtx.contents) {
-            children.push(new CtxButton_Cell(`${content.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + this.dimensions.height, this,() => {PLAYER.take(content.name, this.parent.cellCtx)},content.name))
+            children.push(new CtxButton_Cell(`${content.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(content.name, this.parent.cellCtx)}, content.name))
+            childItemIdCounter++;
         }
         return children;
     }
 
-    // getDimensions() {
-    //     let dimensions = {height: 0, width: 0};
+    createElement(): HTMLElement {
+        let element = this.HTMLElement;
 
-    //     return dimensions;
-    // }
-
-    createHolder() {
-        let element = this.createBaseElement(); // this sucks
-        element.style.top = `${this.y}px`;
-        element.style.left = `${this.x + this.dimensions.width}px`;
-
-        return element;
-    }
-
-    createElement(): HTMLDivElement {
-        let element = this.createBaseElement();
-
-        let holder = this.createHolder();
-        let holderHeight = 0;
-
-        for (let child of this.children) {
-            holder.appendChild(child.createElement());
-            holderHeight += 20;
-            // console.log(holderHeight);
-        }
-
-        holder.style.height = `${holderHeight}px`;
-        holder.style.width  = `60px`;
-
-        holder.style.left   = `${this.x + this.dimensions.width}px`;
-        holder.style.top    = `${this.y}px`;
+        element.style.width  = `${this.dimensions.width}px`;
+        element.style.height = `${this.dimensions.height}px`;
 
         element.innerHTML = "take"; // nooooo
 
         element.classList.add("CtxHoverChildHolder");
 
-        element.appendChild(holder);
         this.parent.HTMLElement.appendChild(element);
+
+        // append child HTML elements to this one
+        for (let child of this.children) {
+            element.appendChild(child.HTMLElement);
+        }
 
         return element;
     }
 }
 
-class CtxButton extends CtxMenuComponent {
-    HTMLElement: HTMLElement;
+abstract class CtxButton extends CtxMenuComponent {
     parent:      CtxHoverMenu|CtxParentMenu;
     action:      Function;
     text:        string;
@@ -684,20 +662,19 @@ class CtxButton extends CtxMenuComponent {
     }
 
     createElement() {
-        let element = this.createBaseElement();
+        let element = this.HTMLElement;
 
-        element.style.left = `${this.x}px`;
-        element.style.top  = `${this.y}px`;
+        element.style.height = "20px";
+        element.style.width  = `60px`;
 
-        element.innerHTML = this.text;
-        element.onclick = () => {this.action()};
+        element.innerHTML  = this.text;
+        console.log(element.innerHTML);
+        element.onclick    = () => {this.click()};
 
         return element;
     }
 
-    // click() {
-    //     return this.action();
-    // }
+    abstract click(): void;
 }
 
 class CtxButton_Cell extends CtxButton {
@@ -705,6 +682,11 @@ class CtxButton_Cell extends CtxButton {
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Cell|CtxHoverMenu_Cell, action: Function, text: string) {
         super(id, x, y, "ctxButton", parent, action, text);
         this.parent = parent;
+    }
+
+    click() {
+        this.action();
+        this.HTMLElement.remove();
     }
 }
 
