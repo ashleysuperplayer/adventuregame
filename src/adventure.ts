@@ -599,9 +599,19 @@ class CtxParentMenu_Cell extends CtxParentMenu {
 
 abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
     parent: CtxParentMenu;
+    abstract children: CtxButton[];
     constructor(id: string, x: number, y: number, ownCls: string, parent: CtxParentMenu) {
         super(id, x, y, ownCls);
         this.parent = parent;
+    }
+
+    setupHover() {
+        this.HTMLElement.addEventListener("mouseover",(e) => {
+            this.children.map((c) => {c.HTMLElement.style.display = "block";})
+        },false);
+        this.HTMLElement.addEventListener("mouseleave",(e) => {
+            this.children.map((c) => {c.HTMLElement.style.display = "none";})
+        },false);
     }
 }
 
@@ -616,6 +626,7 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
         this.dimensions  = {"height": 20, "width": 60};
         this.children    = this.createChildren();
         this.HTMLElement = this.createElement();
+        this.setupHover();
     }
 
     createChildren(): CtxButton_Cell[] {
