@@ -171,26 +171,21 @@ body {
 .ctxHoverMenu {
     position: fixed;
     background-color: black;
-    /* top: 20px; */
-    height: 20px;
-    width: 100px;
+    /* height: 20px;
+    width: 100px; */
 }
 
 .ctxHoverChildHolder {
     position: fixed;
-    /* left: 100px; */
-    /* height: 100px; */
-    /* width: 100px; */
-    /* display: block; */
     background-color: black;
 }
 
 .ctxButton {
     position: fixed;
-    /* padding-left: 1px; */
+    padding-left: 1px;
     color: white;
     background-color: black;
     height: 20px;
     width: 60px;
-    border: 1px solid rgb(82, 76, 76);
+    /* border: 1px solid rgb(82, 76, 76); */
 }
