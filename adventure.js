@@ -501,6 +501,14 @@ class CtxHoverMenu extends CtxMenuComponent {
         super(id, x, y, ownCls);
         this.parent = parent;
     }
+    setupHover() {
+        this.HTMLElement.addEventListener("mouseover", (e) => {
+            this.children.map((c) => { c.HTMLElement.style.display = "block"; });
+        }, false);
+        this.HTMLElement.addEventListener("mouseleave", (e) => {
+            this.children.map((c) => { c.HTMLElement.style.display = "none"; });
+        }, false);
+    }
 }
 class CtxHoverMenu_Cell extends CtxHoverMenu {
     constructor(id, x, y, parent) {
@@ -509,6 +517,7 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
         this.dimensions = { "height": 20, "width": 60 };
         this.children = this.createChildren();
         this.HTMLElement = this.createElement();
+        this.setupHover();
     }
     createChildren() {
         let children = [];
