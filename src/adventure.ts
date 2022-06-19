@@ -696,6 +696,12 @@ class CtxButton_Cell extends CtxButton {
     }
 }
 
+interface MobKind {
+    name: string;
+    symbol: string;
+    luminescence: number;
+}
+
 class Mob {
     name: string;
     x: number;
@@ -705,8 +711,7 @@ class Mob {
     luminescence: number;
     facing: string;
     blocking: boolean;
-    inventory: { [key: string]: InventoryEntry};
-
+    inventory: Inventory;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
         this.x = x;
@@ -717,7 +722,7 @@ class Mob {
         this.luminescence = kind.luminescence;
         this.facing = "n";
         this.blocking = true;
-        this.inventory = {};
+        this.inventory = new Inventory(["lantern"]);
     }
 
     getCell() {
@@ -770,32 +775,9 @@ class Mob {
     }
 
     take(name: string, cell: Cell) {
-        for (let content of cell.contents) {
-            if (content.name === name) {
-                console.log(content.name);
-                cell.contents.splice(cell.contents.indexOf(content), 1);
-                if (!this.inventory[content.name]) {
-                    // console.log(this.inventory[content.name].quantity)
-                    this.inventory[content.name] = {"item": ITEMSMAP[content.name], "quantity": 1};
-                }
-                else {
-                    this.inventory[content.name].quantity += 1;
-                }
-                // this.inventory[content.name].quantity += 1 ?? 1;
-                break;
-            }
-        }
+        cell.inventory.remove(name, 1);
+        this.inventory.add(name, 1);
     }
-
-    // addToInventory(itemName: string, quantity: number) {
-    //     if (!this.inventory[itemName]) {
-    //         this.inventory[itemName].item = ITEMSMAP[itemName];
-    //         this.inventory[itemName].quantity = 1;
-    //     }
-    //     else {
-    //         this.inventory[itemName].quantity += 1;
-    //     }
-    // }
 
     executeAction() {
         switch(this.currentAction) {
@@ -848,18 +830,27 @@ class Mob {
     }
 }
 
-interface MobKind {
-    name: string;
-    symbol: string;
-    luminescence: number;
+interface InventoryEntry {
+    item: Item;
+    quantity: number;
 }
 
 type InventoryMap = { [key: string]: InventoryEntry};
 
 class Inventory {
     contents: InventoryMap;
-    constructor(contents: InventoryMap) {
-        this.contents = contents;
+    constructor(contentNames: string[]) {
+        this.contents = this.itemsFromNames(contentNames);
+    }
+
+    itemsFromNames(itemNames: string[]): InventoryMap {
+        let inventoryMap: InventoryMap = {};
+
+        for (let name of itemNames) {
+            inventoryMap[name] = {"item": ITEMSMAP[name], "quantity": 0}
+        }
+
+        return inventoryMap;
     }
 
     add(itemName: string, quantity: number) {
@@ -871,19 +862,19 @@ class Inventory {
 
     // allows removal of items without knowing if they exist in inventory
     remove(itemName: string, quantity: number) {
-        if (this.contents[itemName].quantity < quantity) {
-            return false;
+        if (this.contents[itemName]) {
+            if (this.contents[itemName].quantity < quantity) {
+                return false;
+            }
+            else {
+                this.contents[itemName].quantity -= quantity;
+                return true;
+            }
         }
         else {
-            this.contents[itemName].quantity -= quantity;
-            return true;
+            return false;
         }
     }
-}
-
-interface InventoryEntry {
-    item: Item;
-    quantity: number;
 }
 
 class NPCHuman extends Mob {
@@ -920,11 +911,14 @@ class Cell {
     contents: CellContents[];
     lightLevel: number;
     color: number[];
+    inventory: Inventory;
     isVisible: Boolean;
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contents = this.genCell() ?? [];
+        this.contents   = this.genCell() ?? [];
+        // inventory should have a way to generate items depending on some seeds
+        this.inventory  = new Inventory([""]);
         this.lightLevel = 0;
         // console.log(this.contents);
         this.color = [240, 240, 240];
