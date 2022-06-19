@@ -854,6 +854,33 @@ interface MobKind {
     luminescence: number;
 }
 
+type InventoryMap = { [key: string]: InventoryEntry};
+
+class Inventory {
+    contents: InventoryMap;
+    constructor(contents: InventoryMap) {
+        this.contents = contents;
+    }
+
+    add(itemName: string, quantity: number) {
+        if (!this.contents[itemName]) {
+            this.contents[itemName] = {"item": ITEMSMAP[itemName], "quantity": 0};
+        }
+        this.contents[itemName].quantity += quantity
+    }
+
+    // allows removal of items without knowing if they exist in inventory
+    remove(itemName: string, quantity: number) {
+        if (this.contents[itemName].quantity < quantity) {
+            return false;
+        }
+        else {
+            this.contents[itemName].quantity -= quantity;
+            return true;
+        }
+    }
+}
+
 interface InventoryEntry {
     item: Item;
     quantity: number;
