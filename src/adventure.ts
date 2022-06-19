@@ -8,7 +8,13 @@ function getElementFromID(id: string): HTMLElement {
         throw new Error("invalid ID");
     }
 }
-
+function calcSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
+    return calcSquareDistanceBetweenCoords(cell1.x, cell1.y, cell2.x, cell2.y);
+}
+// square root to get actual distance
+function calcSquareDistanceBetweenCoords(x1:number, y1:number, x2:number, y2:number) {
+    return (x1 - x2)**2 + (y1 - y2)**2;
+}
 // bresenham stuff i STOLE FROM WIKIPEDIA
 function changeColour(x:number, y:number) {
     CELLMAP[`${x},${y}`].color = [0, 255, 0];
@@ -460,7 +466,6 @@ function minimizeMenuItem(menuItemName: string) {
     if (element) {
         element.style.height = "0";
     }
-    console.log("minimized " + menuItemName);
 }
 
 function maximizeMenuItem(menuItemName: string) {
@@ -468,19 +473,7 @@ function maximizeMenuItem(menuItemName: string) {
     if (element) {
         element.style.height = "400px";
     }
-    console.log("maximized " + menuItemName);
 }
-
-// function contextMenuClick(displayX: number, displayY: number, kind: string, mouseX?: number, mouseY?: number) {
-//     let cell = getMapCellAtDisplayCell(displayX, displayY)
-//     if (mouseX && mouseY) {
-//         if (kind === "navigation") {
-
-//         }
-//         }
-//     }
-// }
-
 
 function getCellContents(x:number, y:number) {
     return CELLMAP[`${x},${y}`].contents;
@@ -567,12 +560,14 @@ abstract class CtxParentMenu extends CtxMenuComponent {
 class CtxParentMenu_Cell extends CtxParentMenu {
     cellCtx:       Cell;
     HTMLElement:   HTMLElement;
-    takeHoverMenu: CtxHoverMenu_Cell;
+    takeHoverMenu?: CtxHoverMenu_Cell;
     constructor(x: number, y: number, cellCtx: Cell) {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx       = cellCtx;
         this.HTMLElement   = this.createElement();   // fine
-        this.takeHoverMenu = this.createTakeHoverMenu();
+        if (calcSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 1) {
+            this.takeHoverMenu = this.createTakeHoverMenu();
+        }
         this.dimensions    = this.getDimensionsFromChildren();
         this.retouchDimensions();
     }
@@ -725,7 +720,7 @@ class Mob {
         this.inventory = {};
     }
 
-    currentCell() {
+    getCell() {
         return CELLMAP[`${this.x},${this.y}`];
     }
 
