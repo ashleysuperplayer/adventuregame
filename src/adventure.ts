@@ -696,13 +696,60 @@ class CtxButton_Cell extends CtxButton {
     }
 }
 
+interface InventoryEntry {
+    item: Item;
+    quantity: number;
+}
+
+type InventoryMap = { [key: string]: InventoryEntry};
+
+class Inventory {
+    contents: InventoryMap;
+    constructor(contentNames: string[]) {
+        this.contents = this.itemsFromNames(contentNames);
+    }
+
+    itemsFromNames(itemNames: string[]): InventoryMap {
+        let inventoryMap: InventoryMap = {};
+
+        for (let name of itemNames) {
+            inventoryMap[name] = {"item": ITEMSMAP[name], "quantity": 0}
+        }
+
+        return inventoryMap;
+    }
+
+    add(itemName: string, quantity: number) {
+        if (!this.contents[itemName]) {
+            this.contents[itemName] = {"item": ITEMSMAP[itemName], "quantity": 0};
+        }
+        this.contents[itemName].quantity += quantity
+    }
+
+    // allows removal of items without knowing if they exist in inventory
+    remove(itemName: string, quantity: number) {
+        if (this.contents[itemName]) {
+            if (this.contents[itemName].quantity < quantity) {
+                return false;
+            }
+            else {
+                this.contents[itemName].quantity -= quantity;
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+}
+
 interface MobKind {
     name: string;
     symbol: string;
     luminescence: number;
 }
 
-class Mob {
+abstract class Mob {
     name: string;
     x: number;
     y: number;
@@ -806,9 +853,16 @@ class Mob {
                 this.move("west", false);
                 break;
         }
-        // console.log("moved" + this.currentAction);
-
         this.currentAction = "wait";
+    }
+
+    abstract tick(): void;
+}
+
+
+class NPCHuman extends Mob {
+    constructor(x: number, y: number, mobKind: MobKind) {
+        super(x, y, mobKind);
     }
 
     tick(): void {
@@ -830,80 +884,17 @@ class Mob {
     }
 }
 
-interface InventoryEntry {
-    item: Item;
-    quantity: number;
-}
-
-type InventoryMap = { [key: string]: InventoryEntry};
-
-class Inventory {
-    contents: InventoryMap;
-    constructor(contentNames: string[]) {
-        this.contents = this.itemsFromNames(contentNames);
-    }
-
-    itemsFromNames(itemNames: string[]): InventoryMap {
-        let inventoryMap: InventoryMap = {};
-
-        for (let name of itemNames) {
-            inventoryMap[name] = {"item": ITEMSMAP[name], "quantity": 0}
-        }
-
-        return inventoryMap;
-    }
-
-    add(itemName: string, quantity: number) {
-        if (!this.contents[itemName]) {
-            this.contents[itemName] = {"item": ITEMSMAP[itemName], "quantity": 0};
-        }
-        this.contents[itemName].quantity += quantity
-    }
-
-    // allows removal of items without knowing if they exist in inventory
-    remove(itemName: string, quantity: number) {
-        if (this.contents[itemName]) {
-            if (this.contents[itemName].quantity < quantity) {
-                return false;
-            }
-            else {
-                this.contents[itemName].quantity -= quantity;
-                return true;
-            }
-        }
-        else {
-            return false;
-        }
-    }
-}
-
-class NPCHuman extends Mob {
-    x: number;
-    y: number;
-    currentAction: string;
-    symbol: string;
-    luminescence: number;
-    constructor(x: number, y: number, mobKind: MobKind) {
-        super(x, y, mobKind);
-        this.x = x;
-        this.y = y;
-        this.currentAction = "wait";
-        this.symbol = mobKind.symbol;
-        this.luminescence = mobKind.luminescence;
-    }
-}
-
 class Player extends Mob {
-    x: number;
-    y: number;
-    currentAction: string;
     constructor(x: number, y: number) {
         super(x, y, MOBKINDSMAP["player"]);
-        this.x = x; // idk why this needs to be defined here if it's already defined in parent
-        this.y = y;
-        this.currentAction = "wait";
+    }
+
+    tick() {
+        return;
     }
 }
+
+type CellContents = TerrainFeature|Mob;
 
 class Cell {
     x: number;
@@ -1053,6 +1044,7 @@ class LightRay {
     }
 }
 
+// i dont think this is needed anymore
 class ControlState {
     state: string;
     constructor() {
@@ -1063,8 +1055,6 @@ class ControlState {
         this.state = "inventory";
     }
 }
-
-type CellContents = TerrainFeature|Item|Mob;
 
 interface Item {
     name: string;
