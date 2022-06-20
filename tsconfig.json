@@ -7,7 +7,7 @@
     "checkJs": true,
     "outDir": "dist",
     "sourceMap": true,
-    "target": "ES6",
+    "target": "es2022",
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "strict": true

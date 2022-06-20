@@ -1,4 +1,3 @@
-
 function getElementFromID(id: string): HTMLElement {
     let element = document.getElementById(id);
     if (element) {
@@ -266,18 +265,30 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     let cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords ${cellCoords}`);
 
     let itemsDisplay = "";
-    for (let content of cell.contents) {
-        if ("displaySmall" in content) {
-            if (!content.displaySmall) {
-                displayElement.innerHTML = content.symbol;
-            }
-            else {
-                itemsDisplay += content.symbol;
-            }
+    displayElement.innerHTML = "";
+    // this sux ! Object.values sucks, make my own thing with types
+    for (let item of cell.inventory.itemsArray()) {
+        // console.log(item)
+        if (item.symbol) {
+            // console.log(item.symbol)
+            itemsDisplay += item.symbol;
         }
-        else {
-            displayElement.innerHTML = content.symbol;
+    }
+
+    if (cell.mobs.length > 0) {
+        const symbol = cell.mobs.at(-1)?.symbol
+        if (symbol) {
+            displayElement.innerHTML = symbol;
         }
+    }
+
+    // this will get untenable when multiple terrain features can exist in the same cell
+    // for (let terrain of cell.terrain) {
+    //     displayElement.innerHTML += terrain.symbol;
+    // }
+
+    if (cell.terrain[0]) {
+        displayElement.innerHTML = cell.terrain[0].symbol;
     }
 
     itemsElement.innerHTML = itemsDisplay;
@@ -363,7 +374,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].contents = CELLMAP["1,0"].contents.concat(ITEMSMAP["oil lamp"]); // add a lamp
+    CELLMAP["1,0"].inventory.add("oil lamp", 1); // add a lamp
 
     PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
@@ -475,10 +486,6 @@ function maximizeMenuItem(menuItemName: string) {
     }
 }
 
-function getCellContents(x:number, y:number) {
-    return CELLMAP[`${x},${y}`].contents;
-}
-
 interface CtxHoverMenuChildren {
     name: string;
     action: Function;
@@ -507,10 +514,6 @@ abstract class CtxMenuComponent {
         this.dimensions = {"height": 0, "width": 0};
         this.HTMLElement = this.createBaseElement();
         this.countChildren = 0;
-    }
-
-    countChild() {
-        this.countChildren++;
     }
 
     getHeightFromChildren() {
@@ -564,7 +567,8 @@ class CtxParentMenu_Cell extends CtxParentMenu {
     constructor(x: number, y: number, cellCtx: Cell) {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx       = cellCtx;
-        this.HTMLElement   = this.createElement();   // fine
+        this.HTMLElement   = this.createElement();
+        // this sucks
         if (calcSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 1) {
             this.takeHoverMenu = this.createTakeHoverMenu();
         }
@@ -580,14 +584,14 @@ class CtxParentMenu_Cell extends CtxParentMenu {
     }
 
     createElement() {
-        let element = this.HTMLElement;
+        let element = this.createBaseElement();
+        // console.log(element);
         this.parentElement.appendChild(element);
         return element;
     }
 
     createTakeHoverMenu() {
         // console.log("ctxtakehover x is "+(this.x+this.dimensions.width))
-        this.countChild();
         return new CtxHoverMenu_Cell("ctxTakeHover", this.x + this.dimensions.width, this.y + this.dimensions.height, this);
     }
 }
@@ -627,15 +631,15 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     createChildren(): CtxButton_Cell[] {
         let children: CtxButton_Cell[] = [];
         let childItemIdCounter = 0;
-        for (let content of this.parent.cellCtx.contents) {
-            children.push(new CtxButton_Cell(`${content.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(content.name, this.parent.cellCtx)}, content.name))
+        for (let content of Object.values(this.parent.cellCtx.inventory.contents)) {
+            children.push(new CtxButton_Cell(`${content.item.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(content.item.name, this.parent.cellCtx)}, content.item.name))
             childItemIdCounter++;
         }
         return children;
     }
 
     createElement(): HTMLElement {
-        let element = this.HTMLElement;
+        let element = this.createBaseElement();
 
         element.style.width  = `${this.dimensions.width}px`;
         element.style.height = `${this.dimensions.height}px`;
@@ -674,7 +678,7 @@ abstract class CtxButton extends CtxMenuComponent {
         element.style.width  = `60px`;
 
         element.innerHTML  = this.text;
-        console.log(element.innerHTML);
+        // console.log(element.innerHTML);
         element.onclick    = () => {this.click()};
 
         return element;
@@ -705,18 +709,16 @@ type InventoryMap = { [key: string]: InventoryEntry};
 
 class Inventory {
     contents: InventoryMap;
-    constructor(contentNames: string[]) {
-        this.contents = this.itemsFromNames(contentNames);
+    constructor(contents?: InventoryMap) {
+        this.contents = contents ?? {};
     }
 
-    itemsFromNames(itemNames: string[]): InventoryMap {
-        let inventoryMap: InventoryMap = {};
-
-        for (let name of itemNames) {
-            inventoryMap[name] = {"item": ITEMSMAP[name], "quantity": 0}
+    itemsArray(): Item[] {
+        let itemList: Item[] = [];
+        for (let entry of Object.values(this.contents)) {
+            itemList.push(entry.item);
         }
-
-        return inventoryMap;
+        return itemList;
     }
 
     add(itemName: string, quantity: number) {
@@ -746,7 +748,6 @@ class Inventory {
 interface MobKind {
     name: string;
     symbol: string;
-    luminescence: number;
 }
 
 abstract class Mob {
@@ -755,7 +756,6 @@ abstract class Mob {
     y: number;
     currentAction: string;
     symbol: string;
-    luminescence: number;
     facing: string;
     blocking: boolean;
     inventory: Inventory;
@@ -765,11 +765,10 @@ abstract class Mob {
         this.y = y;
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        CELLMAP[`${this.x},${this.y}`].contents.push(this);
-        this.luminescence = kind.luminescence;
+        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
         this.facing = "n";
         this.blocking = true;
-        this.inventory = new Inventory(["lantern"]);
+        this.inventory = new Inventory();
     }
 
     getCell() {
@@ -778,7 +777,7 @@ abstract class Mob {
 
     move(direction: string, changeFacing: boolean) {
         // remove from old location
-        let oldContents = CELLMAP[`${this.x},${this.y}`].contents;
+        let oldContents = CELLMAP[`${this.x},${this.y}`].mobs;
         oldContents.splice(oldContents.indexOf(this),1);
 
         switch(direction) {
@@ -816,7 +815,7 @@ abstract class Mob {
                 break;
         }
 
-        CELLMAP[`${this.x},${this.y}`].contents.push(this);
+        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
 
         this.currentAction = "moved";
     }
@@ -859,7 +858,6 @@ abstract class Mob {
     abstract tick(): void;
 }
 
-
 class NPCHuman extends Mob {
     constructor(x: number, y: number, mobKind: MobKind) {
         super(x, y, mobKind);
@@ -899,7 +897,9 @@ type CellContents = TerrainFeature|Mob;
 class Cell {
     x: number;
     y: number;
-    contents: CellContents[];
+    mobs: Mob[];
+    terrain: TerrainFeature[];
+    ground: GroundType;
     lightLevel: number;
     color: number[];
     inventory: Inventory;
@@ -907,26 +907,30 @@ class Cell {
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
-        this.contents   = this.genCell() ?? [];
+        this.mobs = [];
+        this.ground = this.genGround();
+        this.terrain = this.genTerrain();
+        this.color = this.ground.color; // LOL i thought i implemented different-coloured cells
         // inventory should have a way to generate items depending on some seeds
-        this.inventory  = new Inventory([""]);
+        this.inventory  = new Inventory();
         this.lightLevel = 0;
-        // console.log(this.contents);
-        this.color = [240, 240, 240];
         this.isVisible = false;
     }
 
-    genCell(): CellContents[] {
-        let cellContents = [TERRAINFEATURESMAP["snow"]];
-        if (Math.random() < 0.1) {
-            cellContents.push(TERRAINFEATURESMAP["tree"]);
-        }
+    genGround(): GroundType {
+        return GROUNDTYPESMAP["snow"];
+    }
 
-        return cellContents;
+    genTerrain(): TerrainFeature[] {
+        let terrainFeatures = [];
+        if (Math.random() < 0.1) {
+            terrainFeatures.push(TERRAINFEATURESMAP["tree"]);
+        }
+        return terrainFeatures;
     }
 
     isBlocked(): boolean {
-        for (let content of this.contents) {
+        for (let content of [...this.terrain, ...this.mobs]) {
             if (content.blocking) {
                 return true;
             }
@@ -934,16 +938,15 @@ class Cell {
         return false;
     }
 
-    // return list of luminescences of all content
+    // return unordered list of luminescences of all items
     allLuminescence(): number[] {
         let lumList: number[] = [];
-        if (this.contents) {
-            for (let content of this.contents) {
-                lumList.push(content.luminescence);
-            }
+        // combine into one list lol
+        for (let entry of Object.values(this.inventory)) {
+            lumList.push(entry.luminescence);
         }
-        else {
-            throw new Error(`cell without any contents at ${this.x},${this.y}`);
+        for (let entry of this.terrain) {
+            lumList.push(entry.luminescence);
         }
 
         return lumList;
@@ -956,10 +959,16 @@ class Cell {
 
     sumOpacity(): number {
         let sum = 0;
-        if (this.contents) {
-            for (let content of this.contents) {
-                sum += content.luminescence;
-            }
+        for (let item of Object.values(this.inventory)) {
+            sum += item.item.opacity;
+        }
+        for (let terrain of this.terrain) {
+            sum += terrain.opacity;
+        }
+
+        // opacity of all mobs should be assumed to be 1 until able to be calculated from weight or size
+        if (this.mobs) {
+            sum = 1;
         }
 
         return sum;
@@ -1056,13 +1065,17 @@ class ControlState {
     }
 }
 
+interface GroundType {
+    name: string;
+    color: [number, number, number];
+}
+
 interface Item {
     name: string;
     weight: number;
     symbol: string;
     luminescence: number;
     opacity: number;
-    displaySmall: boolean;
     blocking: boolean;
 }
 
@@ -1071,7 +1084,6 @@ interface TerrainFeature {
     symbol: string;
     luminescence: number;
     opacity: number;
-    displaySmall: boolean;
     blocking: boolean;
 }
 
@@ -1121,19 +1133,22 @@ let EMITTERMAP: { [key: string]: LightEmitter} = {};
 let RAYIDCOUNTER = 0;
 
 let MOBKINDSMAP: { [key: string]: MobKind } = {
-    "player": {name: "player", symbol: "@", luminescence: 200},
-    "npctest": {name: "npctest", symbol: "T", luminescence: 0}
+    "player": {name: "player", symbol: "@"},
+    "npctest": {name: "npctest", symbol: "T"}
 }
 
 // the displaySmall boolean might be dumb jank but i feel dirty checking for Item or TerrainFeature type so
 let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, displaySmall: true, blocking: false},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, displaySmall: true, blocking: false}
+    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, blocking: false},
+    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, blocking: false}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, displaySmall: false, blocking: true},
-    "snow": {name: "snow", symbol: "", luminescence: 0, opacity: 0, displaySmall: false, blocking: false}, // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
+    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true},
+}
+
+let GROUNDTYPESMAP: { [key: string]: GroundType } = {
+    "snow": {name: "snow", color: [240, 240, 240]} // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
 }
 
 let PLAYER: Player;
