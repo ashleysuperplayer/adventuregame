@@ -7,11 +7,11 @@ function getElementFromID(id: string): HTMLElement {
         throw new Error("invalid ID");
     }
 }
-function calcSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
-    return calcSquareDistanceBetweenCoords(cell1.x, cell1.y, cell2.x, cell2.y);
+function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
+    return getSquareDistanceBetweenCoords(cell1.x, cell1.y, cell2.x, cell2.y);
 }
 // square root to get actual distance
-function calcSquareDistanceBetweenCoords(x1:number, y1:number, x2:number, y2:number) {
+function getSquareDistanceBetweenCoords(x1:number, y1:number, x2:number, y2:number) {
     return (x1 - x2)**2 + (y1 - y2)**2;
 }
 // bresenham stuff i STOLE FROM WIKIPEDIA
@@ -303,7 +303,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // console.log("lightElementColourAmbient " + lightElementColourAmbient);
     lightElement.style.opacity = lightElementColourAmbient;
 
-    displayElement.style.backgroundColor = `RGB(${cell.color[0]},${cell.color[1]},${cell.color[2]})` // band aid
+    displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
 
     // redo this, only allows for one kind of cell contents at a time
 
@@ -545,8 +545,8 @@ class CtxParentMenu_Cell extends CtxParentMenu {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx       = cellCtx;
         this.HTMLElement   = this.createElement();
-        // this sucks
-        if (calcSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 1) {
+        // this sucks, also 2 means 1.5 cells basicallyt
+        if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
             this.takeHoverMenu = this.createTakeHoverMenu();
         }
     }
@@ -887,7 +887,7 @@ class Cell {
     terrain: TerrainFeature[];
     ground: GroundType;
     lightLevel: number;
-    color: number[];
+    color: [number, number, number];
     inventory: Inventory;
     isVisible: Boolean;
     constructor(x: number, y: number) {
@@ -896,7 +896,7 @@ class Cell {
         this.mobs = [];
         this.ground = this.genGround();
         this.terrain = this.genTerrain();
-        this.color = this.ground.color; // LOL i thought i implemented different-coloured cells
+        this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory  = new Inventory();
         this.lightLevel = 0;
@@ -904,6 +904,9 @@ class Cell {
     }
 
     genGround(): GroundType {
+        if (Math.random() > 0.95) {
+            return GROUNDTYPESMAP["mud"];
+        }
         return GROUNDTYPESMAP["snow"];
     }
 
@@ -1049,8 +1052,38 @@ class ControlState {
     }
 }
 
+class GroundType {
+    name: string;
+    color: [number, number, number];
+    blendMode: Function;
+    constructor(name: string, color: [number, number, number], blendMode: string) {
+        this.name = name;
+        this.color = color;
+        this.blendMode = this.getBlendMode(blendMode);
+    }
+
+    getBlendMode(str: string): Function {
+        switch(str) {
+            case "mudBlend":
+                return this.mudBlend;
+            case "none":
+                return ()=>{return this.color};
+            default:
+                throwExpression("invalid blend mode");
+        }
+    }
+
+    mudBlend() {
+        const random = Math.random() * 30;
+        return this.color.map((rgb)=>{return rgb+random});
+    }
+}
+
+
+
 interface GroundType {
     name: string;
+    blendMode: Function;
     color: [number, number, number];
 }
 
@@ -1131,7 +1164,8 @@ let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
 }
 
 let GROUNDTYPESMAP: { [key: string]: GroundType } = {
-    "snow": {name: "snow", color: [240, 240, 240]} // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
+    "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
+    "snow": new GroundType("snow", [240, 240, 240], "mudBlend") // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
 }
 
 let PLAYER: Player;
