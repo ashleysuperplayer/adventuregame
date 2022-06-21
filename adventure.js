@@ -8,11 +8,11 @@ function getElementFromID(id) {
         throw new Error("invalid ID");
     }
 }
-function calcSquareDistanceBetweenCells(cell1, cell2) {
-    return calcSquareDistanceBetweenCoords(cell1.x, cell1.y, cell2.x, cell2.y);
+function getSquareDistanceBetweenCells(cell1, cell2) {
+    return getSquareDistanceBetweenCoords(cell1.x, cell1.y, cell2.x, cell2.y);
 }
 // square root to get actual distance
-function calcSquareDistanceBetweenCoords(x1, y1, x2, y2) {
+function getSquareDistanceBetweenCoords(x1, y1, x2, y2) {
     return (x1 - x2) ** 2 + (y1 - y2) ** 2;
 }
 // bresenham stuff i STOLE FROM WIKIPEDIA
@@ -261,7 +261,7 @@ function displayCell(displayElementCoords, cellCoords) {
     // all works
     // console.log("lightElementColourAmbient " + lightElementColourAmbient);
     lightElement.style.opacity = lightElementColourAmbient;
-    displayElement.style.backgroundColor = `RGB(${cell.color[0]},${cell.color[1]},${cell.color[2]})`; // band aid
+    displayElement.style.backgroundColor = `RGB(${cell.color})`; // band aid
     // redo this, only allows for one kind of cell contents at a time
     // if (!cell.isVisible) {
     //     displayElement.style.backgroundColor = "black";
@@ -463,8 +463,8 @@ class CtxParentMenu_Cell extends CtxParentMenu {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx = cellCtx;
         this.HTMLElement = this.createElement();
-        // this sucks
-        if (calcSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 1) {
+        // this sucks, also 2 means 1.5 cells basicallyt
+        if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
             this.takeHoverMenu = this.createTakeHoverMenu();
         }
     }
@@ -755,13 +755,16 @@ class Cell {
         this.mobs = [];
         this.ground = this.genGround();
         this.terrain = this.genTerrain();
-        this.color = this.ground.color; // LOL i thought i implemented different-coloured cells
+        this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory = new Inventory();
         this.lightLevel = 0;
         this.isVisible = false;
     }
     genGround() {
+        if (Math.random() > 0.95) {
+            return GROUNDTYPESMAP["mud"];
+        }
         return GROUNDTYPESMAP["snow"];
     }
     genTerrain() {
@@ -885,6 +888,30 @@ class ControlState {
         this.state = "inventory";
     }
 }
+class GroundType {
+    name;
+    color;
+    blendMode;
+    constructor(name, color, blendMode) {
+        this.name = name;
+        this.color = color;
+        this.blendMode = this.getBlendMode(blendMode);
+    }
+    getBlendMode(str) {
+        switch (str) {
+            case "mudBlend":
+                return this.mudBlend;
+            case "none":
+                return () => { return this.color; };
+            default:
+                throwExpression("invalid blend mode");
+        }
+    }
+    mudBlend() {
+        const random = Math.random() * 30;
+        return this.color.map((rgb) => { return rgb + random; });
+    }
+}
 // NICE COMBOS:
 // SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
 // AMBLIGHTAMP = ~200 gives correct range
@@ -927,7 +954,8 @@ let TERRAINFEATURESMAP = {
     "tree": { name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true },
 };
 let GROUNDTYPESMAP = {
-    "snow": { name: "snow", color: [240, 240, 240] } // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
+    "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
+    "snow": new GroundType("snow", [240, 240, 240], "mudBlend") // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
 };
 let PLAYER;
 let TICKER;
