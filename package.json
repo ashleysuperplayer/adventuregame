@@ -5,13 +5,15 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && npm run build:cp-public",
+    "build": "tsc",
     "build:cp-public": "cp ./public/** ./dist",
-    "type": "tsc --noEmit"
+    "type": "tsc --noEmit",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "author": "tdtvbat",
   "license": "ISC",
   "devDependencies": {
+    "gh-pages": "^4.0.0",
     "typescript": "^4.6.4"
   }
 }
