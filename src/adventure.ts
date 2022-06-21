@@ -104,6 +104,9 @@ function isPerfectSquare(x: number) {
 function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
+function getLA() {
+    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
+}
 // placeholder until i get better at maths lol
 // returns light level from 0 to AMBLIGHTAMP
 function timeToLight(time: number) {
@@ -141,6 +144,37 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
     parent.style.gridTemplateColumns = gridAutoColumn;
 }
 
+function updateInventory() {
+    for (let element of document.querySelectorAll(".inventoryDisplayList")) {
+        console.log(element)
+        element.remove();
+    }
+    for (let item of PLAYER.inventory.itemsArray()) {
+        inventoryDisplayEntry(item);
+    }
+}
+
+function inventoryDisplayEntry(item: Item) {
+    const quantity = PLAYER.inventory.contents[item.name].quantity; // jesus good lord
+
+    let name = document.createElement("div");
+    let quant = document.createElement("div");
+    let space = document.createElement("div");
+    let weight = document.createElement("div");
+
+    name.innerHTML   = `${item.name}`;
+    quant.innerHTML  = `${quantity}`;
+    space.innerHTML  = `${item.space}(${item.space * quantity})`;
+    weight.innerHTML = `${item.weight}(${item.weight * quantity})`;
+
+    const parent = document.getElementById("inventoryDisplayList");
+
+    parent?.appendChild(name);
+    parent?.appendChild(quant);
+    parent?.appendChild(space);
+    parent?.appendChild(weight);
+}
+
 function tick() {
     TIME += 1;
     PLAYER.executeAction();
@@ -150,6 +184,7 @@ function tick() {
 
     updateLighting();
     updateDisplay();
+    updateInventory();
 }
 
 function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
@@ -452,18 +487,6 @@ function setupClicks() {
     },false);
 }
 
-function clickTopBar(menuItemName: string) {
-    let element = document.getElementById(menuItemName);
-    if (element) {
-        if (+element.style.height.slice(0, 2) > 0) {
-            minimizeMenuItem(menuItemName);
-        }
-        else {
-            maximizeMenuItem(menuItemName);
-        }
-    }
-}
-
 function minimizeMenuItem(menuItemName: string) {
     let element = document.getElementById(menuItemName);
     if (element) {
@@ -681,7 +704,6 @@ class Inventory {
         this.contents = contents ?? {};
     }
 
-    //
     itemsArray(minQuant?: number): Item[] {
         let itemList: Item[] = [];
         if (minQuant) {
@@ -877,8 +899,6 @@ class Player extends Mob {
         return;
     }
 }
-
-type CellContents = TerrainFeature|Mob;
 
 class Cell {
     x: number;
@@ -1090,6 +1110,7 @@ interface GroundType {
 interface Item {
     name: string;
     weight: number;
+    space: number;
     symbol: string;
     luminescence: number;
     opacity: number;
@@ -1122,10 +1143,6 @@ let AMBLIGHTAMP = 200;
 
 let LIGHTATTENUATION = getLA();
 
-function getLA() {
-    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
-}
-
 let NAVIGATIONELEMENT: HTMLElement;
 
 // control states will influence the behaviour of keyboard controls
@@ -1155,8 +1172,8 @@ let MOBKINDSMAP: { [key: string]: MobKind } = {
 }
 
 let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, blocking: false},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, blocking: false}
+    "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, space: 1, opacity: 0, blocking: false},
+    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
