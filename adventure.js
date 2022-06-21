@@ -243,10 +243,6 @@ function displayCell(displayElementCoords, cellCoords) {
             displayElement.innerHTML = symbol;
         }
     }
-    // this will get untenable when multiple terrain features can exist in the same cell
-    // for (let terrain of cell.terrain) {
-    //     displayElement.innerHTML += terrain.symbol;
-    // }
     if (cell.terrain[0]) {
         displayElement.innerHTML = cell.terrain[0].symbol;
     }
@@ -786,12 +782,13 @@ class Cell {
     // return unordered list of luminescences of all items
     allLuminescence() {
         let lumList = [];
-        // combine into one list lol
-        for (let entry of Object.values(this.inventory)) {
+        for (let entry of [...this.inventory.itemsArray(1), ...this.terrain]) {
             lumList.push(entry.luminescence);
         }
-        for (let entry of this.terrain) {
-            lumList.push(entry.luminescence);
+        for (let mob of this.mobs) {
+            for (let item of mob.inventory.itemsArray(1)) {
+                lumList.push(item.luminescence);
+            }
         }
         return lumList;
     }
@@ -800,16 +797,13 @@ class Cell {
         return Math.max(...this.allLuminescence());
     }
     sumOpacity() {
-        let sum = 0;
-        for (let item of Object.values(this.inventory)) {
-            sum += item.item.opacity;
-        }
-        for (let terrain of this.terrain) {
-            sum += terrain.opacity;
-        }
         // opacity of all mobs should be assumed to be 1 until able to be calculated from weight or size
         if (this.mobs) {
-            sum = 1;
+            return 1;
+        }
+        let sum = 0;
+        for (let entry of [...this.inventory.itemsArray(1), ...this.terrain]) {
+            sum += entry.opacity;
         }
         return sum;
     }
