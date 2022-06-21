@@ -267,13 +267,10 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     let itemsDisplay = "";
     displayElement.innerHTML = "";
     // this sux ! Object.values sucks, make my own thing with types
-    for (let item of cell.inventory.itemsArray()) {
-        // console.log(item)
-        if (item.symbol) {
+    for (let item of cell.inventory.itemsArray(1)) {
             // console.log(item.symbol)
             itemsDisplay += item.symbol;
         }
-    }
 
     if (cell.mobs.length > 0) {
         const symbol = cell.mobs.at(-1)?.symbol
@@ -503,21 +500,13 @@ abstract class CtxMenuComponent {
     x:      number;
     y:      number;
     ownCls: string;
-    dimensions: Dim2;
     HTMLElement: HTMLElement;
-    countChildren: number;
     constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
         this.x      = x;
         this.y      = y;
         this.ownCls = ownCls;
-        this.dimensions = {"height": 0, "width": 0};
         this.HTMLElement = this.createBaseElement();
-        this.countChildren = 0;
-    }
-
-    getHeightFromChildren() {
-        return this.countChildren * 20;
     }
 
     checkDimensions(dimensions: Dim2) {
@@ -546,17 +535,10 @@ abstract class CtxMenuComponent {
 abstract class CtxParentMenu extends CtxMenuComponent {
     parentElement: HTMLElement;
     HTMLElement:   HTMLElement;
-    dimensions:    Dim2;
     constructor(id: string, x: number, y: number, ownCls: string) {
         super(id, x, y, ownCls);
-        this.dimensions    = {"height": 0, "width": 0};
         this.parentElement = getElementFromID("ctx");
         this.HTMLElement   = this.createBaseElement();
-    }
-
-    retouchDimensions() { // oh lord
-        this.HTMLElement.style.height = `${this.dimensions.height}px`;
-        this.HTMLElement.style.width  = `${this.dimensions.width}px`;
     }
 }
 
@@ -572,15 +554,6 @@ class CtxParentMenu_Cell extends CtxParentMenu {
         if (calcSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 1) {
             this.takeHoverMenu = this.createTakeHoverMenu();
         }
-        this.dimensions    = this.getDimensionsFromChildren();
-        this.retouchDimensions();
-    }
-
-    getDimensionsFromChildren(): Dim2 { // this function sux rn but it will be useful in future
-        let dimensions = {height: 0, width: 60};
-        // dimensions.width = this.takeHoverMenu.dimensions.width; // temporary fix
-        dimensions.height = this.getHeightFromChildren(); // should be 20 * "number of properties less properties that are menu items"
-        return dimensions;
     }
 
     createElement() {
@@ -592,12 +565,13 @@ class CtxParentMenu_Cell extends CtxParentMenu {
 
     createTakeHoverMenu() {
         // console.log("ctxtakehover x is "+(this.x+this.dimensions.width))
-        return new CtxHoverMenu_Cell("ctxTakeHover", this.x + this.dimensions.width, this.y + this.dimensions.height, this);
+        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y, this);
     }
 }
 
 abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
     parent: CtxParentMenu;
+    abstract dimensions: Dim2;
     abstract children: CtxButton[];
     constructor(id: string, x: number, y: number, ownCls: string, parent: CtxParentMenu) {
         super(id, x, y, ownCls);
@@ -675,10 +649,9 @@ abstract class CtxButton extends CtxMenuComponent {
         let element = this.HTMLElement;
 
         element.style.height = "20px";
-        element.style.width  = `60px`;
+        element.style.width  = "60px";
 
         element.innerHTML  = this.text;
-        // console.log(element.innerHTML);
         element.onclick    = () => {this.click()};
 
         return element;
@@ -713,11 +686,22 @@ class Inventory {
         this.contents = contents ?? {};
     }
 
-    itemsArray(): Item[] {
+    //
+    itemsArray(minQuant?: number): Item[] {
         let itemList: Item[] = [];
-        for (let entry of Object.values(this.contents)) {
-            itemList.push(entry.item);
+        if (minQuant) {
+            for (let entry of Object.values(this.contents)) {
+                if (entry.quantity >= minQuant) {
+                    itemList.push(entry.item);
+                }
+            }
         }
+        else {
+            for (let entry of Object.values(this.contents)) {
+                itemList.push(entry.item);
+            }
+        }
+
         return itemList;
     }
 
@@ -730,8 +714,11 @@ class Inventory {
 
     // allows removal of items without knowing if they exist in inventory
     remove(itemName: string, quantity: number) {
+        console.log(this.contents[itemName]);
         if (this.contents[itemName]) {
+            console.log(this.contents[itemName]);
             if (this.contents[itemName].quantity < quantity) {
+                console.log("invalid quantity")
                 return false;
             }
             else {
@@ -821,8 +808,12 @@ abstract class Mob {
     }
 
     take(name: string, cell: Cell) {
-        cell.inventory.remove(name, 1);
-        this.inventory.add(name, 1);
+        if (cell.inventory.remove(name, 1)) {
+            this.inventory.add(name, 1);
+        }
+        else {
+            console.log("not there")
+        }
     }
 
     executeAction() {
@@ -1137,9 +1128,8 @@ let MOBKINDSMAP: { [key: string]: MobKind } = {
     "npctest": {name: "npctest", symbol: "T"}
 }
 
-// the displaySmall boolean might be dumb jank but i feel dirty checking for Item or TerrainFeature type so
 let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "light", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, blocking: false},
+    "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, blocking: false},
     "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, blocking: false}
 }
 
