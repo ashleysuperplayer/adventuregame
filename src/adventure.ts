@@ -104,18 +104,12 @@ function isPerfectSquare(x: number) {
 function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
-function getLA() {
-    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
-}
 // placeholder until i get better at maths lol
 // returns light level from 0 to AMBLIGHTAMP
 function timeToLight(time: number) {
     time = Math.floor(time);
     return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
-}
-function printLightingWeights() {
-    console.log(`SELFWEIGHT: ${SELFWEIGHT}, ORTHOGWEIGHT: ${ORTHOGWEIGHT}, DIAGWEIGHT: ${DIAGWEIGHT}, AMBAMPLIGHT: ${AMBLIGHTAMP}`);
 }
 
 // creates a grid of even height and width.
@@ -406,6 +400,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
 
 function setupKeys() {
     window.addEventListener("keydown", (event) => {
+			  event.preventDefault();
         if (event.shiftKey) {
             switch (event.key) {
                 case "ArrowUp":
@@ -1116,18 +1111,7 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     ambientLight: number;
 }
 
-// NICE COMBOS:
-// SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
-// AMBLIGHTAMP = ~200 gives correct range
-// SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
-// ^ old
-// SELFWEIGHT: 10, ORTHOGWEIGHT: 20, DIAGWEIGHT: 1, AMBAMPLIGHT: 200
-let SELFWEIGHT = 10;
-let ORTHOGWEIGHT = 20;
-let DIAGWEIGHT = 1;
 let AMBLIGHTAMP = 200;
-
-let LIGHTATTENUATION = getLA();
 
 let NAVIGATIONELEMENT: HTMLElement;
 
