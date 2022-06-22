@@ -1,6 +1,6 @@
 import { Dim2, getElementFromID } from "./util.js";
-import { PLAYER, Cell, getSquareDistanceBetweenCells } from "./world.js";
-import { Inventory, InventoryEntry, updateInventory } from "./inventory.js";
+import { Cell, getSquareDistanceBetweenCells } from "./world.js";
+import { InventoryEntry, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     if (CTX) {

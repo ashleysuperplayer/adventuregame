@@ -37,7 +37,6 @@ export function timeToLight(time: number) {
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
 }
 
-
 export function tick() {
     globalThis.TIME += 1;
     PLAYER.executeAction();
@@ -59,14 +58,28 @@ function generateWorld(sideLengthWorld: number) {
 
     for (let y = 0 - sideLengthWorld; y < sideLengthWorld; y++) {
         for (let x = 0 - sideLengthWorld; x < sideLengthWorld; x++) {
-            // console.log(`genning ${x},${y}`)
             newCellMap[`${x},${y}`] = new Cell(x, y);
-            // console.log(`genned ${x}, ${y} with color ${newLocationMap[x + "," + y].color}`)
         }
     }
 
     return newCellMap;
 }
+
+function genGround(): GroundType {
+    if (Math.random() > 0.95) {
+        return GROUNDTYPEKINDSMAP["mud"];
+    }
+    return GROUNDTYPEKINDSMAP["snow"];
+}
+
+function genTerrain(): TerrainFeature[] {
+    let terrainFeatures: TerrainFeature[] = [];
+    if (Math.random() < 0.1) {
+        terrainFeatures.push(TERRAINFEATUREKINDSMAP["tree"]);
+    }
+    return terrainFeatures;
+}
+
 
 function setPlayerAction(newAction: string) {
     PLAYER.currentAction = newAction;
@@ -92,11 +105,11 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
-    NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone") // for the context menus
+    globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone") // for the context menus
 
-    CELLMAP = generateWorld(worldSideLength);
+    globalThis.CELLMAP = generateWorld(worldSideLength);
 
-    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
 
     globalThis.TIME = startTime;
     setupKeys();
@@ -185,7 +198,6 @@ function setupClicks() {
         }
     },false);
 }
-
 
 interface MobKind {
     name: string;
@@ -352,28 +364,13 @@ export class Cell {
         this.x = x;
         this.y = y;
         this.mobs = [];
-        this.ground = this.genGround();
-        this.terrain = this.genTerrain();
+        this.ground = genGround();
+        this.terrain = genTerrain();
         this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory  = new Inventory();
         this.lightLevel = 0;
         this.isVisible = false;
-    }
-
-    genGround(): GroundType {
-        if (Math.random() > 0.95) {
-            return GROUNDTYPESMAP["mud"];
-        }
-        return GROUNDTYPESMAP["snow"];
-    }
-
-    genTerrain(): TerrainFeature[] {
-        let terrainFeatures: TerrainFeature[] = [];
-        if (Math.random() < 0.1) {
-            terrainFeatures.push(TERRAINFEATURESMAP["tree"]);
-        }
-        return terrainFeatures;
     }
 
     isBlocked(): boolean {
@@ -432,8 +429,7 @@ class ControlState {
     }
 }
 
-
-class GroundType {
+export class GroundType {
     name: string;
     color: [number, number, number];
     blendMode: Function;
@@ -479,40 +475,25 @@ interface TerrainFeature {
     blocking: boolean;
 }
 
-
-
 declare global {
+    var PLAYER: Player;
+
     var TIME: number;
+    var NAVIGATIONELEMENT: HTMLElement;
+    var CONTROLSTATE: string;
+
+    var MINSPERDAY: number;
+    var TICKSPERMINUTE: number;
+
+    var TICKDURATION: number;
+    var TICKSPERDAY: number;
+
+    var CELLMAP: { [key: string]: Cell };
+    var MOBSMAP: { [id: string]: Mob };
+
+    var MOBKINDSMAP: { [key: string]: MobKind };
+    var ITEMKINDSMAP: { [key: string]: Item};
+    var TERRAINFEATUREKINDSMAP: { [key: string]: TerrainFeature};
+    var GROUNDTYPEKINDSMAP: { [key: string]: GroundType };
 }
-
-let NAVIGATIONELEMENT: HTMLElement;
-let CONTROLSTATE;
-
-const MINSPERDAY = 1440; // 1440
-const TICKSPERMINUTE = 600;
-
-export const TICKDURATION = 100;
-const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
-
-export let CELLMAP: { [key: string]: Cell };
-let MOBSMAP: { [id: string]: Mob } = {};
-
-let MOBKINDSMAP: { [key: string]: MobKind } = {
-    "player": {name: "player", symbol: "@"},
-    "npctest": {name: "npctest", symbol: "T"}
-}
-export let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, space: 1, opacity: 0, blocking: false},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false},
-    "chocolate thunder": {name: "chocolate thunder", symbol: "c", luminescence: 0, weight: 10, space: 0.01, opacity: 0, blocking: false}
-}
-let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true},
-}
-let GROUNDTYPESMAP: { [key: string]: GroundType } = {
-    "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
-    "snow": new GroundType("snow", [240, 240, 240], "mudBlend") // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
-}
-
-export let PLAYER: Player;
 
