@@ -4,7 +4,7 @@ function getElementFromID(id: string): HTMLElement {
         return element;
     }
     else {
-        throw new Error("invalid ID");
+        throw new Error(`invalid ID: ${id}`);
     }
 }
 function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
