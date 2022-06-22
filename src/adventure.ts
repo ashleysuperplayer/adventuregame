@@ -308,34 +308,20 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
     // this will require reworking the whole lighting system to use rays
     // for now this "works" though
-    let lightElementColourAmbient = `${1 - ((cell.lightLevel / 255) + (timeToLight(TIME) / 255))}`;
+    let lightElementColourAmbient = cell.lightLevel + timeToLight(TIME);
 
-    if (+lightElementColourAmbient < 0) {
-        lightElementColourAmbient = `0`;
+    if (lightElementColourAmbient < 0) {
+        lightElementColourAmbient = 0;
     }
 
-    if (+lightElementColourAmbient > 1) {
-        lightElementColourAmbient = `1`;
+    if (lightElementColourAmbient > 255) {
+        lightElementColourAmbient = 255;
     }
-    // all works
 
-    // console.log("lightElementColourAmbient " + lightElementColourAmbient);
-    lightElement.style.opacity = lightElementColourAmbient;
+		lightElement.style.mixBlendMode = "multiply"
+    lightElement.style.backgroundColor = `RGB(${lightElementColourAmbient},${lightElementColourAmbient},${lightElementColourAmbient}`;
 
     displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
-
-    // redo this, only allows for one kind of cell contents at a time
-
-
-    // if (!cell.isVisible) {
-    //     displayElement.style.backgroundColor = "black";
-    // }
-    // else {
-    //     displayElement.style.backgroundColor = `rgb(${cell.color})`;
-    // }
-
-    // cell.isVisible = false;
-    // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
 function setPlayerAction(newAction: string) {
