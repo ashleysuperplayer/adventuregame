@@ -1,5 +1,5 @@
-import { throwExpression } from "./util";
-import { Cell, TIME, PLAYER, CELLMAP, timeToLight } from "./world";
+import { throwExpression } from "./util.js";
+import { Cell, TIME, PLAYER, CELLMAP, timeToLight } from "./world.js";
 
 export function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)

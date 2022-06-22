@@ -1,8 +1,8 @@
-import { updateLighting } from "./light";
-import { createGrid, throwExpression } from "./util";
-import { Inventory, updateInventory } from "./inventory";
-import { CtxParentMenu_Cell, setCTX } from "./menu";
-import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display";
+import { updateLighting } from "./light.js";
+import { createGrid, throwExpression } from "./util.js";
+import { Inventory, updateInventory } from "./inventory.js";
+import { CtxParentMenu_Cell, setCTX } from "./menu.js";
+import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
 export function getMapCellAtDisplayCell(x: number, y: number): Cell
 export function getMapCellAtDisplayCell(xy: string): Cell
@@ -369,7 +369,7 @@ export class Cell {
     }
 
     genTerrain(): TerrainFeature[] {
-        let terrainFeatures = [];
+        let terrainFeatures: TerrainFeature[] = [];
         if (Math.random() < 0.1) {
             terrainFeatures.push(TERRAINFEATURESMAP["tree"]);
         }

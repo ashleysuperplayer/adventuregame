@@ -50,19 +50,19 @@ export function createGrid(parentID: string, sideLength: number, cellClass: stri
     parent.style.gridTemplateColumns = gridAutoColumn;
 }
 
-function convertListToString(someList: number[] | string[], delimiter="") {
-    let someString = "";
-    for (let i of someList) {
-        someString += i + delimiter;
-    }
+// function convertListToString(someList: number[] | string[], delimiter="") {
+//     let someString = "";
+//     for (let i of someList) {
+//         someString += i + delimiter;
+//     }
 
-    if (delimiter) {
-        return someString.slice(0, -1);
-    }
-    else {
-        return someString;
-    }
-}
+//     if (delimiter) {
+//         return someString.slice(0, -1);
+//     }
+//     else {
+//         return someString;
+//     }
+// }
 
 export interface Dim2 {
     height: number;

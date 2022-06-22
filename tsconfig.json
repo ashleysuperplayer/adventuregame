@@ -11,5 +11,6 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "strict": true
-  }
+  },
+  "exclude": ["dist/**/*"]
 }

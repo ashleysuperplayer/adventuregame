@@ -1,6 +1,6 @@
-import { PLAYER, Item, ITEMSMAP } from "./world";
-import { getElementFromID } from "./util";
-import { setCTX, CtxParentMenu_Inventory } from "./menu";
+import { PLAYER, Item, ITEMSMAP } from "./world.js";
+import { getElementFromID } from "./util.js";
+import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
 export function updateInventory() {
     getElementFromID("inventoryDisplayList").textContent = "";

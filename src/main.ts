@@ -1,4 +1,4 @@
-import { setup, tick, TICKDURATION } from "./world";
+import { setup, tick, TICKDURATION } from "./world.js";
 
 function main() {
     let TICKER;

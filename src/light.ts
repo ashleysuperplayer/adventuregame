@@ -1,5 +1,5 @@
-import { throwExpression } from "./util";
-import { PLAYER, CELLMAP } from "./world";
+import { throwExpression } from "./util.js";
+import { PLAYER, CELLMAP } from "./world.js";
 
 // adds two numbers in [0, 255], guaranteed to land in [0, 255], inspired by relativistic velocity addition
 function addcolours(c1: number, c2: number) {
