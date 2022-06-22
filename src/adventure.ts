@@ -1102,14 +1102,6 @@ class GroundType {
     }
 }
 
-
-
-interface GroundType {
-    name: string;
-    blendMode: Function;
-    color: [number, number, number];
-}
-
 interface Item {
     name: string;
     weight: number;
