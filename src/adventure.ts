@@ -145,37 +145,43 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 }
 
 function updateInventory() {
-    let element = document.getElementById("inventoryDisplayList");
-    if (element) {
-        element.textContent = '';
-    }
+    getElementFromID("inventoryDisplayList").textContent = "";
+    let totalSpace  = 0;
+    let totalWeight = 0;
 
     for (let item of PLAYER.inventory.itemsArray()) {
-        inventoryDisplayEntry(item);
+    let [space, weight] = inventoryDisplayEntry(item);
+        totalSpace  += space;
+        totalWeight += weight;
     }
+
+    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/100`;
+    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/5000g`
 }
 
-function inventoryDisplayEntry(item: Item) {
+function inventoryDisplayEntry(item: Item): number[] {
     const quantity = PLAYER.inventory.contents[item.name].quantity; // jesus good lord
+    const space    = item.space  * quantity;
+    const weight   = item.weight * quantity;
 
-    let name = document.createElement("div");
-    let quant = document.createElement("div");
-    let space = document.createElement("div");
-    let weight = document.createElement("div");
+    let nameE   = document.createElement("div");
+    let quantE  = document.createElement("div");
+    let spaceE  = document.createElement("div");
+    let weightE = document.createElement("div");
 
-    name.innerHTML   = `${item.name}`;
-    quant.innerHTML  = `${quantity}`;
-    space.innerHTML  = `${item.space}(${item.space * quantity})`;
-    weight.innerHTML = `${item.weight}g(${item.weight * quantity}g)`;
+    nameE.innerHTML   = `${item.name}`;
+    quantE.innerHTML  = `${quantity}`;
+    spaceE.innerHTML  = `${space}`;
+    weightE.innerHTML = `${weight}g`;
 
     const parent = document.getElementById("inventoryDisplayList");
 
-    parent?.appendChild(name);
-    parent?.appendChild(quant);
-    parent?.appendChild(space);
-    parent?.appendChild(weight);
+    parent?.appendChild(nameE);
+    parent?.appendChild(quantE);
+    parent?.appendChild(spaceE);
+    parent?.appendChild(weightE);
 
-    return [name, quant, space, weight];
+    return [space, weight];
 }
 
 function tick() {
@@ -187,7 +193,7 @@ function tick() {
 
     updateLighting();
     updateDisplay();
-    updateInventory();
+    // updateInventory();
 }
 
 function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
@@ -400,19 +406,21 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
 
     CELLMAP = generateWorld(worldSideLength);
 
+    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+
     TIME = startTime;
     setupKeys();
     setupClicks();
 
     CELLMAP["1,0"].inventory.add("oil lamp", 1); // add a lamp
 
-    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
     // debug stuff
 
     updateLighting();
     updateDisplay();
+    updateInventory();
 }
 
 function setupKeys() {
@@ -730,6 +738,7 @@ class Inventory {
             this.contents[itemName] = {"item": ITEMSMAP[itemName], "quantity": 0};
         }
         this.contents[itemName].quantity += quantity
+        updateInventory();
     }
 
     // allows removal of items without knowing if they exist in inventory
@@ -743,6 +752,7 @@ class Inventory {
             }
             else {
                 this.contents[itemName].quantity -= quantity;
+                updateInventory();
                 return true;
             }
         }
