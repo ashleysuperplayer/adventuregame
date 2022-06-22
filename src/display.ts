@@ -1,5 +1,5 @@
 import { throwExpression } from "./util.js";
-import { Cell, TIME, PLAYER, CELLMAP, timeToLight } from "./world.js";
+import { Cell, PLAYER, CELLMAP, timeToLight } from "./world.js";
 
 export function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
@@ -41,7 +41,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
     // this will require reworking the whole lighting system to use rays
     // for now this "works" though
-    let lightElementColourAmbient = cell.lightLevel + timeToLight(TIME);
+    let lightElementColourAmbient = cell.lightLevel + timeToLight(globalThis.TIME);
 
     if (lightElementColourAmbient < 0) {
         lightElementColourAmbient = 0;
