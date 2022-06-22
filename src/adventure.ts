@@ -145,10 +145,11 @@ function createGrid(parentID: string, sideLength: number, cellClass: string, ele
 }
 
 function updateInventory() {
-    for (let element of document.querySelectorAll(".inventoryDisplayList")) {
-        console.log(element)
-        element.remove();
+    let element = document.getElementById("inventoryDisplayList");
+    if (element) {
+        element.textContent = '';
     }
+
     for (let item of PLAYER.inventory.itemsArray()) {
         inventoryDisplayEntry(item);
     }
@@ -165,7 +166,7 @@ function inventoryDisplayEntry(item: Item) {
     name.innerHTML   = `${item.name}`;
     quant.innerHTML  = `${quantity}`;
     space.innerHTML  = `${item.space}(${item.space * quantity})`;
-    weight.innerHTML = `${item.weight}(${item.weight * quantity})`;
+    weight.innerHTML = `${item.weight}g(${item.weight * quantity}g)`;
 
     const parent = document.getElementById("inventoryDisplayList");
 
@@ -173,6 +174,8 @@ function inventoryDisplayEntry(item: Item) {
     parent?.appendChild(quant);
     parent?.appendChild(space);
     parent?.appendChild(weight);
+
+    return [name, quant, space, weight];
 }
 
 function tick() {
@@ -1173,7 +1176,8 @@ let MOBKINDSMAP: { [key: string]: MobKind } = {
 
 let ITEMSMAP: { [key: string]: Item} = {
     "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, space: 1, opacity: 0, blocking: false},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false}
+    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false},
+    "chocolate thunder": {name: "chocolate thunder", symbol: "c", luminescence: 0, weight: 10, space: 0.01, opacity: 0, blocking: false}
 }
 
 let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
