@@ -28,7 +28,7 @@ function setGlobals() {
     }
     globalThis.GROUNDTYPEKINDSMAP = {
         "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
-        "snow": new GroundType("snow", [240, 240, 240], "mudBlend") // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
+        "snow": new GroundType("snow", [240, 240, 240], "mudBlend")
     }
 }
 

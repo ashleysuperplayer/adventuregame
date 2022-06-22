@@ -214,6 +214,7 @@ body {
 }
 
 .ctxHoverMenu {
+    /* border: white solid 1px; */
     position: fixed;
     background-color: black;
 }
@@ -224,9 +225,10 @@ body {
 }
 
 .ctxButton {
+    /* border: white 1px solid; */
     position: fixed;
-    padding-left: 1px;
+    /* padding-left: 1px; */
     color: white;
     background-color: black;
-    border-left: 2px solid rgb(82, 76, 76);
+    /* border-left: 2px solid rgb(82, 76, 76); */
 }
