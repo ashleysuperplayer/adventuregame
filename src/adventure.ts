@@ -205,7 +205,7 @@ function addcolours(c1: number, c2: number) {
     return 255*255*(c1+c2) / (255*255 + c1*c2);
 }
 
-// attenuation coeff for a light some distance away
+// attenuation coeff for a light some distance away (TODO: precompute?)
 function attenuate(dx: number, dy: number) {
     return 1/(dx*dx+dy*dy+1);
 }
@@ -214,14 +214,12 @@ function attenuate(dx: number, dy: number) {
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
-    const x = cell.x;
-    const y = cell.y;
 
     let cum = 0;
-    const sr = 5;
-    for (let dy = -sr; dy <= sr; ++dy) {
-        for (let dx = -sr; dx <= sr; ++dx) {
-            const cell2 = CELLMAP[`${x+dx},${y+dy}`];
+    const searchradius = 5;
+    for (let dy = -searchradius; dy <= searchradius; ++dy) {
+        for (let dx = -searchradius; dx <= searchradius; ++dx) {
+            const cell2 = CELLMAP[`${cell.x+dx},${cell.y+dy}`];
             if (!cell2) continue;
             const lum = cell2.maxLum();
             if (lum === 0) continue;
@@ -229,46 +227,6 @@ function calcCellLighting(cellCoords: string) {
             cum = addcolours(cum, lum*attenuate(dx, dy));
         }
     }
-    cell.lightLevel = Math.floor(cum);
-    return;
-
-    // if (cell.isBlocked()) {
-    //     cum = -200;
-    // }
-
-    // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
-    // remind me to add cloud movement above player
-    for (let dY = -1; dY <= 1; dY++) {
-        for (let dX = -1; dX <= 1; dX++) {
-            const absOffsets = Math.abs(dX) + Math.abs(dY);
-            if (absOffsets === 0) {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
-            }
-            if (absOffsets === 1) {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
-            }
-            else {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
-            }
-        }
-    }
-
-    if (!cell.isBlocked()) {
-        cum /= LIGHTATTENUATION * 0.97;
-    }
-    else {
-        cum /= (LIGHTATTENUATION * 2);
-    }
-
-    // upper limit on lightLevel
-    if (cum > 255) {
-        cum = 255;
-    }
-
-    if (cum < cell.maxLum()) {
-        cum = cell.maxLum();
-    }
-
     cell.lightLevel = Math.floor(cum);
 };
 
