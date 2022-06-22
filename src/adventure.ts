@@ -4,7 +4,7 @@ function getElementFromID(id: string): HTMLElement {
         return element;
     }
     else {
-        throw new Error("invalid ID");
+        throw new Error(`invalid ID: ${id}`);
     }
 }
 function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
@@ -104,18 +104,12 @@ function isPerfectSquare(x: number) {
 function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
-function getLA() {
-    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
-}
 // placeholder until i get better at maths lol
 // returns light level from 0 to AMBLIGHTAMP
 function timeToLight(time: number) {
     time = Math.floor(time);
     return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * AMBLIGHTAMP * 0.5; // super fast for debug
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
-}
-function printLightingWeights() {
-    console.log(`SELFWEIGHT: ${SELFWEIGHT}, ORTHOGWEIGHT: ${ORTHOGWEIGHT}, DIAGWEIGHT: ${DIAGWEIGHT}, AMBAMPLIGHT: ${AMBLIGHTAMP}`);
 }
 
 // creates a grid of even height and width.
@@ -208,52 +202,33 @@ function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
     EMITTERMAP[`${posX},${posY},${trajX},${trajY}`] = new LightEmitter(posX, posY, trajX, trajY);
 }
 
+// adds two numbers in [0, 255], guaranteed to land in [0, 255], inspired by relativistic velocity addition
+function addcolours(c1: number, c2: number) {
+    return 255*255*(c1+c2) / (255*255 + c1*c2);
+}
+
+// attenuation coeff for a light some distance away (TODO: precompute?)
+function attenuate(dx: number, dy: number) {
+    return 1/(dx*dx+dy*dy+1);
+}
+
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
-    const x = cell.x;
-    const y = cell.y;
 
     let cum = 0;
-
-    // if (cell.isBlocked()) {
-    //     cum = -200;
-    // }
-
-    // these will be calculated from "weather lighting" level which is calculated based on time of day and weather
-    // remind me to add cloud movement above player
-    for (let dY = -1; dY <= 1; dY++) {
-        for (let dX = -1; dX <= 1; dX++) {
-            const absOffsets = Math.abs(dX) + Math.abs(dY);
-            if (absOffsets === 0) {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * SELFWEIGHT;
-            }
-            if (absOffsets === 1) {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * ORTHOGWEIGHT;
-            }
-            else {
-                cum += CELLMAP[`${x+dX},${y+dY}`].lightLevel * DIAGWEIGHT;
-            }
+    const searchradius = 5;
+    for (let dy = -searchradius; dy <= searchradius; ++dy) {
+        for (let dx = -searchradius; dx <= searchradius; ++dx) {
+            const cell2 = CELLMAP[`${cell.x+dx},${cell.y+dy}`];
+            if (!cell2) continue;
+            const lum = cell2.maxLum();
+            if (lum === 0) continue;
+            // we have a light source in cell2
+            cum = addcolours(cum, lum*attenuate(dx, dy));
         }
     }
-
-    if (!cell.isBlocked()) {
-        cum /= LIGHTATTENUATION * 0.97;
-    }
-    else {
-        cum /= (LIGHTATTENUATION * 2);
-    }
-
-    // upper limit on lightLevel
-    if (cum > 255) {
-        cum = 255;
-    }
-
-    if (cum < cell.maxLum()) {
-        cum = cell.maxLum();
-    }
-
     cell.lightLevel = Math.floor(cum);
 };
 
@@ -342,34 +317,20 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
     // this will require reworking the whole lighting system to use rays
     // for now this "works" though
-    let lightElementColourAmbient = `${1 - ((cell.lightLevel / 255) + (timeToLight(TIME) / 255))}`;
+    let lightElementColourAmbient = cell.lightLevel + timeToLight(TIME);
 
-    if (+lightElementColourAmbient < 0) {
-        lightElementColourAmbient = `0`;
+    if (lightElementColourAmbient < 0) {
+        lightElementColourAmbient = 0;
     }
 
-    if (+lightElementColourAmbient > 1) {
-        lightElementColourAmbient = `1`;
+    if (lightElementColourAmbient > 255) {
+        lightElementColourAmbient = 255;
     }
-    // all works
 
-    // console.log("lightElementColourAmbient " + lightElementColourAmbient);
-    lightElement.style.opacity = lightElementColourAmbient;
+		lightElement.style.mixBlendMode = "multiply"
+    lightElement.style.backgroundColor = `RGB(${lightElementColourAmbient},${lightElementColourAmbient},${lightElementColourAmbient}`;
 
     displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
-
-    // redo this, only allows for one kind of cell contents at a time
-
-
-    // if (!cell.isVisible) {
-    //     displayElement.style.backgroundColor = "black";
-    // }
-    // else {
-    //     displayElement.style.backgroundColor = `rgb(${cell.color})`;
-    // }
-
-    // cell.isVisible = false;
-    // console.log(`displayCell: HTML cell: ${cellCoords} is displaying location: ${displayElementCoords} with light level ${cell.lightLevel} and effective colour ${effectiveColor}`);
 }
 
 function setPlayerAction(newAction: string) {
@@ -433,7 +394,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
 
 function setupKeys() {
     window.addEventListener("keydown", (event) => {
-        event.preventDefault();
+			  event.preventDefault();
         if (event.shiftKey) {
             switch (event.key) {
                 case "ArrowUp":
@@ -1047,7 +1008,7 @@ class Cell {
 
     // return highest luminesence item of Cell
     maxLum(): number {
-        return Math.max(...this.allLuminescence());
+        return Math.max(0, ...this.allLuminescence());
     }
 
     sumOpacity(): number {
@@ -1205,18 +1166,7 @@ interface Weather {  // this is a placeholder system, in future weather and ligh
     ambientLight: number;
 }
 
-// NICE COMBOS:
-// SELFWEIGHT: 1, AMBIENTWEIGHT: 0.5, ORTHOGWEIGHT: 0.75, DIAGWEIGHT: 0.5, AMBLIGHTAMP: 0 (correct lighting effect but perpetual night)
-// AMBLIGHTAMP = ~200 gives correct range
-// SELFWEIGHT: 10, AMBIENTWEIGHT: 1, ORTHOGWEIGHT: 0.5, DIAGWEIGHT: 0.25, AMBAMPLIGHT: 200 (almost correct ambient feel, light tapers too quickly still)
-// ^ old
-// SELFWEIGHT: 10, ORTHOGWEIGHT: 20, DIAGWEIGHT: 1, AMBAMPLIGHT: 200
-let SELFWEIGHT = 10;
-let ORTHOGWEIGHT = 20;
-let DIAGWEIGHT = 1;
 let AMBLIGHTAMP = 200;
-
-let LIGHTATTENUATION = getLA();
 
 let NAVIGATIONELEMENT: HTMLElement;
 
