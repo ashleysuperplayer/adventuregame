@@ -200,6 +200,16 @@ function newLightEmitter(posX=0, posY=0, trajX=0, trajY=0) {
     EMITTERMAP[`${posX},${posY},${trajX},${trajY}`] = new LightEmitter(posX, posY, trajX, trajY);
 }
 
+// adds two numbers in [0, 255], guaranteed to land in [0, 255], inspired by relativistic velocity addition
+function addcolours(c1: number, c2: number) {
+    return 255*255*(c1+c2) / (255*255 + c1*c2);
+}
+
+// attenuation coeff for a light some distance away
+function attenuate(dx: number, dy: number) {
+    return 1/(dx*dx+dy*dy+1);
+}
+
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 function calcCellLighting(cellCoords: string) {
@@ -208,6 +218,19 @@ function calcCellLighting(cellCoords: string) {
     const y = cell.y;
 
     let cum = 0;
+    const sr = 5;
+    for (let dy = -sr; dy <= sr; ++dy) {
+        for (let dx = -sr; dx <= sr; ++dx) {
+            const cell2 = CELLMAP[`${x+dx},${y+dy}`];
+            if (!cell2) continue;
+            const lum = cell2.maxLum();
+            if (lum === 0) continue;
+            // we have a light source in cell2
+            cum = addcolours(cum, lum*attenuate(dx, dy));
+        }
+    }
+    cell.lightLevel = Math.floor(cum);
+    return;
 
     // if (cell.isBlocked()) {
     //     cum = -200;
@@ -977,7 +1000,7 @@ class Cell {
 
     // return highest luminesence item of Cell
     maxLum(): number {
-        return Math.max(...this.allLuminescence());
+        return Math.max(0, ...this.allLuminescence());
     }
 
     sumOpacity(): number {
