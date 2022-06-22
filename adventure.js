@@ -99,6 +99,9 @@ function isPerfectSquare(x) {
 function ZZ(a, b) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
+function getLA() {
+    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
+}
 // placeholder until i get better at maths lol
 // returns light level from 0 to AMBLIGHTAMP
 function timeToLight(time) {
@@ -127,6 +130,37 @@ function createGrid(parentID, sideLength, cellClass, elementsDict) {
     }
     parent.style.gridTemplateColumns = gridAutoColumn;
 }
+function updateInventory() {
+    getElementFromID("inventoryDisplayList").textContent = "";
+    let totalSpace = 0;
+    let totalWeight = 0;
+    for (let item of PLAYER.inventory.itemsArray()) {
+        let [space, weight] = inventoryDisplayEntry(item);
+        totalSpace += space;
+        totalWeight += weight;
+    }
+    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/100`;
+    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/5000g`;
+}
+function inventoryDisplayEntry(item) {
+    const quantity = PLAYER.inventory.contents[item.name].quantity; // jesus good lord
+    const space = item.space * quantity;
+    const weight = item.weight * quantity;
+    let nameE = document.createElement("div");
+    let quantE = document.createElement("div");
+    let spaceE = document.createElement("div");
+    let weightE = document.createElement("div");
+    nameE.innerHTML = `${item.name}`;
+    quantE.innerHTML = `${quantity}`;
+    spaceE.innerHTML = `${space}`;
+    weightE.innerHTML = `${weight}g`;
+    const parent = document.getElementById("inventoryDisplayList");
+    parent?.appendChild(nameE);
+    parent?.appendChild(quantE);
+    parent?.appendChild(spaceE);
+    parent?.appendChild(weightE);
+    return [space, weight];
+}
 function tick() {
     TIME += 1;
     PLAYER.executeAction();
@@ -135,6 +169,7 @@ function tick() {
     }
     updateLighting();
     updateDisplay();
+    // updateInventory();
 }
 function newLightEmitter(posX = 0, posY = 0, trajX = 0, trajY = 0) {
     EMITTERMAP[`${posX},${posY},${trajX},${trajY}`] = new LightEmitter(posX, posY, trajX, trajY);
@@ -308,15 +343,16 @@ function setup(worldSideLength, startTime, playerStartLocation) {
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
     NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone"); // for the context menus
     CELLMAP = generateWorld(worldSideLength);
+    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     TIME = startTime;
     setupKeys();
     setupClicks();
     CELLMAP["1,0"].inventory.add("oil lamp", 1); // add a lamp
-    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
     // debug stuff
     updateLighting();
     updateDisplay();
+    updateInventory();
 }
 function setupKeys() {
     window.addEventListener("keydown", (event) => {
@@ -390,17 +426,6 @@ function setupClicks() {
             CTX = new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(displayCellCoords)); // cell should point to whichever cell is clicked, if that's how this works
         }
     }, false);
-}
-function clickTopBar(menuItemName) {
-    let element = document.getElementById(menuItemName);
-    if (element) {
-        if (+element.style.height.slice(0, 2) > 0) {
-            minimizeMenuItem(menuItemName);
-        }
-        else {
-            maximizeMenuItem(menuItemName);
-        }
-    }
 }
 function minimizeMenuItem(menuItemName) {
     let element = document.getElementById(menuItemName);
@@ -566,7 +591,6 @@ class Inventory {
     constructor(contents) {
         this.contents = contents ?? {};
     }
-    //
     itemsArray(minQuant) {
         let itemList = [];
         if (minQuant) {
@@ -588,6 +612,7 @@ class Inventory {
             this.contents[itemName] = { "item": ITEMSMAP[itemName], "quantity": 0 };
         }
         this.contents[itemName].quantity += quantity;
+        updateInventory();
     }
     // allows removal of items without knowing if they exist in inventory
     remove(itemName, quantity) {
@@ -600,6 +625,7 @@ class Inventory {
             }
             else {
                 this.contents[itemName].quantity -= quantity;
+                updateInventory();
                 return true;
             }
         }
@@ -923,9 +949,6 @@ let ORTHOGWEIGHT = 20;
 let DIAGWEIGHT = 1;
 let AMBLIGHTAMP = 200;
 let LIGHTATTENUATION = getLA();
-function getLA() {
-    return SELFWEIGHT + ((ORTHOGWEIGHT + DIAGWEIGHT) * 4) + 1; // this +1 is a band-aid until ""raytracing"" works
-}
 let NAVIGATIONELEMENT;
 // control states will influence the behaviour of keyboard controls
 // they will be things like "navigation", "menu", "inventory" etc
@@ -947,8 +970,9 @@ let MOBKINDSMAP = {
     "npctest": { name: "npctest", symbol: "T" }
 };
 let ITEMSMAP = {
-    "oil lamp": { name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, opacity: 0, blocking: false },
-    "rock": { name: "rock", symbol: ".", luminescence: 0, weight: 100, opacity: 0, blocking: false }
+    "oil lamp": { name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, space: 1, opacity: 0, blocking: false },
+    "rock": { name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false },
+    "chocolate thunder": { name: "chocolate thunder", symbol: "c", luminescence: 0, weight: 10, space: 0.01, opacity: 0, blocking: false }
 };
 let TERRAINFEATURESMAP = {
     "tree": { name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true },
