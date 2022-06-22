@@ -39,7 +39,7 @@ export function timeToLight(time: number) {
 
 
 export function tick() {
-    TIME += 1;
+    globalThis.TIME += 1;
     PLAYER.executeAction();
     for (let mob in MOBSMAP) {
         MOBSMAP[mob].tick();
@@ -98,7 +98,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
 
     PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
 
-    TIME = startTime;
+    globalThis.TIME = startTime;
     setupKeys();
     setupClicks();
 
@@ -481,7 +481,9 @@ interface TerrainFeature {
 
 
 
-export let TIME: number;
+declare global {
+    var TIME: number;
+}
 
 let NAVIGATIONELEMENT: HTMLElement;
 let CONTROLSTATE;
