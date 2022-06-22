@@ -149,8 +149,9 @@ function updateInventory() {
     let totalSpace  = 0;
     let totalWeight = 0;
 
-    for (let item of PLAYER.inventory.itemsArray()) {
-    let [space, weight] = inventoryDisplayEntry(item);
+    // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
+    for (let item of PLAYER.inventory.itemsArray(1)) {
+        let [space, weight] = inventoryDisplayEntry(item);
         totalSpace  += space;
         totalWeight += weight;
     }
@@ -165,6 +166,13 @@ function inventoryDisplayEntry(item: Item): number[] {
     const weight   = item.weight * quantity;
 
     let nameE   = document.createElement("div");
+    nameE.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        if (CTX) {
+            CTX.HTMLElement.remove();
+        }
+        CTX = new CtxParentMenu_Inventory(event.clientX, event.clientY, item.name);
+    })
     let quantE  = document.createElement("div");
     let spaceE  = document.createElement("div");
     let weightE = document.createElement("div");
@@ -278,6 +286,7 @@ function getMapCellAtDisplayCell(xyOrX: number|string, y?: number): Cell {
     }
     else {
         let splitXY = xyOrX.split(","); // tried defining with x, y = xyOrX.split(",") but x sometimes "didnt exist"
+
         return CELLMAP[`${+splitXY[0] - 18 + PLAYER.x},${+splitXY[1] - 18 + PLAYER.y}`];
     }
 }
@@ -364,7 +373,6 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
 }
 
 function setPlayerAction(newAction: string) {
-    // console.log("click!");
     PLAYER.currentAction = newAction;
 }
 
@@ -425,6 +433,7 @@ function setup(worldSideLength: number, startTime: number, playerStartLocation: 
 
 function setupKeys() {
     window.addEventListener("keydown", (event) => {
+        event.preventDefault();
         if (event.shiftKey) {
             switch (event.key) {
                 case "ArrowUp":
@@ -572,8 +581,8 @@ abstract class CtxParentMenu extends CtxMenuComponent {
 }
 
 class CtxParentMenu_Cell extends CtxParentMenu {
-    cellCtx:       Cell;
-    HTMLElement:   HTMLElement;
+    cellCtx:        Cell;
+    HTMLElement:    HTMLElement;
     takeHoverMenu?: CtxHoverMenu_Cell;
     constructor(x: number, y: number, cellCtx: Cell) {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
@@ -618,10 +627,10 @@ abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements al
 }
 
 class CtxHoverMenu_Cell extends CtxHoverMenu {
-    parent: CtxParentMenu_Cell;
+    parent:      CtxParentMenu_Cell;
     children:    CtxButton_Cell[];
     HTMLElement: HTMLElement;
-    dimensions: Dim2;
+    dimensions:  Dim2;
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Cell) {
         super(id, x, y, "ctxHoverMenu", parent);
         this.parent      = parent;
@@ -699,6 +708,67 @@ class CtxButton_Cell extends CtxButton {
     click() {
         this.action();
         this.HTMLElement.remove();
+    }
+}
+
+class CtxParentMenu_Inventory extends CtxParentMenu {
+    entry:      InventoryEntry;
+    dropButton: CtxButton_Inventory;
+    constructor(x: number, y: number, itemName: string) {
+        super("ctxParentMenu_Inventory", x, y, "ctxParentMenu");
+        this.entry = PLAYER.inventory.contents[itemName];
+        this.HTMLElement = this.createElement();
+        this.dropButton = this.createDropButton();
+    }
+
+    createElement() {
+        let element = this.createBaseElement();
+        this.parentElement.appendChild(element);
+        return element;
+    }
+
+    createDropButton() {
+        let itemName = this.entry.item.name;
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y, this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop");
+        this.HTMLElement.appendChild(button.HTMLElement);
+        return button;
+    }
+}
+
+class CtxHoverMenu_Inventory extends CtxHoverMenu {
+    parent: CtxParentMenu_Inventory;
+    children: CtxButton_Inventory[];
+    HTMLElement: HTMLElement;
+    dimensions: Dim2;
+    constructor(id: string, x: number, y: number, parent: CtxParentMenu_Inventory) {
+        super(id, x, y, "ctxHoverMenu", parent);
+        this.parent = parent;
+        this.dimensions = {"height": 20, width: 60};
+        this.children   = this.createChildren();
+        this.HTMLElement = this.createElement();
+        this.setupHover()
+    }
+
+    createChildren() {
+        return [new CtxButton_Inventory("test", 0, 0, this, Function(), "test")];
+    }
+
+    createElement() {
+        let element = this.createBaseElement();
+        return element;
+    }
+}
+
+class CtxButton_Inventory extends CtxButton {
+    constructor(id: string, x: number, y: number, parent: CtxParentMenu_Inventory|CtxHoverMenu_Inventory, action: Function, text: string) {
+        super(id, x, y, "ctxButton", parent, action, text);
+        this.parent = parent;
+    }
+
+
+    click() {
+        updateInventory();
+        this.action();
     }
 }
 
@@ -1195,7 +1265,7 @@ let PLAYER: Player;
 
 let TICKER;
 
-let CTX: CtxParentMenu_Cell;
+let CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory;
 
 let TIME: number;
 
