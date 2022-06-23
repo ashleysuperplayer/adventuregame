@@ -1,4 +1,30 @@
-import { Lex, GroundType, setup, tick } from "./world.js";
+import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
+import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick } from "./world.js";
+
+declare global {
+    var CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
+
+    var DEBUG: boolean;
+    var PLAYER: Player;
+
+    var TIME: number;
+    var NAVIGATIONELEMENT: HTMLElement;
+    var CONTROLSTATE: string;
+
+    var MINSPERDAY: number;
+    var TICKSPERMINUTE: number;
+
+    var TICKDURATION: number;
+    var TICKSPERDAY: number;
+
+    var CELLMAP: { [key: string]: Cell };
+    var MOBSMAP: { [id: string]: Mob };
+
+    var MOBKINDSMAP: { [key: string]: MobKind };
+    var ITEMKINDSMAP: { [key: string]: Item};
+    var TERRAINFEATUREKINDSMAP: { [key: string]: TerrainFeature};
+    var GROUNDTYPEKINDSMAP: { [key: string]: GroundType };
+}
 
 function main() {
     let TICKER;
@@ -9,6 +35,7 @@ function main() {
 }
 
 function setGlobals() {
+    globalThis.DEBUG = true;
     globalThis.MINSPERDAY = 1440;
     globalThis.TICKSPERMINUTE = 600;
     globalThis.TICKDURATION = 100;
@@ -31,6 +58,7 @@ function setGlobals() {
         "snow": new GroundType("snow", [240, 240, 240], "mudBlend", new Lex("is covered in snow")),
         "clay": new GroundType("clay", [0, 0, 0], "clayBlend", new Lex("is slippery, clay-rich soil"))
     }
+    globalThis.CTX = undefined;
 }
 
 window.addEventListener("load", (event) => {

@@ -106,6 +106,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
 
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
+    // CTX = new CtxParentMenu_Cell(-500,-500,CELLMAP["0,50"]);
     // debug stuff
 
     updateLighting();
@@ -205,12 +206,12 @@ function stringCoordsToNum(stringCoords: string): number[] {
     return numCoords;
 }
 
-interface MobKind {
+export interface MobKind {
     name: string;
     symbol: string;
 }
 
-abstract class Mob {
+export abstract class Mob {
     name: string;
     x: number;
     y: number;
@@ -347,7 +348,7 @@ class NPCHuman extends Mob {
     }
 }
 
-class Player extends Mob {
+export class Player extends Mob {
     constructor(x: number, y: number) {
         super(x, y, MOBKINDSMAP["player"]);
     }
@@ -358,33 +359,35 @@ class Player extends Mob {
 }
 
 export function parseCell(cell: Cell): string {
-    if (cell.lightLevel < 30 && timeToLight(TIME) < 30) {
+    let cellDescAppend = (x: string) => {cellDescription = cellDescription.concat(x)};
+    if (cell.lightLevel < 30) {
         return "you can't see a thing, but for the darkness.";
     }
     let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
 
     for (let terrain of cell.terrain) {
-        cellDescription = cellDescription.concat(`there ${terrain.lex.cellDesc}. `);
+        cellDescAppend(`there ${terrain.lex.cellDesc}. `);
     }
     for (let entry of cell.inventory.entriesArray()) {
         if (entry.quantity > 1) {
-            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDescXPlural(entry.quantity)}. `);
+            cellDescAppend(`there ${entry.item.lex.cellDescXPlural(entry.quantity)}. `);
+            ["are ", entry.quantity," rocks"]
         }
         else {
-            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDesc}. `);
+            cellDescAppend(`there ${entry.item.lex.cellDesc}. `);
         }
     }
     for (let mob of cell.mobs) {
         if (mob === PLAYER) {
-            cellDescription = cellDescription.concat(`you are here. `);
+            cellDescAppend(`you are here. `);
         }
         else {
             if ("fullName" in mob) {
                 if (!mob.fullName === undefined) {
-                    cellDescription = cellDescription.concat(`${mob.fullName} is here. `);
+                    cellDescAppend(`${mob.fullName} is here. `);
                 }
                 else {
-                    cellDescription = cellDescription.concat(`there is a ${mob.name} here. `);
+                    cellDescAppend(`there is a ${mob.name} here. `);
                 }
             }
         }
@@ -438,7 +441,7 @@ export interface Item {
     lex: Lex;
 }
 
-interface TerrainFeature {
+export interface TerrainFeature {
     name: string;
     symbol: string;
     luminescence: number;
@@ -565,26 +568,4 @@ export class GroundType {
             return [172, 160, 125];
         }
     }
-}
-
-declare global {
-    var PLAYER: Player;
-
-    var TIME: number;
-    var NAVIGATIONELEMENT: HTMLElement;
-    var CONTROLSTATE: string;
-
-    var MINSPERDAY: number;
-    var TICKSPERMINUTE: number;
-
-    var TICKDURATION: number;
-    var TICKSPERDAY: number;
-
-    var CELLMAP: { [key: string]: Cell };
-    var MOBSMAP: { [id: string]: Mob };
-
-    var MOBKINDSMAP: { [key: string]: MobKind };
-    var ITEMKINDSMAP: { [key: string]: Item};
-    var TERRAINFEATUREKINDSMAP: { [key: string]: TerrainFeature};
-    var GROUNDTYPEKINDSMAP: { [key: string]: GroundType };
 }
