@@ -86,6 +86,7 @@ abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements al
     }
 
     setupHover() {
+        this.children.map((c) => {c.HTMLElement.style.display = "none";})
         this.HTMLElement.addEventListener("mouseover",(e) => {
             this.children.map((c) => {c.HTMLElement.style.display = "block";})
         },false);
