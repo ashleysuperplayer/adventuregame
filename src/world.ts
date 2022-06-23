@@ -4,20 +4,11 @@ import { Inventory, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
-export function getMapCellAtDisplayCell(x: number, y: number): Cell
-export function getMapCellAtDisplayCell(xy: string): Cell
-export function getMapCellAtDisplayCell(xyOrX: number|string, y?: number): Cell {
-    if (typeof xyOrX === "number") {
-        if (y || y === 0) {
-            return CELLMAP[`${xyOrX - 18 + PLAYER.x},${y - 18 + PLAYER.y}`];
-        }
-        return throwExpression("xyOrX is a number but y doesn't exist (you missed an argument)")
-    }
-    else {
-        let splitXY = xyOrX.split(","); // tried defining with x, y = xyOrX.split(",") but x sometimes "didnt exist"
+export function getMapCellAtDisplayCell(x: number, y: number): Cell {
+    const newX = x - 16 + PLAYER.x;
+    const newY = y - 16 + PLAYER.y;
 
-        return CELLMAP[`${+splitXY[0] - 18 + PLAYER.x},${+splitXY[1] - 18 + PLAYER.y}`];
-    }
+    return CELLMAP[`${newX},${newY}`];
 }
 
 export function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
@@ -67,6 +58,9 @@ function generateWorld(sideLengthWorld: number) {
 
 function genGround(): GroundType {
     if (Math.random() > 0.95) {
+        return GROUNDTYPEKINDSMAP["clay"];
+    }
+    if (Math.random() > 0.9) {
         return GROUNDTYPEKINDSMAP["mud"];
     }
     return GROUNDTYPEKINDSMAP["snow"];
@@ -192,11 +186,24 @@ function setupKeys() {
 function setupClicks() {
     NAVIGATIONELEMENT.addEventListener("contextmenu", function(e) {
         e.preventDefault();
-        let displayCellCoords = document.elementFromPoint(e.clientX + 36, e.clientY - 36)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
-        if (displayCellCoords) {
-            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(displayCellCoords))); // cell should point to whichever cell is clicked, if that's how this works
+        let displayCellCoords: undefined|string|number[] = document.elementFromPoint(e.clientX, e.clientY)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
+        let x = 0;
+        let y = 0;
+        if (typeof displayCellCoords === "string") {
+            [x,y] = stringCoordsToNum(displayCellCoords);
+        }
+        if (x && y || x===0 || y===0) {
+            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(x, y))); // cell should point to whichever cell is clicked, if that's how this works
         }
     },false);
+}
+
+function stringCoordsToNum(stringCoords: string): number[] {
+    let numCoords = [];
+    for (let coord of stringCoords.split(",")) {
+        numCoords.push(+coord);
+    }
+    return numCoords;
 }
 
 interface MobKind {
@@ -443,6 +450,8 @@ export class GroundType {
         switch(str) {
             case "mudBlend":
                 return this.mudBlend;
+            case "clayBlend":
+                return this.clayBlend;
             case "none":
                 return ()=>{return this.color};
             default:
@@ -454,6 +463,16 @@ export class GroundType {
     mudBlend() {
         const random = Math.random() * 30;
         return this.color.map((rgb)=>{return rgb+random});
+    }
+
+    clayBlend() {
+        const random = Math.random();
+        if (random > 0.5) {
+            return [169, 108, 80];
+        }
+        else {
+            return [172, 160, 125];
+        }
     }
 }
 
@@ -496,4 +515,3 @@ declare global {
     var TERRAINFEATUREKINDSMAP: { [key: string]: TerrainFeature};
     var GROUNDTYPEKINDSMAP: { [key: string]: GroundType };
 }
-

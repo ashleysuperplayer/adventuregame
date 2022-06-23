@@ -89,7 +89,6 @@ export class Inventory {
 
     // allows removal of items without knowing if they exist in inventory
     remove(itemName: string, quantity: number) {
-        console.log(this.contents[itemName]);
         if (this.contents[itemName]) {
             if (this.contents[itemName].quantity < quantity) {
                 return false;

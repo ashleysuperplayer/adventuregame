@@ -27,8 +27,9 @@ function setGlobals() {
         "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true},
     }
     globalThis.GROUNDTYPEKINDSMAP = {
-        "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
-        "snow": new GroundType("snow", [240, 240, 240], "mudBlend")
+        "mud":  new GroundType("mud", [109, 81, 60], "mudBlend"),
+        "snow": new GroundType("snow", [240, 240, 240], "mudBlend"),
+        "clay": new GroundType("clay", [0, 0, 0], "clayBlend")
     }
 }
 
