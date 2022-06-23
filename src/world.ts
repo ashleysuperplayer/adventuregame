@@ -1,4 +1,4 @@
-import { updateLighting } from "./light.js";
+import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression } from "./util.js";
 import { Inventory, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
@@ -360,7 +360,7 @@ export class Player extends Mob {
 
 export function parseCell(cell: Cell): string {
     let cellDescAppend = (x: string) => {cellDescription = cellDescription.concat(x)};
-    if (cell.lightLevel < 10) {
+    if (cell.lightLevel.mag() < 10) {
         return "you can't see a thing, but for the darkness.";
     }
     let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
@@ -435,7 +435,7 @@ export interface Item {
     weight: number;
     space: number;
     symbol: string;
-    luminescence: number;
+    luminescence: Colour;
     opacity: number;
     blocking: boolean;
     lex: Lex;
@@ -444,7 +444,7 @@ export interface Item {
 export interface TerrainFeature {
     name: string;
     symbol: string;
-    luminescence: number;
+    luminescence: Colour;
     opacity: number;
     blocking: boolean;
     lex: Lex;
@@ -456,7 +456,7 @@ export class Cell {
     mobs: Mob[];
     terrain: TerrainFeature[];
     ground: GroundType;
-    lightLevel: number;
+    lightLevel: Colour;
     color: [number, number, number];
     inventory: Inventory;
     isVisible: Boolean;
@@ -469,7 +469,7 @@ export class Cell {
         this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory  = new Inventory();
-        this.lightLevel = 0;
+        this.lightLevel = Colour.Zero();
         this.isVisible = false;
     }
 
@@ -483,8 +483,8 @@ export class Cell {
     }
 
     // return unordered list of luminescences of all items
-    allLuminescence(): number[] {
-        let lumList: number[] = [];
+    allLuminescence(): Colour[] {
+        let lumList: Colour[] = [];
         for (let entry of [...this.inventory.itemsArray(1), ...this.terrain]) {
             lumList.push(entry.luminescence);
         }
@@ -498,8 +498,8 @@ export class Cell {
     }
 
     // return highest luminesence item of Cell
-    maxLum(): number {
-        return Math.max(0, ...this.allLuminescence());
+    maxLum(): Colour {
+        return Colour.sum(this.allLuminescence());
     }
 
     sumOpacity(): number {

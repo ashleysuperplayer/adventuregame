@@ -37,7 +37,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     itemsElement.innerHTML = itemsDisplay;
 
     lightElement.style.mixBlendMode = "multiply";
-    lightElement.style.backgroundColor = `RGB(${cell.lightLevel},${cell.lightLevel},${cell.lightLevel}`;
+    lightElement.style.backgroundColor = `${cell.lightLevel}`;
 
     displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
 }

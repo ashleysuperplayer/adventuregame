@@ -24,6 +24,11 @@ function ZZ(a: number, b: number) {
     return a === 0 && b === 0; // i just hate writing this line out all the time it reminds me i'm still using js lol
 }
 
+export function clamp(x: number, min: number, max: number) {
+    if (max < min) return x;
+    else return Math.max(min, Math.min(max, x));
+}
+
 // creates a grid of even height and width.
 export function createGrid(parentID: string, sideLength: number, cellClass: string, elementsDict: { [key: string]: HTMLElement}) {
     const parent: HTMLElement = document.getElementById(parentID) ?? throwExpression("parentID not found");
