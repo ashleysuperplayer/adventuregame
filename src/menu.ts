@@ -238,17 +238,8 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     }
 
     createDebugMenu() {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+        this.();
         return new CtxDebugMenu(this.x, this.y, this, this.entry.item);
-=======
-        this.addToStack();
-        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.entry.item);
->>>>>>> Stashed changes
-=======
-        this.addToStack();
-        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.entry.item);
->>>>>>> Stashed changes
     }
 
     createDropButton() {
