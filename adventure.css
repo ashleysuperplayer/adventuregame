@@ -113,13 +113,44 @@ body {
 }
 
 #menus {
-    font-size: 18px;
+    font-size: 14px;
     position: absolute;
     top: 0;
     right: 6px;
-    background-color: rgb(41, 41, 41);
+    background-color: black;
     color: white;
     width: 54%;
+}
+
+#focus {
+    font-size: 14px;
+    position: absolute;
+    left: 0;
+    top:  10px;
+    height: 609px;
+    width: 423px;
+    background-color: black;
+    color: white;
+    border: 1px white solid;
+}
+
+#focus::before {
+    position: relative;
+    background-color:black;
+    content: "read me";
+    top: -15px;
+    left: 5px;
+    color: white;
+    opacity: 1;
+    text-decoration: underline;
+    content: attr(focus-title);
+}
+
+#focusElementChild {
+    position: absolute;
+    left: 2px;
+    top: 0px;
+    color: white;
 }
 
 .inventory {
@@ -134,7 +165,7 @@ body {
     position: absolute;
     top: 10px;
     right: 5px;
-    width: 320px;
+    width: 300px;
     height: 380px;
     border: 1px white solid;
 }
@@ -182,16 +213,6 @@ body {
     grid-template-columns: 105px 32px 70px auto;
 }
 
-.topBar {
-    color: white;
-    margin-right: 10px;
-}
-
-.title {
-    display: inline-block;
-    padding-left: 2px;
-}
-
 #inventoryGridContainer {
     background-color: rgb(85, 85, 85);
     border:rgb(41, 41, 41);
@@ -214,6 +235,7 @@ body {
 }
 
 .ctxHoverMenu {
+    /* border: white solid 1px; */
     position: fixed;
     background-color: black;
 }
@@ -224,9 +246,10 @@ body {
 }
 
 .ctxButton {
+    /* border: white 1px solid; */
     position: fixed;
-    padding-left: 1px;
+    /* padding-left: 1px; */
     color: white;
     background-color: black;
-    border-left: 2px solid rgb(82, 76, 76);
+    /* border-left: 2px solid rgb(82, 76, 76); */
 }

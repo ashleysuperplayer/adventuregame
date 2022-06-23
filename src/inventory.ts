@@ -1,4 +1,4 @@
-import { PLAYER, Item, ITEMSMAP } from "./world.js";
+import { Item } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
@@ -79,9 +79,17 @@ export class Inventory {
         return itemList;
     }
 
+    entriesArray() {
+        let entriesList: InventoryEntry[] = [];
+        for (let entry of Object.values(this.contents)) {
+            entriesList.push(entry);
+        }
+        return entriesList;
+    }
+
     add(itemName: string, quantity: number) {
         if (!this.contents[itemName]) {
-            this.contents[itemName] = {"item": ITEMSMAP[itemName], "quantity": 0};
+            this.contents[itemName] = {"item": globalThis.ITEMKINDSMAP[itemName], "quantity": 0};
         }
         this.contents[itemName].quantity += quantity
         updateInventory();
@@ -89,11 +97,8 @@ export class Inventory {
 
     // allows removal of items without knowing if they exist in inventory
     remove(itemName: string, quantity: number) {
-        console.log(this.contents[itemName]);
         if (this.contents[itemName]) {
-            console.log(this.contents[itemName]);
             if (this.contents[itemName].quantity < quantity) {
-                console.log("invalid quantity")
                 return false;
             }
             else {

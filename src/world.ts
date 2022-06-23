@@ -1,23 +1,14 @@
 import { updateLighting } from "./light.js";
-import { createGrid, throwExpression } from "./util.js";
+import { createGrid, getElementFromID, throwExpression } from "./util.js";
 import { Inventory, updateInventory } from "./inventory.js";
-import { CtxParentMenu_Cell, setCTX } from "./menu.js";
+import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
-export function getMapCellAtDisplayCell(x: number, y: number): Cell
-export function getMapCellAtDisplayCell(xy: string): Cell
-export function getMapCellAtDisplayCell(xyOrX: number|string, y?: number): Cell {
-    if (typeof xyOrX === "number") {
-        if (y || y === 0) {
-            return CELLMAP[`${xyOrX - 18 + PLAYER.x},${y - 18 + PLAYER.y}`];
-        }
-        return throwExpression("xyOrX is a number but y doesn't exist (you missed an argument)")
-    }
-    else {
-        let splitXY = xyOrX.split(","); // tried defining with x, y = xyOrX.split(",") but x sometimes "didnt exist"
+export function getMapCellAtDisplayCell(x: number, y: number): Cell {
+    const newX = x - 16 + PLAYER.x;
+    const newY = y - 16 + PLAYER.y;
 
-        return CELLMAP[`${+splitXY[0] - 18 + PLAYER.x},${+splitXY[1] - 18 + PLAYER.y}`];
-    }
+    return CELLMAP[`${newX},${newY}`];
 }
 
 export function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
@@ -36,7 +27,6 @@ export function timeToLight(time: number) {
     return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * 200 * 0.5; // super fast for debug
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
 }
-
 
 export function tick() {
     globalThis.TIME += 1;
@@ -59,14 +49,31 @@ function generateWorld(sideLengthWorld: number) {
 
     for (let y = 0 - sideLengthWorld; y < sideLengthWorld; y++) {
         for (let x = 0 - sideLengthWorld; x < sideLengthWorld; x++) {
-            // console.log(`genning ${x},${y}`)
             newCellMap[`${x},${y}`] = new Cell(x, y);
-            // console.log(`genned ${x}, ${y} with color ${newLocationMap[x + "," + y].color}`)
         }
     }
 
     return newCellMap;
 }
+
+function genGround(): GroundType {
+    if (Math.random() > 0.95) {
+        return GROUNDTYPEKINDSMAP["clay"];
+    }
+    if (Math.random() > 0.9) {
+        return GROUNDTYPEKINDSMAP["mud"];
+    }
+    return GROUNDTYPEKINDSMAP["snow"];
+}
+
+function genTerrain(): TerrainFeature[] {
+    let terrainFeatures: TerrainFeature[] = [];
+    if (Math.random() < 0.1) {
+        terrainFeatures.push(TERRAINFEATUREKINDSMAP["tree"]);
+    }
+    return terrainFeatures;
+}
+
 
 function setPlayerAction(newAction: string) {
     PLAYER.currentAction = newAction;
@@ -92,11 +99,11 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
-    NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone") // for the context menus
+    globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone") // for the context menus
 
-    CELLMAP = generateWorld(worldSideLength);
+    globalThis.CELLMAP = generateWorld(worldSideLength);
 
-    PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
 
     globalThis.TIME = startTime;
     setupKeys();
@@ -175,17 +182,35 @@ function setupKeys() {
     });
 }
 
-// this function works!
 function setupClicks() {
-    NAVIGATIONELEMENT.addEventListener("contextmenu", function(e) {
+    NAVIGATIONELEMENT.addEventListener("contextmenu", (e) => {
         e.preventDefault();
-        let displayCellCoords = document.elementFromPoint(e.clientX + 36, e.clientY - 36)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
-        if (displayCellCoords) {
-            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(displayCellCoords))); // cell should point to whichever cell is clicked, if that's how this works
+        let displayCellCoords: undefined|string|number[] = document.elementFromPoint(e.clientX, e.clientY)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
+        let x = 0;
+        let y = 0;
+
+        if (typeof displayCellCoords === "string") {
+            [x,y] = stringCoordsToNum(displayCellCoords);
         }
+
+        let cell = getMapCellAtDisplayCell(x, y);
+
+        if (x && y || x===0 || y===0) {
+            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, cell)); // cell should point to whichever cell is clicked, if that's how this works
+        }
+    },false);
+    NAVIGATIONELEMENT.addEventListener("click", (e) => {
+        clearCTX();
     },false);
 }
 
+function stringCoordsToNum(stringCoords: string): number[] {
+    let numCoords = [];
+    for (let coord of stringCoords.split(",")) {
+        numCoords.push(+coord);
+    }
+    return numCoords;
+}
 
 interface MobKind {
     name: string;
@@ -201,6 +226,7 @@ abstract class Mob {
     facing: string;
     blocking: boolean;
     inventory: Inventory;
+    fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
         this.x = x;
@@ -338,6 +364,96 @@ class Player extends Mob {
     }
 }
 
+export function parseCell(cell: Cell): string {
+    if (cell.lightLevel < 30 && timeToLight(TIME) < 30) {
+        return "you can't see a thing, but for the darkness.";
+    }
+    let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
+
+    for (let terrain of cell.terrain) {
+        cellDescription = cellDescription.concat(`there ${terrain.lex.cellDesc}. `);
+    }
+    for (let entry of cell.inventory.entriesArray()) {
+        if (entry.quantity > 1) {
+            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDescXPlural(entry.quantity)}. `);
+        }
+        else {
+            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDesc}. `);
+        }
+    }
+    for (let mob of cell.mobs) {
+        if (mob === PLAYER) {
+            cellDescription = cellDescription.concat(`you are here. `);
+        }
+        else {
+            if ("fullName" in mob) {
+                if (!mob.fullName === undefined) {
+                    cellDescription = cellDescription.concat(`${mob.fullName} is here. `);
+                }
+                else {
+                    cellDescription = cellDescription.concat(`there is a ${mob.name} here. `);
+                }
+            }
+        }
+    }
+
+    return cellDescription;
+}
+
+export function setFocus(focus: string, title: string) {
+    getElementFromID("focusElementChild").remove();
+    let focusElement      = getElementFromID("focus");
+    let focusElementChild = document.createElement("div");
+
+    focusElement.setAttribute("focus-title", title);
+
+    focusElement.appendChild(focusElementChild);
+    focusElementChild.id = "focusElementChild";
+    focusElementChild.classList.add("focusElementChild");
+    focusElementChild.innerHTML = focus;
+}
+
+export class Lex {
+    cellDesc: string;
+    cellDescP?: string[];
+    constructor(cellDesc: string, cellDescP?: string[]) {
+        this.cellDesc = cellDesc;
+        this.cellDescP = cellDescP;
+    }
+
+    cellDescXPlural(x: string|number) {
+        if (typeof x === "number") {
+            x = x.toString();
+        }
+        if (this.cellDescP) {
+            return this.cellDescP[0].concat(x, this.cellDescP[1]);
+        }
+        else {
+            throwExpression("object has no cellDescP");
+        }
+    }
+}
+
+export interface Item {
+    name: string;
+    weight: number;
+    space: number;
+    symbol: string;
+    luminescence: number;
+    opacity: number;
+    blocking: boolean;
+    lex: Lex;
+}
+
+interface TerrainFeature {
+    name: string;
+    symbol: string;
+    luminescence: number;
+    opacity: number;
+    blocking: boolean;
+    lex: Lex;
+}
+
 export class Cell {
     x: number;
     y: number;
@@ -352,28 +468,13 @@ export class Cell {
         this.x = x;
         this.y = y;
         this.mobs = [];
-        this.ground = this.genGround();
-        this.terrain = this.genTerrain();
+        this.ground = genGround();
+        this.terrain = genTerrain();
         this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory  = new Inventory();
         this.lightLevel = 0;
         this.isVisible = false;
-    }
-
-    genGround(): GroundType {
-        if (Math.random() > 0.95) {
-            return GROUNDTYPESMAP["mud"];
-        }
-        return GROUNDTYPESMAP["snow"];
-    }
-
-    genTerrain(): TerrainFeature[] {
-        let terrainFeatures: TerrainFeature[] = [];
-        if (Math.random() < 0.1) {
-            terrainFeatures.push(TERRAINFEATURESMAP["tree"]);
-        }
-        return terrainFeatures;
     }
 
     isBlocked(): boolean {
@@ -432,87 +533,65 @@ class ControlState {
     }
 }
 
-
-class GroundType {
+export class GroundType {
     name: string;
     color: [number, number, number];
     blendMode: Function;
-    constructor(name: string, color: [number, number, number], blendMode: string) {
+    lex: Lex;
+    constructor(name: string, color: [number, number, number], blendMode: string, lex: Lex) {
         this.name = name;
         this.color = color;
         this.blendMode = this.getBlendMode(blendMode);
+        this.lex = lex;
     }
 
     getBlendMode(str: string) {
         switch(str) {
             case "mudBlend":
                 return this.mudBlend;
+            case "clayBlend":
+                return this.clayBlend;
             case "none":
                 return ()=>{return this.color};
             default:
                 throwExpression("invalid blend mode");
         }
-        return throwExpression("invalid blend mode");
     }
 
     mudBlend() {
         const random = Math.random() * 30;
         return this.color.map((rgb)=>{return rgb+random});
     }
+
+    clayBlend() {
+        const random = Math.random();
+        if (random > 0.5) {
+            return [169, 108, 80];
+        }
+        else {
+            return [172, 160, 125];
+        }
+    }
 }
-
-export interface Item {
-    name: string;
-    weight: number;
-    space: number;
-    symbol: string;
-    luminescence: number;
-    opacity: number;
-    blocking: boolean;
-}
-
-interface TerrainFeature {
-    name: string;
-    symbol: string;
-    luminescence: number;
-    opacity: number;
-    blocking: boolean;
-}
-
-
 
 declare global {
+    var PLAYER: Player;
+
     var TIME: number;
+    var NAVIGATIONELEMENT: HTMLElement;
+    var CONTROLSTATE: string;
+
+    var MINSPERDAY: number;
+    var TICKSPERMINUTE: number;
+
+    var TICKDURATION: number;
+    var TICKSPERDAY: number;
+
+    var CELLMAP: { [key: string]: Cell };
+    var MOBSMAP: { [id: string]: Mob };
+
+    var MOBKINDSMAP: { [key: string]: MobKind };
+    var ITEMKINDSMAP: { [key: string]: Item};
+    var TERRAINFEATUREKINDSMAP: { [key: string]: TerrainFeature};
+    var GROUNDTYPEKINDSMAP: { [key: string]: GroundType };
 }
-
-let NAVIGATIONELEMENT: HTMLElement;
-let CONTROLSTATE;
-
-const MINSPERDAY = 1440; // 1440
-const TICKSPERMINUTE = 600;
-
-export const TICKDURATION = 100;
-const TICKSPERDAY = 86400 * (1000 / TICKDURATION);
-
-export let CELLMAP: { [key: string]: Cell };
-let MOBSMAP: { [id: string]: Mob } = {};
-
-let MOBKINDSMAP: { [key: string]: MobKind } = {
-    "player": {name: "player", symbol: "@"},
-    "npctest": {name: "npctest", symbol: "T"}
-}
-export let ITEMSMAP: { [key: string]: Item} = {
-    "oil lamp": {name: "oil lamp", symbol: "o", luminescence: 125, weight: 2700, space: 1, opacity: 0, blocking: false},
-    "rock": {name: "rock", symbol: ".", luminescence: 0, weight: 100, space: 0.1, opacity: 0, blocking: false},
-    "chocolate thunder": {name: "chocolate thunder", symbol: "c", luminescence: 0, weight: 10, space: 0.01, opacity: 0, blocking: false}
-}
-let TERRAINFEATURESMAP: { [key: string]: TerrainFeature } = {
-    "tree": {name: "tree", symbol: "#", luminescence: 0, opacity: 0, blocking: true},
-}
-let GROUNDTYPESMAP: { [key: string]: GroundType } = {
-    "mud": new GroundType("mud", [109, 81, 60], "mudBlend"),
-    "snow": new GroundType("snow", [240, 240, 240], "mudBlend") // use this in a more robust way to display cells. basically if cell.contents content has a "colour", set the cell to that colour.
-}
-
-export let PLAYER: Player;
-
