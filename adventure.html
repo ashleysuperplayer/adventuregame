@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="./adventure.css">
+<script src="./main.js" type="module"></script>
+</head>
+<body>
+    <div id="adventure">
+        <div id="ctx"></div>
+        <div id="navigation">
+            <div id="mapContainer">
+                <div id="map"></div>
+            </div>
+            <div id="itemsMapContainer">
+                <div id="itemsMap"></div>
+            </div>
+            <div id="lightMapContainer">
+                <div id="lightMap"></div>
+            </div>
+            <div id="navButtonContainer">
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("north")'>north</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("west")'>west</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("east")'>east</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("south")'>south</div>
+                <div class="navButton"> </div>
+            </div>
+        </div>
+        <div id="menus">
+            <div id="focus">
+                <div id="focusElementChild">
+                    Here There Will Be All Kinds Of HelpFul Tips & Trix ! :-D
+                </div>
+            </div>
+            <div id="inventory">
+                <div id="invQuant" class="inventory" title="quantity">q.</div>
+                <div id="invWeightLimit" class="inventory" title="total weight/weight limit"></div>
+                <div id="invSpaceLimit" class="inventory" title="used space/space left"></div>
+                <div class="inventory inventoryList">
+                    <div class="displayInventory" id="inventoryDisplayList">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
