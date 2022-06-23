@@ -568,6 +568,7 @@ export class GroundType {
 }
 
 declare global {
+    var DEBUG: boolean;
     var PLAYER: Player;
 
     var TIME: number;

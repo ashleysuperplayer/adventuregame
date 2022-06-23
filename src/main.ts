@@ -9,6 +9,7 @@ function main() {
 }
 
 function setGlobals() {
+    globalThis.DEBUG = true;
     globalThis.MINSPERDAY = 1440;
     globalThis.TICKSPERMINUTE = 600;
     globalThis.TICKDURATION = 100;
