@@ -10,19 +10,12 @@ function attenuate(dx: number, dy: number) {
     return 1/(dx*dx+dy*dy+1);
 }
 
-// returns light level from 0 to 200
-function timeToLight(time: number) {
-    return  200 * 0.5*(Math.cos(2*Math.PI * time / globalThis.MINSPERDAY / 10) + 1); // super fast for debug
-    // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
-}
-
-
 // TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
 // calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
 export function calcCellLighting(cellCoords: string) {
     const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
 
-    let cum = timeToLight(globalThis.TIME);
+    let cum = 0;
     const searchradius = 5;
     for (let dy = -searchradius; dy <= searchradius; ++dy) {
         for (let dx = -searchradius; dx <= searchradius; ++dx) {
