@@ -20,14 +20,6 @@ function getSquareDistanceBetweenCoords(x1:number, y1:number, x2:number, y2:numb
     return (x1 - x2)**2 + (y1 - y2)**2;
 }
 
-// placeholder until i get better at maths lol
-// returns light level from 0 to 200
-export function timeToLight(time: number) {
-    time = Math.floor(time);
-    return (Math.cos(2*Math.PI * time / MINSPERDAY / 10) + 1) * 200 * 0.5; // super fast for debug
-    // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
-}
-
 export function tick() {
     globalThis.TIME += 1;
     PLAYER.executeAction();
@@ -106,6 +98,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
 
     globalThis.TIME = startTime;
+    globalThis.MINSPERDAY = 1440;
     setupKeys();
     setupClicks();
 

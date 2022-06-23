@@ -1,5 +1,5 @@
 import { throwExpression } from "./util.js";
-import { timeToLight } from "./world.js";
+import { Cell, PLAYER, CELLMAP } from "./world.js";
 
 export function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
@@ -37,22 +37,8 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
 
     itemsElement.innerHTML = itemsDisplay;
 
-    // under the current system, ambient light is purely cosmetic for the player
-    // in the future, npc's will be beholden to light level and what they can "see" to be able to do stuff
-    // this will require reworking the whole lighting system to use rays
-    // for now this "works" though
-    let lightElementColourAmbient = cell.lightLevel + timeToLight(globalThis.TIME);
-
-    if (lightElementColourAmbient < 0) {
-        lightElementColourAmbient = 0;
-    }
-
-    if (lightElementColourAmbient > 255) {
-        lightElementColourAmbient = 255;
-    }
-
     lightElement.style.mixBlendMode = "multiply";
-    lightElement.style.backgroundColor = `RGB(${lightElementColourAmbient},${lightElementColourAmbient},${lightElementColourAmbient}`;
+    lightElement.style.backgroundColor = `RGB(${cell.lightLevel},${cell.lightLevel},${cell.lightLevel}`;
 
     displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
 }
