@@ -1,6 +1,6 @@
 import { Dim2, getElementFromID } from "./util.js";
-import { Cell, getSquareDistanceBetweenCells, parseCell, setFocus } from "./world.js";
-import { InventoryEntry, updateInventory } from "./inventory.js";
+import { Cell, getSquareDistanceBetweenCells, Item, parseCell, setFocus } from "./world.js";
+import { Inventory, InventoryEntry, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     if (CTX) {
@@ -9,9 +9,10 @@ export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     CTX = newCTX;
 }
 export function clearCTX() {
-    CTX.HTMLElement.remove();
+    if (CTX) {
+        CTX.HTMLElement.remove();
+    }
 }
-// create own element > create children > calculate dimensions to fit children > reshape element to accomodate children
 abstract class CtxMenuComponent {
     id:     string;
     x:      number;
@@ -65,31 +66,6 @@ abstract class CtxParentMenu extends CtxMenuComponent {
     }
 }
 
-export class CtxParentMenu_Cell extends CtxParentMenu {
-    cellCtx:        Cell;
-    lookButton:     CtxButton_Cell;
-    takeHoverMenu?: CtxHoverMenu_Cell;
-    constructor(x: number, y: number, cellCtx: Cell) {
-        super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
-        this.cellCtx           = cellCtx;
-        this.lookButton        = this.createLookButton();
-        // this sucks, also 2 means every orthog/diag
-        if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
-            if (this.cellCtx.inventory.itemsArray(1).length > 0) {
-                this.takeHoverMenu = this.createTakeHoverMenu();
-            }
-        }
-    }
-
-    createLookButton() {
-        return new CtxButton_Cell("ctxLookButton", this.x, this.y, this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
-    }
-
-    createTakeHoverMenu() {
-        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y+20, this);
-    }
-}
-
 abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
     parent: CtxParentMenu;
     abstract dimensions: Dim2;
@@ -106,6 +82,69 @@ abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements al
         this.HTMLElement.addEventListener("mouseleave",(e) => {
             this.children.map((c) => {c.HTMLElement.style.display = "none";})
         },false);
+    }
+}
+
+abstract class CtxButton extends CtxMenuComponent {
+    parent:      CtxHoverMenu|CtxParentMenu;
+    action:      Function;
+    text:        string;
+    disappearOnClick: boolean;
+    constructor(id: string, x: number, y: number, ownCls: string, parent: CtxHoverMenu|CtxParentMenu, action: Function, text: string, disappearOnClick: boolean) {
+        super(id, x, y, ownCls);
+        this.parent = parent;
+        this.action = action;
+        this.text   = text;
+        this.disappearOnClick = disappearOnClick;
+        this.HTMLElement = this.createButtonElement();
+    }
+
+    createButtonElement() {
+        let element = this.HTMLElement;
+
+        element.style.height = "20px";
+        element.style.width  = "60px";
+
+        element.innerHTML  = this.text;
+        this.parent.HTMLElement.appendChild(element);
+
+        return element;
+    }
+
+    abstract addAction(): void; // it seems like adding onClick during createElement is adding the abstract onclick method to the button, resulting in its doing nothing
+    abstract click(): void;
+}
+
+export class CtxParentMenu_Cell extends CtxParentMenu {
+    cellCtx:        Cell;
+    lookButton:     CtxButton_Cell;
+    takeHoverMenu?: CtxHoverMenu_Cell;
+    debugMenu?:     CtxDebugMenu;
+    constructor(x: number, y: number, cellCtx: Cell) {
+        super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
+        this.cellCtx    = cellCtx;
+        this.lookButton = this.createLookButton();
+        if (DEBUG) {
+            this.debugMenu  = this.createDebugMenu();
+        }
+        // this sucks, also 2 means every orthog/diag
+        if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
+            if (this.cellCtx.inventory.itemsArray(1).length > 0) {
+                this.takeHoverMenu = this.createTakeHoverMenu();
+            }
+        }
+    }
+
+    createDebugMenu() {
+        return new CtxDebugMenu(this.x, this.y+40, this, this.cellCtx);
+    }
+
+    createLookButton() {
+        return new CtxButton_Cell("ctxLookButton", this.x, this.y, this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
+    }
+
+    createTakeHoverMenu() {
+        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y+20, this);
     }
 }
 
@@ -154,36 +193,6 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     }
 }
 
-abstract class CtxButton extends CtxMenuComponent {
-    parent:      CtxHoverMenu|CtxParentMenu;
-    action:      Function;
-    text:        string;
-    disappearOnClick: boolean;
-    constructor(id: string, x: number, y: number, ownCls: string, parent: CtxHoverMenu|CtxParentMenu, action: Function, text: string, disappearOnClick: boolean) {
-        super(id, x, y, ownCls);
-        this.parent = parent;
-        this.action = action;
-        this.text   = text;
-        this.disappearOnClick = disappearOnClick;
-        this.HTMLElement = this.createButtonElement();
-    }
-
-    createButtonElement() {
-        let element = this.HTMLElement;
-
-        element.style.height = "20px";
-        element.style.width  = "60px";
-
-        element.innerHTML  = this.text;
-        this.parent.HTMLElement.appendChild(element);
-
-        return element;
-    }
-
-    abstract addAction(): void; // it seems like adding onClick during createElement is adding the abstract onclick method to the button, resulting in its doing nothing
-    abstract click(): void;
-}
-
 class CtxButton_Cell extends CtxButton {
     parent: CtxHoverMenu_Cell|CtxParentMenu_Cell;
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Cell|CtxHoverMenu_Cell, action: Function, text: string, disappearOnClick: boolean) {
@@ -193,7 +202,7 @@ class CtxButton_Cell extends CtxButton {
     }
 
     addAction() {
-        this.HTMLElement.onclick = () => {return this.click()}
+        this.HTMLElement.onclick = () => {return this.click()};
     }
 
     click() {
@@ -203,8 +212,6 @@ class CtxButton_Cell extends CtxButton {
         }
         // jank, redo
         if ("children" in this.parent) {
-            console.log("fart");
-            console.log(this.parent.HTMLElement.childElementCount);
             if (this.parent.HTMLElement.childElementCount < 1) {
                 this.parent.HTMLElement.remove();
             }
@@ -216,14 +223,22 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     entry:          InventoryEntry;
     dropButton:     CtxButton_Inventory;
     dropAllButton?: CtxButton_Inventory;
+    debugMenu?:     CtxDebugMenu;
     constructor(x: number, y: number, itemName: string) {
         super("ctxParentMenu_Inventory", x, y, "ctxParentMenu");
         this.entry         = PLAYER.inventory.contents[itemName];
         this.HTMLElement   = this.createParentElement();
         this.dropButton    = this.createDropButton();
+        if (DEBUG) {
+            this.debugMenu = this.createDebugMenu();
+        }
         if (this.entry.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
         }
+    }
+
+    createDebugMenu() {
+        return new CtxDebugMenu(this.x, this.y, this, this.entry.item);
     }
 
     createDropButton() {
@@ -278,4 +293,62 @@ class CtxButton_Inventory extends CtxButton {
     }
 }
 
-export let CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory;
+class CtxDebugMenu extends CtxHoverMenu {
+    dimensions: Dim2;
+    children:   CtxButton[];
+    context:    Item|Cell;
+    constructor(x: number, y: number, parent: CtxParentMenu, context: Item|Cell) {
+        super("ctxDebugMenu", x, y, "ctxHoverMenu", parent);
+        this.dimensions  = {height: 20, width: 60};
+        this.context     = context;
+        this.HTMLElement = this.createElement();
+        this.children    = this.createDebugChildren();
+        this.setupHover();
+    }
+
+    createElement(): HTMLElement {
+        let element = this.createBaseElement();
+
+        element.style.width  = `${this.dimensions.width}px`;
+        element.style.height = `${this.dimensions.height}px`;
+
+        element.innerHTML = "debug"; // nooooo
+
+        element.classList.add("CtxHoverChildHolder");
+
+        this.parent.HTMLElement.appendChild(element);
+
+        return element;
+    }
+
+    createDebugChildren() {
+        let children: CtxButton[] = [];
+        let childItemIdCounter = 0;
+        console.log(this.context); // TODO fix context not coming through sometimes on right side of screen
+        for (let key of Object.keys(this.context)) {
+            if (key in this.context) {
+                // god forgive me
+                //@ts-ignorets-ignore
+                children.push(new CtxButtonDebug(`${childItemIdCounter}DebugButton`, this.x + 60, this.y + (childItemIdCounter * 20), this, ()=>{return console.log(key), console.log(this.context[key])}, `${key}`));
+            }
+            childItemIdCounter++;
+        }
+        return children;
+    }
+}
+
+class CtxButtonDebug extends CtxButton {
+    constructor(id: string, x: number, y: number, parent: CtxDebugMenu, action: Function, text: string) {
+        super(id, x, y, "ctxButton", parent, action, text, false)
+        this.addAction();
+    }
+
+    addAction(): void {
+        this.HTMLElement.onclick = () => this.click();
+    }
+
+    click(): void {
+        this.action();
+    }
+
+}
