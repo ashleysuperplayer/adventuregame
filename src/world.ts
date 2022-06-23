@@ -358,7 +358,7 @@ class Player extends Mob {
 }
 
 export function parseCell(cell: Cell): string {
-    if (cell.lightLevel < 30 && timeToLight(TIME) < 30) {
+    if (cell.lightLevel < 30) {
         return "you can't see a thing, but for the darkness.";
     }
     let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
