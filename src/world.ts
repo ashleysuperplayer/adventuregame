@@ -1,5 +1,5 @@
 import { updateLighting } from "./light.js";
-import { createGrid, throwExpression } from "./util.js";
+import { createGrid, getElementFromID, throwExpression } from "./util.js";
 import { Inventory, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
@@ -226,6 +226,7 @@ abstract class Mob {
     facing: string;
     blocking: boolean;
     inventory: Inventory;
+    fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
         this.x = x;
@@ -361,6 +362,55 @@ class Player extends Mob {
     tick() {
         return;
     }
+}
+
+export function parseCell(cell: Cell): string {
+    if (cell.lightLevel < 30) {
+        return "you can't see a thing, but for the darkness.";
+    }
+    let cellDescription = `the ground is ${cell.ground.name}y. `;
+
+    for (let terrain of cell.terrain) {
+        cellDescription = cellDescription.concat(`there is a ${terrain.name}. `);
+    }
+    for (let entry of cell.inventory.entriesArray()) {
+        if (entry.quantity > 1) {
+            cellDescription = cellDescription.concat(`there are ${entry.quantity} ${entry.item.name}s. `);
+        }
+        else {
+            cellDescription = cellDescription.concat(`there is a ${entry.item.name}. `);
+        }
+    }
+    for (let mob of cell.mobs) {
+        if (mob === PLAYER) {
+            cellDescription = cellDescription.concat(`you are here. `);
+        }
+        else {
+            if ("fullName" in mob) {
+                if (!mob.fullName === undefined) {
+                    cellDescription = cellDescription.concat(`${mob.fullName} is here. `);
+                }
+                else {
+                    cellDescription = cellDescription.concat(`there is a ${mob.name} here. `);
+                }
+            }
+        }
+    }
+
+    return cellDescription;
+}
+
+export function setFocus(focus: string, title: string) {
+    getElementFromID("focusElementChild").remove();
+    let focusElement      = getElementFromID("focus");
+    let focusElementChild = document.createElement("div");
+
+    focusElement.setAttribute("focus-title", title);
+
+    focusElement.appendChild(focusElementChild);
+    focusElementChild.id = "focusElementChild";
+    focusElementChild.classList.add("focusElementChild");
+    focusElementChild.innerHTML = focus;
 }
 
 export interface Item {

@@ -1,5 +1,5 @@
 import { Dim2, getElementFromID } from "./util.js";
-import { Cell, getSquareDistanceBetweenCells } from "./world.js";
+import { Cell, getSquareDistanceBetweenCells, parseCell, setFocus } from "./world.js";
 import { InventoryEntry, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
@@ -82,7 +82,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
     }
 
     createLookButton() {
-        return new CtxButton_Cell("ctxLookButton", this.x, this.y, this, ()=>{return console.log(`${this.cellCtx.x},${this.cellCtx.y}`)}, "look", false);
+        return new CtxButton_Cell("ctxLookButton", this.x, this.y, this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
     }
 
     createTakeHoverMenu() {
@@ -198,10 +198,10 @@ class CtxButton_Cell extends CtxButton {
 
     click() {
         this.action();
-        // jank, redo
         if (this.disappearOnClick) {
             this.HTMLElement.remove();
         }
+        // jank, redo
         if ("children" in this.parent) {
             console.log("fart");
             console.log(this.parent.HTMLElement.childElementCount);
@@ -272,7 +272,6 @@ class CtxButton_Inventory extends CtxButton {
 
     click() {
         this.action();
-        // updateInventory();
         if (this.disappearOnClick){
             this.HTMLElement.remove();
         }
