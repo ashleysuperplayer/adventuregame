@@ -18,13 +18,23 @@ abstract class CtxMenuComponent {
     x:      number;
     y:      number;
     ownCls: string;
+    stackBase: number;
     HTMLElement: HTMLElement;
     constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
         this.x      = x;
         this.y      = y;
         this.ownCls = ownCls;
+        this.stackBase = -1; // jank that it starts at 0
         this.HTMLElement = this.createBaseElement();
+    }
+
+    addToStack() {
+        this.stackBase += 1;
+    }
+
+    stack() {
+        return this.stackBase * 20;
     }
 
     checkDimensions(dimensions: Dim2) {
@@ -136,15 +146,18 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
     }
 
     createDebugMenu() {
-        return new CtxDebugMenu(this.x, this.y+40, this, this.cellCtx);
+        this.addToStack()
+        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.cellCtx);
     }
 
     createLookButton() {
-        return new CtxButton_Cell("ctxLookButton", this.x, this.y, this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
+        this.addToStack()
+        return new CtxButton_Cell("ctxLookButton", this.x, this.y + this.stack(), this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
     }
 
     createTakeHoverMenu() {
-        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y+20, this);
+        this.addToStack()
+        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y + this.stack(), this);
     }
 }
 
@@ -167,11 +180,10 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
 
     createChildren(): CtxButton_Cell[] {
         let children: CtxButton_Cell[] = [];
-        let childItemIdCounter = 0;
         for (let entry of this.parent.cellCtx.inventory.entriesArray()) {
             for (let quantity = entry.quantity; quantity--; quantity > 0) {
-                children.push(new CtxButton_Cell(`${entry.item.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
-                childItemIdCounter++;
+                this.addToStack()
+                children.push(new CtxButton_Cell(`${entry.item.name + this.stack}Button`, this.x + this.dimensions.width, this.y + this.stack(), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
             }
         }
         return children;
@@ -238,10 +250,12 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     }
 
     createDebugMenu() {
+        this.addToStack();
         return new CtxDebugMenu(this.x, this.y, this, this.entry.item);
     }
 
     createDropButton() {
+        this.addToStack();
         let itemName = this.entry.item.name;
         let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y, this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
@@ -249,6 +263,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     }
 
     createDropAllButton() {
+        this.addToStack();
         let itemName  = this.entry.item.name;
         let itemQuant = this.entry.quantity;
         let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.x, this.y+20, this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
@@ -323,15 +338,14 @@ class CtxDebugMenu extends CtxHoverMenu {
 
     createDebugChildren() {
         let children: CtxButton[] = [];
-        let childItemIdCounter = 0;
         console.log(this.context); // TODO fix context not coming through sometimes on right side of screen
         for (let key of Object.keys(this.context)) {
             if (key in this.context) {
+                this.addToStack();
                 // god forgive me
                 //@ts-ignorets-ignore
-                children.push(new CtxButtonDebug(`${childItemIdCounter}DebugButton`, this.x + 60, this.y + (childItemIdCounter * 20), this, ()=>{return console.log(key), console.log(this.context[key])}, `${key}`));
+                children.push(new CtxButtonDebug(`${this.stack}DebugButton`, this.x + 60, this.y + this.stack(), this, ()=>{return console.log(key), console.log(this.context[key])}, `${key}`));
             }
-            childItemIdCounter++;
         }
         return children;
     }
