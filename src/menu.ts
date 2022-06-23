@@ -129,9 +129,11 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     createChildren(): CtxButton_Cell[] {
         let children: CtxButton_Cell[] = [];
         let childItemIdCounter = 0;
-        for (let content of Object.values(this.parent.cellCtx.inventory.contents)) {
-            children.push(new CtxButton_Cell(`${content.item.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(content.item.name, this.parent.cellCtx)}, content.item.name, true))
-            childItemIdCounter++;
+        for (let entry of this.parent.cellCtx.inventory.entriesArray()) {
+            for (let quantity = entry.quantity; quantity--; quantity > 0) {
+                children.push(new CtxButton_Cell(`${entry.item.name + childItemIdCounter}Button`, this.x + this.dimensions.width, this.y + (childItemIdCounter * this.dimensions.height), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
+                childItemIdCounter++;
+            }
         }
         return children;
     }
@@ -196,8 +198,16 @@ class CtxButton_Cell extends CtxButton {
 
     click() {
         this.action();
-        if (this.disappearOnClick){
+        // jank, redo
+        if (this.disappearOnClick) {
             this.HTMLElement.remove();
+        }
+        if ("children" in this.parent) {
+            console.log("fart");
+            console.log(this.parent.HTMLElement.childElementCount);
+            if (this.parent.HTMLElement.childElementCount < 1) {
+                this.parent.HTMLElement.remove();
+            }
         }
     }
 }

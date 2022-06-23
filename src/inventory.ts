@@ -79,6 +79,14 @@ export class Inventory {
         return itemList;
     }
 
+    entriesArray() {
+        let entriesList: InventoryEntry[] = [];
+        for (let entry of Object.values(this.contents)) {
+            entriesList.push(entry);
+        }
+        return entriesList;
+    }
+
     add(itemName: string, quantity: number) {
         if (!this.contents[itemName]) {
             this.contents[itemName] = {"item": globalThis.ITEMKINDSMAP[itemName], "quantity": 0};
