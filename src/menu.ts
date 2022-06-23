@@ -8,6 +8,9 @@ export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     }
     CTX = newCTX;
 }
+export function clearCTX() {
+    CTX.HTMLElement.remove();
+}
 // create own element > create children > calculate dimensions to fit children > reshape element to accomodate children
 abstract class CtxMenuComponent {
     id:     string;
@@ -70,7 +73,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx           = cellCtx;
         this.lookButton        = this.createLookButton();
-        // this sucks, also 2 means every orthog/diag cell
+        // this sucks, also 2 means every orthog/diag
         if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
             this.takeHoverMenu = this.createTakeHoverMenu();
         }

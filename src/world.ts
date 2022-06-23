@@ -1,7 +1,7 @@
 import { updateLighting } from "./light.js";
 import { createGrid, throwExpression } from "./util.js";
 import { Inventory, updateInventory } from "./inventory.js";
-import { CtxParentMenu_Cell, setCTX } from "./menu.js";
+import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
 export function getMapCellAtDisplayCell(x: number, y: number): Cell {
@@ -182,7 +182,6 @@ function setupKeys() {
     });
 }
 
-// this function works!
 function setupClicks() {
     NAVIGATIONELEMENT.addEventListener("contextmenu", function(e) {
         e.preventDefault();
@@ -195,6 +194,9 @@ function setupClicks() {
         if (x && y || x===0 || y===0) {
             setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(x, y))); // cell should point to whichever cell is clicked, if that's how this works
         }
+    },false);
+    NAVIGATIONELEMENT.addEventListener("click", (e) => {
+        clearCTX();
     },false);
 }
 
