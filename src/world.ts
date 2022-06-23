@@ -183,16 +183,20 @@ function setupKeys() {
 }
 
 function setupClicks() {
-    NAVIGATIONELEMENT.addEventListener("contextmenu", function(e) {
+    NAVIGATIONELEMENT.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         let displayCellCoords: undefined|string|number[] = document.elementFromPoint(e.clientX, e.clientY)?.id.slice("lightMap".length); // for some reason clientX and clientY are both offset by two cell width/lengths
         let x = 0;
         let y = 0;
+
         if (typeof displayCellCoords === "string") {
             [x,y] = stringCoordsToNum(displayCellCoords);
         }
+
+        let cell = getMapCellAtDisplayCell(x, y);
+
         if (x && y || x===0 || y===0) {
-            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, getMapCellAtDisplayCell(x, y))); // cell should point to whichever cell is clicked, if that's how this works
+            setCTX(new CtxParentMenu_Cell(e.clientX, e.clientY, cell)); // cell should point to whichever cell is clicked, if that's how this works
         }
     },false);
     NAVIGATIONELEMENT.addEventListener("click", (e) => {
@@ -359,6 +363,24 @@ class Player extends Mob {
     }
 }
 
+export interface Item {
+    name: string;
+    weight: number;
+    space: number;
+    symbol: string;
+    luminescence: number;
+    opacity: number;
+    blocking: boolean;
+}
+
+interface TerrainFeature {
+    name: string;
+    symbol: string;
+    luminescence: number;
+    opacity: number;
+    blocking: boolean;
+}
+
 export class Cell {
     x: number;
     y: number;
@@ -476,24 +498,6 @@ export class GroundType {
             return [172, 160, 125];
         }
     }
-}
-
-export interface Item {
-    name: string;
-    weight: number;
-    space: number;
-    symbol: string;
-    luminescence: number;
-    opacity: number;
-    blocking: boolean;
-}
-
-interface TerrainFeature {
-    name: string;
-    symbol: string;
-    luminescence: number;
-    opacity: number;
-    blocking: boolean;
 }
 
 declare global {

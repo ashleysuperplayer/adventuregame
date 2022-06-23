@@ -201,18 +201,30 @@ class CtxButton_Cell extends CtxButton {
 }
 
 export class CtxParentMenu_Inventory extends CtxParentMenu {
-    entry:      InventoryEntry;
-    dropButton: CtxButton_Inventory;
+    entry:          InventoryEntry;
+    dropButton:     CtxButton_Inventory;
+    dropAllButton?: CtxButton_Inventory;
     constructor(x: number, y: number, itemName: string) {
         super("ctxParentMenu_Inventory", x, y, "ctxParentMenu");
-        this.entry = PLAYER.inventory.contents[itemName];
-        this.HTMLElement = this.createParentElement();
-        this.dropButton = this.createDropButton();
+        this.entry         = PLAYER.inventory.contents[itemName];
+        this.HTMLElement   = this.createParentElement();
+        this.dropButton    = this.createDropButton();
+        if (this.entry.quantity > 1) {
+            this.dropAllButton = this.createDropAllButton();
+        }
     }
 
     createDropButton() {
         let itemName = this.entry.item.name;
         let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y, this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
+        this.HTMLElement.appendChild(button.HTMLElement);
+        return button;
+    }
+
+    createDropAllButton() {
+        let itemName  = this.entry.item.name;
+        let itemQuant = this.entry.quantity;
+        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.x, this.y+20, this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
@@ -248,7 +260,7 @@ class CtxButton_Inventory extends CtxButton {
 
     click() {
         this.action();
-        updateInventory();
+        // updateInventory();
         if (this.disappearOnClick){
             this.HTMLElement.remove();
         }
