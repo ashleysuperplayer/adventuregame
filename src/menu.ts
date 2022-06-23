@@ -229,22 +229,21 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.entry         = PLAYER.inventory.contents[itemName];
         this.HTMLElement   = this.createParentElement();
         this.dropButton    = this.createDropButton();
-        if (this.entry.quantity > 1) {
-            this.dropAllButton = this.createDropAllButton();
-        }
         if (DEBUG) {
             this.debugMenu = this.createDebugMenu();
+        }
+        if (this.entry.quantity > 1) {
+            this.dropAllButton = this.createDropAllButton();
         }
     }
 
     createDebugMenu() {
-        this.();
         return new CtxDebugMenu(this.x, this.y, this, this.entry.item);
     }
 
     createDropButton() {
         let itemName = this.entry.item.name;
-        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y, this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
