@@ -365,20 +365,20 @@ class Player extends Mob {
 }
 
 export function parseCell(cell: Cell): string {
-    if (cell.lightLevel < 30) {
+    if (cell.lightLevel < 30 && timeToLight(TIME) < 30) {
         return "you can't see a thing, but for the darkness.";
     }
-    let cellDescription = `the ground is ${cell.ground.name}y. `;
+    let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
 
     for (let terrain of cell.terrain) {
-        cellDescription = cellDescription.concat(`there is a ${terrain.name}. `);
+        cellDescription = cellDescription.concat(`there ${terrain.lex.cellDesc}. `);
     }
     for (let entry of cell.inventory.entriesArray()) {
         if (entry.quantity > 1) {
-            cellDescription = cellDescription.concat(`there are ${entry.quantity} ${entry.item.name}s. `);
+            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDescXPlural(entry.quantity)}. `);
         }
         else {
-            cellDescription = cellDescription.concat(`there is a ${entry.item.name}. `);
+            cellDescription = cellDescription.concat(`there ${entry.item.lex.cellDesc}. `);
         }
     }
     for (let mob of cell.mobs) {
@@ -413,6 +413,27 @@ export function setFocus(focus: string, title: string) {
     focusElementChild.innerHTML = focus;
 }
 
+export class Lex {
+    cellDesc: string;
+    cellDescP?: string[];
+    constructor(cellDesc: string, cellDescP?: string[]) {
+        this.cellDesc = cellDesc;
+        this.cellDescP = cellDescP;
+    }
+
+    cellDescXPlural(x: string|number) {
+        if (typeof x === "number") {
+            x = x.toString();
+        }
+        if (this.cellDescP) {
+            return this.cellDescP[0].concat(x, this.cellDescP[1]);
+        }
+        else {
+            throwExpression("object has no cellDescP");
+        }
+    }
+}
+
 export interface Item {
     name: string;
     weight: number;
@@ -421,6 +442,7 @@ export interface Item {
     luminescence: number;
     opacity: number;
     blocking: boolean;
+    lex: Lex;
 }
 
 interface TerrainFeature {
@@ -429,6 +451,7 @@ interface TerrainFeature {
     luminescence: number;
     opacity: number;
     blocking: boolean;
+    lex: Lex;
 }
 
 export class Cell {
@@ -514,10 +537,12 @@ export class GroundType {
     name: string;
     color: [number, number, number];
     blendMode: Function;
-    constructor(name: string, color: [number, number, number], blendMode: string) {
+    lex: Lex;
+    constructor(name: string, color: [number, number, number], blendMode: string, lex: Lex) {
         this.name = name;
         this.color = color;
         this.blendMode = this.getBlendMode(blendMode);
+        this.lex = lex;
     }
 
     getBlendMode(str: string) {
@@ -531,7 +556,6 @@ export class GroundType {
             default:
                 throwExpression("invalid blend mode");
         }
-        return throwExpression("invalid blend mode");
     }
 
     mudBlend() {
