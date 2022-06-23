@@ -7,38 +7,45 @@ function addcolours(c1: number, c2: number) {
 
 // attenuation coeff for a light some distance away (TODO: precompute?)
 function attenuate(dx: number, dy: number) {
-    return 1/(dx*dx+dy*dy+1);
+    return 1/(0.5*(dx*dx+dy*dy)+1);
 }
 
-// TODO lighting needs to be calculated for a few cells AROUND where the player can actually see
-// calculate lighting based on avg lighting of 4 adjacent cells, there is definitely a better way to do it
-export function calcCellLighting(cellCoords: string) {
-    const cell = CELLMAP[cellCoords] ?? throwExpression(`invalid cell coords LIGHTING "${cellCoords}"`) // needs to return cell
-
-    let cum = 0;
-    const searchradius = 5;
-    for (let dy = -searchradius; dy <= searchradius; ++dy) {
-        for (let dx = -searchradius; dx <= searchradius; ++dx) {
-            const cell2 = CELLMAP[`${cell.x+dx},${cell.y+dy}`];
-            if (!cell2) continue;
-            const lum = cell2.maxLum();
-            if (lum === 0) continue;
-            // we have a light source in cell2
-            cum = addcolours(cum, lum*attenuate(dx, dy));
-        }
-    }
-    cell.lightLevel = Math.floor(cum);
-};
+// returns light level from 0 to 200
+function timeToLight(time: number) {
+    return  200 * 0.5*(Math.cos(2*Math.PI * time / globalThis.MINSPERDAY / 10) + 1); // super fast for debug
+    // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
+}
 
 export function updateLighting() {
+    let lights = [];
+    const amblight = timeToLight(globalThis.TIME);
+    const lightrange = 8;
+
+    // reset light level of all cells to the ambient level
     for (let cellY = -11; cellY < 44; cellY++) { // (screen length) // TODO remove these magical numbers lol
         for (let cellX = -5; cellX < 44; cellX++) { // (screen length)
-            calcCellLighting(`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`);
-            // definitely a better way to do all this
-            // place "seen" cells into a register and then calc their lighting
-            // until it drops to/below ambient light and then stop tracking them?
+            const cell = CELLMAP[`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`];
+            if (!cell) continue;
+            cell.lightLevel = amblight;
+        }
+    }
+
+    // find all light sources among visible(+epsilon) cells, and add their influences
+    for (let cellY = -11; cellY < 44; cellY++) { // (screen length) // TODO remove these magical numbers lol
+        for (let cellX = -5; cellX < 44; cellX++) { // (screen length)
+            const cell = CELLMAP[`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`];
+            if (!cell) continue;
+            const lum = cell.maxLum();
+            if (lum === 0) continue;
+
+            // then cell contains a light
+            for (let dy = -lightrange; dy <= lightrange; ++dy) {
+                for (let dx = -lightrange; dx <= lightrange; ++dx) {
+                    const cell2 = CELLMAP[`${cell.x+dx},${cell.y+dy}`];
+                    if (!cell2) continue;
+                    cell2.lightLevel = addcolours(cell2.lightLevel, lum*attenuate(dx,dy));
+                }
+            }
         }
     }
 }
-
-// let AMBLIGHTAMP = 200;
