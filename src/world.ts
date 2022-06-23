@@ -360,7 +360,7 @@ export class Player extends Mob {
 
 export function parseCell(cell: Cell): string {
     let cellDescAppend = (x: string) => {cellDescription = cellDescription.concat(x)};
-    if (cell.lightLevel < 30) {
+    if (cell.lightLevel < 10) {
         return "you can't see a thing, but for the darkness.";
     }
     let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
