@@ -15,7 +15,7 @@ function timeToLight(time: number) {
     return  200 * 0.5*(Math.cos(2*Math.PI * time / globalThis.MINSPERDAY / 10) + 1); // super fast for debug
     // return Math.cos(time / (MINSPERDAY * 10)) * MINSPERDAY / 2 + MINSPERDAY / 2;
 }
-
+//test comment please remove
 export function updateLighting() {
     let lights = [];
     const amblight = timeToLight(globalThis.TIME);
