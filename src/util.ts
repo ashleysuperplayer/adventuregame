@@ -73,3 +73,31 @@ export interface Dim2 {
     height: number;
     width:  number;
 }
+
+export class Vector2 {
+    x: number;
+    y: number;
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    add(v: Vector2) {
+        this.x += v.x;
+        this.y += v.y;
+    }
+
+    scalarmult(s: number) {
+        this.x *= s;
+        this.y *= s;
+    }
+
+    lengthsq() {
+        return this.x*this.x + this.y*this.y;
+    }
+    
+    dot(v: Vector2) {
+        return this.x*v.x + this.y*v.y;
+    }
+}
+
