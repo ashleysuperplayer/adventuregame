@@ -83,7 +83,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].inventory.add("oil lamp", 1); // add a lamp
+    CELLMAP["1,0"].inventory.add("oil lamp", 5); // add a lamp
 
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
