@@ -8,7 +8,7 @@ export function updateInventory() {
     let totalWeight = 0;
 
     // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
-    for (let item of PLAYER.inventory.returnMinQuant(1)) {
+    for (let item of PLAYER.inventory.items) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace  += space;
         totalWeight += weight;

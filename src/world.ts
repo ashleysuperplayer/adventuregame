@@ -81,7 +81,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    // CELLMAP["1,0"].inventory.add(); // add a lamp
+    CELLMAP["1,0"].inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]); // add a lamp
 
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
@@ -461,6 +461,10 @@ export class Item {
         this.lex = itemKind.lex;
         this.stats = itemKind.stats;
         this.preferredEquipSlot = itemKind.equipSlot;
+    }
+
+    static createItem(itemName: string) {
+        return new Item(ITEMKINDSMAP[itemName]);
     }
 }
 

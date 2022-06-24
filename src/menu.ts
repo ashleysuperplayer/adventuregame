@@ -130,7 +130,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
         this.lookButton = this.createLookButton();
         // this sucks, also 2 means every orthog
         if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
-            if (this.cellCtx.inventory.returnMinQuant(1).length > 0) {
+            if (this.cellCtx.inventory.items.length > 0) {
                 this.takeHoverMenu = this.createTakeHoverMenu();
             }
         }
@@ -245,7 +245,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 
     createDebugMenu() {
         this.addToStack();
-        return new CtxDebugMenu(this.pos.x + 60, this.pos.y + this.stack(), this, this.item);
+        return new CtxDebugMenu(this.pos.x, this.pos.y + this.stack(), this, this.item);
     }
 
     createDropButton() {

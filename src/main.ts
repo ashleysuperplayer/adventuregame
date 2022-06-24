@@ -3,8 +3,10 @@ import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setu
 import { Colour } from "./light.js";
 import { Slot } from "./inventory.js";
 import { Viewport } from "./display.js";
+import { Debugger } from "./util.js";
 
 declare global {
+    var DEBUGGER: Debugger;
     var TICKER: number;
     var CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
     var VIEWPORT: Viewport;
@@ -38,6 +40,7 @@ function main() {
 }
 
 function setGlobals() {
+    globalThis.DEBUGGER = new Debugger();
     globalThis.DEBUG = true;
     globalThis.MINSPERDAY = 1440;
     globalThis.TICKSPERMINUTE = 600;
