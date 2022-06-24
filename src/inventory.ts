@@ -134,6 +134,7 @@ const SLOTBIAS: SlotBias = {
     [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
 }
 
+// MobSlots is 20150117--Jump3 MOB slots switched, OBVIOUSLY
 export type MobSlots = {[key in Slot]?: Inventory};
 
 export function constructMobSlots() {
@@ -148,50 +149,3 @@ export function constructMobSlots() {
             [Slot.RightHand]: new Inventory()
         };
     }
-
-
-// equipment
-export class EquipmentSet {
-    mob: Mob;
-    mobSlots: MobSlots;
-    constructor(mob: Mob) {
-        this.mob = mob;
-        this.mobSlots = mob.limbs;
-    }
-}
-
-// export class EquipmentOld extends Inventory {
-//     mob: Mob;
-//     slots: {[key in Slot]?: Inventory}; // enums cant be used as keys unless ?
-//     constructor(mob: Mob, contents?: InventoryMap|undefined) {
-//         super(contents);
-//         this.mob = mob;
-//         this.slots = {};
-//     }
-
-//     getEquipment() {
-//         return this.slots[Slot.Torso]?.itemsArray;
-//     }
-
-//     equipSlot(slot: Slot, item: Item) {
-//         let slotObj = this.contents[slot];
-//         console.log(item.equipSlot);
-//         if (!item.equipSlot) {
-//             console.log("youre not meant to use this");
-//             return;
-//         }
-//         PLAYER.applyStats(slot in item.equipSlot ?
-//             {inInsul: item.stats.insulation * SLOTBIAS[slot].inInsul, extInsul: item.stats.insulation * SLOTBIAS[slot].extInsul}:
-//             {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
-
-//         if (!slotObj) {
-//             slotObj = {item: item, quantity: 1};
-//             this.mob.inventory.remove(slotObj.item.name, 1);
-//         }
-//         else {
-//             this.mob.inventory.add(slotObj.item.name, 1);
-//             slotObj = {item: item, quantity: 1};
-//             this.mob.inventory.remove(slotObj.item.name, 1);
-//         }
-//     }
-// }

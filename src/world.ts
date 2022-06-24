@@ -192,20 +192,18 @@ export interface MobKind {
 
 export abstract class Mob {
     name: string;
-    // limbs will be of type Limb[], for now it is MobSlots
-    limbs: MobSlots;
     pos: Vector2;
     currentAction: string;
     symbol: string;
     facing: string;
     blocking: boolean;
-    // equipment: Equipment;
+    equipment: MobSlots;
     inventory: Inventory;
     stats: MobStats;
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
-        this.limbs = kind.limbs;
+        this.equipment = kind.limbs;
         this.pos = new Vector2(x, y);
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
@@ -215,6 +213,10 @@ export abstract class Mob {
         // this.equipment = new Equipment(this);
         this.inventory = new Inventory();
         this.stats = this.baseStats();
+    }
+
+    equip(item: Item, slot: Slot) {
+        this.equipment[slot]?.add([item]);
     }
 
     // apply stats to Mob based on StatDelta object
