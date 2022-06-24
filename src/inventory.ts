@@ -98,54 +98,41 @@ export class Inventory {
     }
 }
 
-export interface SlotStats {
-    name: string;
-    inInsul: number;
-    extInsul: number;
-}
-
 // each slot must have a name, inInsul and extInsul
 // item stats are multiplied against inInsul and extInsul to derive Mob stats "inInsul" & "extInsul"
 // inInsul and extInsul of Mob is used to calculate heat loss/temperature etc
-export const enum Slot {
-    Head,
-    Face,
-    Neck,
-    Torso,
-    Legs,
-    LFoot,
-    RFoot,
-    LeftHand,
-    RightHand
-};
 
 // how much of each stat each slot will imbue when correct items are worn
-type SlotBias = {[key in Slot]: MobStats};
+type SlotBias = {
+    [key: string]: MobStats;
+}
 
-const SLOTBIAS: SlotBias = {
-    [Slot.Head]:      {inInsul: 1.0, extInsul: 1.2},
-    [Slot.Face]:      {inInsul: 0.5, extInsul: 1.2},
-    [Slot.Neck]:      {inInsul: 0.8, extInsul: 1.0},
-    [Slot.Torso]:     {inInsul: 1.5, extInsul: 1.0},
-    [Slot.Legs]:      {inInsul: 1.0, extInsul: 1.3},
-    [Slot.LFoot]:     {inInsul: 0.3, extInsul: 1.3},
-    [Slot.RFoot]:     {inInsul: 0.3, extInsul: 1.5},
-    [Slot.LeftHand]:  {inInsul: 0.2, extInsul: 1.5},
-    [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
+export const SLOTBIAS: SlotBias = {
+    "head":  {inInsul: 1.0, extInsul: 1.2},
+    "face":  {inInsul: 0.5, extInsul: 1.2},
+    "neck":  {inInsul: 0.8, extInsul: 1.0},
+    "torso": {inInsul: 1.5, extInsul: 1.0},
+    "legs":  {inInsul: 1.0, extInsul: 1.3},
+    "lFoot": {inInsul: 0.3, extInsul: 1.3},
+    "rFoot": {inInsul: 0.3, extInsul: 1.5},
+    "lHand": {inInsul: 0.2, extInsul: 1.5},
+    "rHand": {inInsul: 0.2, extInsul: 1.5}
 }
 
 // MobSlots is 20150117--Jump3 MOB slots switched, OBVIOUSLY
-export type MobSlots = {[key in Slot]?: Inventory};
+export type MobSlots =  {
+    [key: string]: Inventory;
+}
 
-export function constructMobSlots() {
-    return {[Slot.Head]:      new Inventory(),
-            [Slot.Face]:      new Inventory(),
-            [Slot.Neck]:      new Inventory(),
-            [Slot.Torso]:     new Inventory(),
-            [Slot.Legs]:      new Inventory(),
-            [Slot.LFoot]:     new Inventory(),
-            [Slot.RFoot]:     new Inventory(),
-            [Slot.LeftHand]:  new Inventory(),
-            [Slot.RightHand]: new Inventory()
+export function constructMobSlots(): MobSlots {
+    return {"head": new Inventory(),
+            "face": new Inventory(),
+            "neck": new Inventory(),
+            "torso": new Inventory(),
+            "legs":  new Inventory(),
+            "lFoot": new Inventory(),
+            "rFoot": new Inventory(),
+            "lHand": new Inventory(),
+            "rHand": new Inventory()
         };
     }

@@ -1,7 +1,7 @@
 import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
 import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick, constructItemKind } from "./world.js";
 import { Colour } from "./light.js";
-import { Slot, constructMobSlots } from "./inventory.js";
+import { constructMobSlots } from "./inventory.js";
 import { Viewport } from "./display.js";
 import { Debugger } from "./util.js";
 
@@ -56,7 +56,7 @@ function setGlobals() {
         "oil lamp":     constructItemKind("oil lamp",      2700, 1,    "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"]),          {insulation: 0}),
         "rock":         constructItemKind("rock",          5000, 0.05, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"]),              {insulation: 0}),
         "chocolate bar":constructItemKind("chocolate bar", 200,  0.05, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"]), {insulation: 0}),
-        "coat":         constructItemKind("coat",          800,  3,    "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"]),       {insulation: 10}, [Slot.Torso])
+        "coat":         constructItemKind("coat",          800,  3,    "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"]),       {insulation: 10}, ["torso"])
     };
     globalThis.TERRAINFEATUREKINDSMAP = {
         "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
