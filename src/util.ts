@@ -9,13 +9,6 @@ export function getElementFromID(id: string): HTMLElement {
         throw new Error(`invalid ID: ${id}`);
     }
 }
-
-// function i stole from stackoverflow
-function getKeyByValue(object: object, value: any) {
-    // @ts-ignore // come back to this later
-    return Object.keys(object).find(key => object[key] === value);
-}
-
 // throw error when can't set variable
 export function throwExpression(errorMessage: string): never {
     throw new Error(errorMessage);
