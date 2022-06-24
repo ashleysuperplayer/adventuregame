@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { Equipment, Inventory, Slot, updateInventory } from "./inventory.js";
+import { Inventory, Slot, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -81,11 +81,11 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].inventory.add("oil lamp", 5); // add a lamp
+    // CELLMAP["1,0"].inventory.add(); // add a lamp
 
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
-    PLAYER.equipment.equipSlot(Slot.Torso, ITEMKINDSMAP["coat"]);
+    // PLAYER.equipment.equipSlot(Slot.Torso, ITEMKINDSMAP["coat"]);
 
     updateLighting();
     updateDisplay();
@@ -94,7 +94,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
 
 function setupKeys() {
     window.addEventListener("keydown", (event) => {
-        event.preventDefault();
+        // event.preventDefault();
         if (event.shiftKey) {
             switch (event.key) {
                 case "ArrowUp":
@@ -196,7 +196,7 @@ export abstract class Mob {
     symbol: string;
     facing: string;
     blocking: boolean;
-    equipment: Equipment;
+    // equipment: Equipment;
     inventory: Inventory;
     stats: MobStats;
     fullName?: string;
@@ -208,7 +208,7 @@ export abstract class Mob {
         this.symbol = kind.symbol;
         this.facing = "n";
         this.blocking = true;
-        this.equipment = new Equipment(this);
+        // this.equipment = new Equipment(this);
         this.inventory = new Inventory();
         this.stats = this.baseStats();
     }
@@ -281,12 +281,12 @@ export abstract class Mob {
     }
 
     // remove 1 item from Cell Inventory and place into Mob's Inventory
-    take(name: string, cell: Cell) {
-        if (cell.inventory.remove(name, 1)) {
-            this.inventory.add(name, 1);
+    take(item: Item, cell: Cell) {
+        if (cell.inventory.remove([item])) {
+            this.inventory.add([item]);
         }
         else {
-            console.log("not there")
+            console.log("not there");
         }
     }
 
@@ -371,13 +371,14 @@ export function parseCell(cell: Cell): string {
     for (let terrain of cell.terrain) {
         cellDescAppend(`there ${terrain.lex.cellDesc}. `);
     }
-    for (let entry of cell.inventory.entriesArray()) {
-        if (entry.quantity > 1) {
-            cellDescAppend(`there ${entry.item.lex.cellDescXPlural(entry.quantity)}. `);
-            ["are ", entry.quantity," rocks"]
+    for (let item of cell.inventory.items) {
+        const quantity = cell.inventory.returnByName(item.name).length;
+        if (cell.inventory.returnMinQuant(1).length > 1) {
+            cellDescAppend(`there ${item.lex.cellDescXPlural(quantity)}. `);
+            ["are ", quantity," rocks"]
         }
         else {
-            cellDescAppend(`there ${entry.item.lex.cellDesc}. `);
+            cellDescAppend(`there ${item.lex.cellDesc}. `);
         }
     }
     for (let mob of cell.mobs) {
@@ -525,11 +526,11 @@ export class Cell {
     // return unordered list of luminescences of all items
     allLuminescence(): Colour[] {
         let lumList: Colour[] = [];
-        for (let entry of [...this.inventory.itemsArray(1), ...this.terrain]) {
+        for (let entry of [...this.inventory.items, ...this.terrain]) {
             lumList.push(entry.luminescence);
         }
         for (let mob of this.mobs) {
-            for (let item of mob.inventory.itemsArray(1)) {
+            for (let item of mob.inventory.items) {
                 lumList.push(item.luminescence);
             }
         }
@@ -549,7 +550,7 @@ export class Cell {
         }
         let sum = 0;
 
-        for (let entry of [...this.inventory.itemsArray(1), ...this.terrain]) {
+        for (let entry of [...this.inventory.items, ...this.terrain]) {
             sum += entry.opacity;
         }
 

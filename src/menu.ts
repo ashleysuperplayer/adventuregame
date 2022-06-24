@@ -1,6 +1,6 @@
-import { Dim2, getElementFromID, Vector2 } from "./util.js";
+import { getElementFromID, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, parseCell, setFocus } from "./world.js";
-import { Inventory, InventoryEntry, updateInventory } from "./inventory.js";
+import { Inventory, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     if (CTX) {
@@ -71,7 +71,7 @@ abstract class CtxParentMenu extends CtxMenuComponent {
 
 abstract class CtxHoverMenu extends CtxMenuComponent { // these base elements all suck, this class definitely will always have children but doesn't have a way to generate them without the subclass hhmmmmm
     parent: CtxParentMenu;
-    abstract dimensions: Dim2;
+    abstract dimensions: Vector2;
     abstract children: CtxButton[];
     constructor(id: string, x: number, y: number, ownCls: string, parent: CtxParentMenu) {
         super(id, x, y, ownCls);
@@ -130,7 +130,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
         this.lookButton = this.createLookButton();
         // this sucks, also 2 means every orthog
         if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
-            if (this.cellCtx.inventory.itemsArray(1).length > 0) {
+            if (this.cellCtx.inventory.returnMinQuant(1).length > 0) {
                 this.takeHoverMenu = this.createTakeHoverMenu();
             }
         }
@@ -140,17 +140,17 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
     }
 
     createDebugMenu() {
-        this.addToStack()
+        this.addToStack();
         return new CtxDebugMenu(this.pos.x, this.pos.y + this.stack(), this, this.cellCtx);
     }
 
     createLookButton() {
-        this.addToStack()
+        this.addToStack();
         return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
     }
 
     createTakeHoverMenu() {
-        this.addToStack()
+        this.addToStack();
         return new CtxHoverMenu_Cell("ctxTakeHover", this.pos.x, this.pos.y + this.stack(), this);
     }
 }
@@ -159,11 +159,11 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     parent:      CtxParentMenu_Cell;
     children:    CtxButton_Cell[];
     HTMLElement: HTMLElement;
-    dimensions:  Dim2;
+    dimensions:  Vector2;
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Cell) {
         super(id, x, y, "ctxHoverMenu", parent);
         this.parent      = parent;
-        this.dimensions  = {"height": 20, "width": 60};
+        this.dimensions  = new Vector2(60, 20);
         this.HTMLElement = this.createElement();
         this.children    = this.createChildren();
         for (let child of this.children) {
@@ -174,11 +174,9 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
 
     createChildren(): CtxButton_Cell[] {
         let children: CtxButton_Cell[] = [];
-        for (let entry of this.parent.cellCtx.inventory.entriesArray()) {
-            for (let quantity = entry.quantity; quantity--; quantity > 0) {
-                this.addToStack()
-                children.push(new CtxButton_Cell(`${entry.item.name + this.stack}Button`, this.pos.x + this.dimensions.width, this.pos.y + this.stack(), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
-            }
+        for (let item of this.parent.cellCtx.inventory.items) {
+            this.addToStack()
+            children.push(new CtxButton_Cell(`${item.name + this.stack}Button`, this.pos.x + this.dimensions.x, this.pos.y + this.stack(), this, () => {PLAYER.take(item, this.parent.cellCtx)}, item.name, true));
         }
         return children;
     }
@@ -186,8 +184,8 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
     createElement(): HTMLElement {
         let element = this.createBaseElement();
 
-        element.style.width  = `${this.dimensions.width}px`;
-        element.style.height = `${this.dimensions.height}px`;
+        element.style.width  = `${this.dimensions.x}px`;
+        element.style.height = `${this.dimensions.y}px`;
 
         element.innerHTML = "take"; // nooooo
 
@@ -226,16 +224,18 @@ class CtxButton_Cell extends CtxButton {
 }
 
 export class CtxParentMenu_Inventory extends CtxParentMenu {
-    entry:          InventoryEntry;
+    item:           Item;
+    quantity:       number;
     dropButton:     CtxButton_Inventory;
     dropAllButton?: CtxButton_Inventory;
     debugMenu?:     CtxDebugMenu;
-    constructor(x: number, y: number, itemName: string) {
+    constructor(x: number, y: number, item: Item) {
         super("ctxParentMenu_Inventory", x, y, "ctxParentMenu");
-        this.entry         = PLAYER.inventory.contents[itemName];
+        this.item          = item;
+        this.quantity      = PLAYER.inventory.returnByName(item.name).length;
         this.HTMLElement   = this.createParentElement();
         this.dropButton    = this.createDropButton();
-        if (this.entry.quantity > 1) {
+        if (this.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
         }
         if (DEBUG) {
@@ -245,22 +245,19 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 
     createDebugMenu() {
         this.addToStack();
-        return new CtxDebugMenu(this.pos.x, this.pos.y + this.stack(), this, this.entry.item);
+        return new CtxDebugMenu(this.pos.x + 60, this.pos.y + this.stack(), this, this.item);
     }
 
     createDropButton() {
         this.addToStack();
-        let itemName = this.entry.item.name;
-        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.remove([this.item]); PLAYER.getCell().inventory.add([this.item])}, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
 
     createDropAllButton() {
         this.addToStack();
-        let itemName  = this.entry.item.name;
-        let itemQuant = this.entry.quantity;
-        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
+        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.removeAllByName(this.item.name); PLAYER.getCell().inventory.add([])}, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
@@ -269,11 +266,11 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 class CtxHoverMenu_Inventory extends CtxHoverMenu {
     parent: CtxParentMenu_Inventory;
     children: CtxButton_Inventory[];
-    dimensions: Dim2;
+    dimensions: Vector2;
     constructor(id: string, x: number, y: number, parent: CtxParentMenu_Inventory) {
         super(id, x, y, "ctxHoverMenu", parent);
         this.parent = parent;
-        this.dimensions = {"height": 20, width: 60};
+        this.dimensions = new Vector2(60, 20);
         this.children   = this.createChildren();
         this.setupHover()
     }
@@ -303,12 +300,12 @@ class CtxButton_Inventory extends CtxButton {
 }
 
 class CtxDebugMenu extends CtxHoverMenu {
-    dimensions: Dim2;
+    dimensions: Vector2;
     children:   CtxButton[];
     context:    Item|Cell;
     constructor(x: number, y: number, parent: CtxParentMenu, context: Item|Cell) {
         super("ctxDebugMenu", x, y, "ctxHoverMenu", parent);
-        this.dimensions  = {height: 20, width: 60};
+        this.dimensions  = new Vector2(60, 20);
         this.context     = context;
         this.HTMLElement = this.createElement();
         this.children    = this.createDebugChildren();
@@ -318,8 +315,8 @@ class CtxDebugMenu extends CtxHoverMenu {
     createElement(): HTMLElement {
         let element = this.createBaseElement();
 
-        element.style.width  = `${this.dimensions.width}px`;
-        element.style.height = `${this.dimensions.height}px`;
+        element.style.width  = `${this.dimensions.x}px`;
+        element.style.height = `${this.dimensions.y}px`;
 
         element.innerHTML = "debug"; // nooooo
 
@@ -338,7 +335,7 @@ class CtxDebugMenu extends CtxHoverMenu {
                 this.addToStack();
                 // god forgive me
                 //@ts-ignorets-ignore
-                children.push(new CtxButtonDebug(`${this.stack}DebugButton`, this.x + 60, this.y + this.stack(), this, ()=>{return console.log(key), console.log(this.context[key])}, `${key}`));
+                children.push(new CtxButtonDebug(`${this.stack}DebugButton`, this.pos.x + this.dimensions.x, this.pos.y + this.stack(), this, ()=>{return console.log(key), console.log(this.context[key])}, `${key}`));
             }
         }
         return children;

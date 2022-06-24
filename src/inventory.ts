@@ -8,7 +8,7 @@ export function updateInventory() {
     let totalWeight = 0;
 
     // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
-    for (let item of PLAYER.inventory.itemsArray(1)) {
+    for (let item of PLAYER.inventory.returnMinQuant(1)) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace  += space;
         totalWeight += weight;
@@ -19,14 +19,14 @@ export function updateInventory() {
 }
 
 function inventoryDisplayEntry(item: Item): number[] {
-    const quantity = PLAYER.inventory.contents[item.name].quantity; // jesus good lord
+    const quantity = PLAYER.inventory.returnByName.length
     const space    = item.space  * quantity;
     const weight   = item.weight * quantity;
 
     let nameE   = document.createElement("div");
     nameE.addEventListener("contextmenu", (event) => {
         event.preventDefault();
-        setCTX(new CtxParentMenu_Inventory(event.clientX, event.clientY, item.name));
+        setCTX(new CtxParentMenu_Inventory(event.clientX, event.clientY, item));
     })
     let quantE  = document.createElement("div");
     let spaceE  = document.createElement("div");
@@ -47,69 +47,54 @@ function inventoryDisplayEntry(item: Item): number[] {
     return [space, weight];
 }
 
+// in an Inventory is an Array of Items
 
-export interface InventoryEntry {
-    item: Item;
-    quantity: number;
-}
-
-export type InventoryMap = { [key: string]: InventoryEntry};
 
 export class Inventory {
-    contents: InventoryMap;
-    constructor(contents?: InventoryMap) {
-        this.contents = contents ?? {};
-    }
-
-    itemsArray(minQuant?: number): Item[] {
-        let itemList: Item[] = [];
-        if (minQuant) {
-            for (let entry of Object.values(this.contents)) {
-                if (entry.quantity >= minQuant) {
-                    itemList.push(entry.item);
-                }
-            }
+    items: Item[];
+    constructor(items?: Item[]) {
+        if (items) {
+            this.items = items;
         }
         else {
-            for (let entry of Object.values(this.contents)) {
-                itemList.push(entry.item);
-            }
+            this.items = [];
+        }
+    }
+
+    // return all objects with name
+    returnByName(name: string): Item[] {
+        return this.items.filter((item) => {item.name === name});
+    }
+
+    // return items whose quantity > quant, redo
+    returnMinQuant(quant: number): Item[] {
+        let bucket: {[key: string]: Item[]} = {};
+        for (let item of this.items) {
+            bucket[item.name].push(item);
+        }
+
+        let itemList = [];
+        for (let bucketList of Object.values(bucket).filter((itemList) => {itemList.length > quant})) {
+            itemList.push(...bucketList)
         }
 
         return itemList;
     }
 
-    entriesArray() {
-        let entriesList: InventoryEntry[] = [];
-        for (let entry of Object.values(this.contents)) {
-            entriesList.push(entry);
-        }
-        return entriesList;
-    }
-
-    add(itemName: string, quantity: number) {
-        if (!this.contents[itemName]) {
-            this.contents[itemName] = {"item": globalThis.ITEMKINDSMAP[itemName], "quantity": 0};
-        }
-        this.contents[itemName].quantity += quantity
+    // add an item into the inventory
+    add(items: Item[]): void {
+        this.items.push(...items);
         updateInventory();
     }
 
-    // allows removal of items without knowing if they exist in inventory
-    remove(itemName: string, quantity: number) {
-        if (this.contents[itemName]) {
-            if (this.contents[itemName].quantity < quantity) {
-                return false;
-            }
-            else {
-                this.contents[itemName].quantity -= quantity;
-                updateInventory();
-                return true;
-            }
-        }
-        else {
-            return false;
-        }
+    // remove item from inventory and return removed item
+    remove(items: Item[]): Item[] {
+        return this.items = this.items.filter((x) => !items.includes(x));
+    }
+
+    // remove all objects with name and return them
+    removeAllByName(name: string): Item[] {
+        return this.remove(this.returnByName(name));
     }
 }
 
@@ -122,8 +107,7 @@ export interface SlotStats {
 // each slot must have a name, inInsul and extInsul
 // item stats are multiplied against inInsul and extInsul to derive Mob stats "inInsul" & "extInsul"
 // inInsul and extInsul of Mob is used to calculate heat loss/temperature etc
-
-export enum Slot {
+export const enum Slot {
     Head,
     Face,
     Neck,
@@ -133,7 +117,7 @@ export enum Slot {
     RFoot,
     LeftHand,
     RightHand
-}
+};
 
 // how much of each stat each slot will imbue when correct items are worn
 type SlotBias = {[key in Slot]: MobStats};
@@ -150,38 +134,48 @@ const SLOTBIAS: SlotBias = {
     [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
 }
 
-export class Equipment extends Inventory {
-    mob: Mob;
-    slots: {[key in Slot]?: Inventory}; // enums cant be used as keys unless ?
-    constructor(mob: Mob, contents?: InventoryMap|undefined) {
-        super(contents);
-        this.mob = mob;
-        this.slots = {};
-    }
+// type MobSlots = {[key in Slot]?: Inventory}
 
-    getEquipment() {
-        return this.slots[Slot.Torso]?.itemsArray;
-    }
+// export class Equipment {
+//     mob: Mob;
+//     mobSlots: MobSlots;
+//     constructor(mob: Mob, mobSlots: ) {
 
-    equipSlot(slot: Slot, item: Item) {
-        let slotObj = this.contents[slot];
-        console.log(item.equipSlot);
-        if (!item.equipSlot) {
-            console.log("youre not meant to use this");
-            return;
-        }
-        PLAYER.applyStats(slot in item.equipSlot ?
-            {inInsul: item.stats.insulation * SLOTBIAS[slot].inInsul, extInsul: item.stats.insulation * SLOTBIAS[slot].extInsul}:
-            {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
+//     }
+// }
 
-        if (!slotObj) {
-            slotObj = {item: item, quantity: 1};
-            this.mob.inventory.remove(slotObj.item.name, 1);
-        }
-        else {
-            this.mob.inventory.add(slotObj.item.name, 1);
-            slotObj = {item: item, quantity: 1};
-            this.mob.inventory.remove(slotObj.item.name, 1);
-        }
-    }
-}
+// export class EquipmentOld extends Inventory {
+//     mob: Mob;
+//     slots: {[key in Slot]?: Inventory}; // enums cant be used as keys unless ?
+//     constructor(mob: Mob, contents?: InventoryMap|undefined) {
+//         super(contents);
+//         this.mob = mob;
+//         this.slots = {};
+//     }
+
+//     getEquipment() {
+//         return this.slots[Slot.Torso]?.itemsArray;
+//     }
+
+//     equipSlot(slot: Slot, item: Item) {
+//         let slotObj = this.contents[slot];
+//         console.log(item.equipSlot);
+//         if (!item.equipSlot) {
+//             console.log("youre not meant to use this");
+//             return;
+//         }
+//         PLAYER.applyStats(slot in item.equipSlot ?
+//             {inInsul: item.stats.insulation * SLOTBIAS[slot].inInsul, extInsul: item.stats.insulation * SLOTBIAS[slot].extInsul}:
+//             {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
+
+//         if (!slotObj) {
+//             slotObj = {item: item, quantity: 1};
+//             this.mob.inventory.remove(slotObj.item.name, 1);
+//         }
+//         else {
+//             this.mob.inventory.add(slotObj.item.name, 1);
+//             slotObj = {item: item, quantity: 1};
+//             this.mob.inventory.remove(slotObj.item.name, 1);
+//         }
+//     }
+// }

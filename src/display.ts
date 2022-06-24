@@ -19,9 +19,7 @@ function displayCell(x: number, y: number) {
 
     let itemsDisplay = "";
     displayElement.innerHTML = "";
-    // this sux ! Object.values sucks, make my own thing with types
-    for (let item of cell.inventory.itemsArray(1)) {
-            // console.log(item.symbol)
+    for (let item of cell.inventory.items) {
             itemsDisplay += item.symbol;
         }
 
