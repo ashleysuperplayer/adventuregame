@@ -99,5 +99,9 @@ export class Vector2 {
     dot(v: Vector2) {
         return this.x*v.x + this.y*v.y;
     }
+
+    toString() {
+        return `${this.x},${this.y}`;
+    }
 }
 

@@ -1,14 +1,11 @@
 import { updateLighting, Colour } from "./light.js";
-import { createGrid, getElementFromID, throwExpression } from "./util.js";
+import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
 import { Equipment, Inventory, Slot, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
 export function getMapCellAtDisplayCell(x: number, y: number): Cell {
-    const newX = x - 16 + PLAYER.x;
-    const newY = y - 16 + PLAYER.y;
-
-    return CELLMAP[`${newX},${newY}`];
+    return CELLMAP[`${x-16+PLAYER.pos.x},${y-16+PLAYER.pos.y}`];
 }
 
 export function getSquareDistanceBetweenCells(cell1: Cell, cell2: Cell) {
@@ -193,8 +190,7 @@ export interface MobKind {
 
 export abstract class Mob {
     name: string;
-    x: number;
-    y: number;
+    pos: Vector2;
     currentAction: string;
     symbol: string;
     facing: string;
@@ -205,9 +201,8 @@ export abstract class Mob {
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
-        this.x = x;
-        this.y = y;
-        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
+        this.pos = new Vector2(x, y);
+        CELLMAP[`${this.pos.x},${this.pos.y}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
         this.facing = "n";
@@ -235,51 +230,51 @@ export abstract class Mob {
 
     // returns the current cell of this Mob
     getCell() {
-        return CELLMAP[`${this.x},${this.y}`];
+        return CELLMAP[`${this.pos}`];
     }
 
     // initiates movement of Mob in direction
     move(direction: string, changeFacing: boolean) {
         // remove from old location
-        let oldContents = CELLMAP[`${this.x},${this.y}`].mobs;
+        let oldContents = CELLMAP[`${this.pos}`].mobs;
         oldContents.splice(oldContents.indexOf(this),1);
 
         switch(direction) {
             case "north":
-                if (!checkIfCellBlocked(this.x, this.y + 1)) {
+                if (!checkIfCellBlocked(this.pos.x, this.pos.y + 1)) {
                     if (changeFacing) {
                         this.facing = "n";
                     }
-                    this.y += 1;
+                    this.pos.y += 1;
                 }
                 break;
             case "south":
-                if (!checkIfCellBlocked(this.x, this.y - 1)) {
+                if (!checkIfCellBlocked(this.pos.x, this.pos.y - 1)) {
                     if (changeFacing) {
                         this.facing = "s";
                     }
-                    this.y -= 1;
+                    this.pos.y -= 1;
                 }
                 break;
             case "east":
-                if (!checkIfCellBlocked(this.x + 1, this.y)) {
+                if (!checkIfCellBlocked(this.pos.x + 1, this.pos.y)) {
                     if (changeFacing) {
                         this.facing = "e";
                     }
-                    this.x += 1;
+                    this.pos.x += 1;
                 }
                 break;
             case "west":
-                if (!checkIfCellBlocked(this.x - 1, this.y)) {
+                if (!checkIfCellBlocked(this.pos.x - 1, this.pos.y)) {
                     if (changeFacing) {
                         this.facing = "w";
                     }
-                    this.x -= 1;
+                    this.pos.x -= 1;
                 }
                 break;
         }
 
-        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
+        CELLMAP[`${this.pos}`].mobs.push(this);
 
         this.currentAction = "moved";
     }

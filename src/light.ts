@@ -74,7 +74,7 @@ export function updateLighting() {
     // reset light level of all cells to the ambient level
     for (let cellY = -11; cellY < 44; cellY++) { // (screen length) // TODO remove these magical numbers lol
         for (let cellX = -5; cellX < 44; cellX++) { // (screen length)
-            const cell = CELLMAP[`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`];
+            const cell = CELLMAP[`${cellX - 16 + PLAYER.pos.x},${cellY - 16 + PLAYER.pos.y}`];
             if (!cell) continue;
             cell.lightLevel = amblight;
         }
@@ -83,7 +83,7 @@ export function updateLighting() {
     // find all light sources among visible(+epsilon) cells, and add their influences
     for (let cellY = -11; cellY < 44; cellY++) { // (screen length) // TODO remove these magical numbers lol
         for (let cellX = -5; cellX < 44; cellX++) { // (screen length)
-            const cell = CELLMAP[`${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`];
+            const cell = CELLMAP[`${cellX - 16 + PLAYER.pos.x},${cellY - 16 + PLAYER.pos.y}`];
             if (!cell) continue;
             const lum = cell.maxLum();
             if (lum.isZero()) continue;

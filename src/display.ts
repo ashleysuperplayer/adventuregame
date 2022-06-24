@@ -3,7 +3,7 @@ import { throwExpression } from "./util.js";
 export function updateDisplay() {
     for (let cellY = 0; cellY < 33; cellY++) { // (screen length)
         for (let cellX = 0; cellX < 33; cellX++) { // (screen length)
-            displayCell(`${cellX},${cellY}`, `${cellX - 16 + PLAYER.x},${cellY - 16 + PLAYER.y}`);
+            displayCell(`${cellX},${cellY}`, `${cellX - 16 + PLAYER.pos.x},${cellY - 16 + PLAYER.pos.y}`);
         }
     }
 }
