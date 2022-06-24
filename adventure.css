@@ -142,7 +142,6 @@ body {
     left: 5px;
     color: white;
     opacity: 1;
-    text-decoration: underline;
     content: attr(focus-title);
 }
 
