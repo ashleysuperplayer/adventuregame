@@ -46,7 +46,7 @@ function setGlobals() {
         "npctest": {name: "npctest", symbol: "T"}
     }
     globalThis.ITEMKINDSMAP = {
-        "oil lamp": {name: "oil lamp", symbol: "o", luminescence: new Colour(150, 100, 100), weight: 2700, space: 1, opacity: 0, blocking: false, lex: new Lex("is an oil lamp", ["are ", " oil lamps"])},
+        "oil lamp": {name: "oil lamp", symbol: "o", luminescence: new Colour(247, 91, 18), weight: 2700, space: 1, opacity: 0, blocking: false, lex: new Lex("is an oil lamp", ["are ", " oil lamps"])},
         "rock": {name: "rock", symbol: ".", luminescence: new Colour(0, 0, 0), weight: 100, space: 0.1, opacity: 0, blocking: false, lex: new Lex("is a rock", ["are ", " rocks"])},
         "chocolate thunder": {name: "chocolate thunder", symbol: "c", luminescence: new Colour(0, 0, 0), weight: 10, space: 0.01, opacity: 0, blocking: false, lex: new Lex("is a chocolate thunder", ["are ", " chocolate thunders"])}
     }

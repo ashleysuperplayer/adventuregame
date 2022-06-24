@@ -48,25 +48,6 @@ function generateWorld(sideLengthWorld: number) {
     return newCellMap;
 }
 
-function genGround(): GroundType {
-    if (Math.random() > 0.95) {
-        return GROUNDTYPEKINDSMAP["clay"];
-    }
-    if (Math.random() > 0.9) {
-        return GROUNDTYPEKINDSMAP["mud"];
-    }
-    return GROUNDTYPEKINDSMAP["snow"];
-}
-
-function genTerrain(): TerrainFeature[] {
-    let terrainFeatures: TerrainFeature[] = [];
-    if (Math.random() < 0.1) {
-        terrainFeatures.push(TERRAINFEATUREKINDSMAP["tree"]);
-    }
-    return terrainFeatures;
-}
-
-
 function setPlayerAction(newAction: string) {
     PLAYER.currentAction = newAction;
 }
@@ -464,13 +445,28 @@ export class Cell {
         this.x = x;
         this.y = y;
         this.mobs = [];
-        this.ground = genGround();
-        this.terrain = genTerrain();
+        this.ground = Cell.genGround();
+        this.terrain = Cell.genTerrain();
         this.color = this.ground.blendMode();
         // inventory should have a way to generate items depending on some seeds
         this.inventory  = new Inventory();
         this.lightLevel = Colour.Zero();
         this.isVisible = false;
+    }
+
+    static genGround(): GroundType {
+        // if (Math.random() > 0.99) {
+        //     return GROUNDTYPEKINDSMAP["mud"];
+        // }
+        return GROUNDTYPEKINDSMAP["snow"];
+    }
+
+    static genTerrain(): TerrainFeature[] {
+        let terrainFeatures: TerrainFeature[] = [];
+        if (Math.random() < 0.1) {
+            terrainFeatures.push(TERRAINFEATUREKINDSMAP["tree"]);
+        }
+        return terrainFeatures;
     }
 
     isBlocked(): boolean {

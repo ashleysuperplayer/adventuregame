@@ -135,14 +135,14 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx    = cellCtx;
         this.lookButton = this.createLookButton();
-        if (DEBUG) {
-            this.debugMenu  = this.createDebugMenu();
-        }
-        // this sucks, also 2 means every orthog/diag
+        // this sucks, also 2 means every orthog
         if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
             if (this.cellCtx.inventory.itemsArray(1).length > 0) {
                 this.takeHoverMenu = this.createTakeHoverMenu();
             }
+        }
+        if (DEBUG) {
+            this.debugMenu  = this.createDebugMenu();
         }
     }
 
@@ -242,23 +242,23 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.entry         = PLAYER.inventory.contents[itemName];
         this.HTMLElement   = this.createParentElement();
         this.dropButton    = this.createDropButton();
-        if (DEBUG) {
-            this.debugMenu = this.createDebugMenu();
-        }
         if (this.entry.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
+        }
+        if (DEBUG) {
+            this.debugMenu = this.createDebugMenu();
         }
     }
 
     createDebugMenu() {
         this.addToStack();
-        return new CtxDebugMenu(this.x, this.y, this, this.entry.item);
+        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.entry.item);
     }
 
     createDropButton() {
         this.addToStack();
         let itemName = this.entry.item.name;
-        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y, this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
@@ -267,7 +267,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.addToStack();
         let itemName  = this.entry.item.name;
         let itemQuant = this.entry.quantity;
-        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.x, this.y+20, this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
+        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.x, this.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
