@@ -1,10 +1,12 @@
 import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
-import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick } from "./world.js";
+import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick, constructItemKind } from "./world.js";
 import { Colour } from "./light.js";
-import { Slot } from "./inventory.js";
+import { constructMobSlots } from "./inventory.js";
 import { Viewport } from "./display.js";
+import { Debugger } from "./util.js";
 
 declare global {
+    var DEBUGGER: Debugger;
     var TICKER: number;
     var CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
     var VIEWPORT: Viewport;
@@ -38,6 +40,7 @@ function main() {
 }
 
 function setGlobals() {
+    globalThis.DEBUGGER = new Debugger();
     globalThis.DEBUG = true;
     globalThis.MINSPERDAY = 1440;
     globalThis.TICKSPERMINUTE = 600;
@@ -45,14 +48,15 @@ function setGlobals() {
     globalThis.TICKSPERDAY = 86400;
     globalThis.MOBSMAP = {};
     globalThis.MOBKINDSMAP = {
-        "player": {name: "player", symbol: "@"},
-        "npctest": {name: "npctest", symbol: "T"}
+        "player": {name: "player", symbol: "@", limbs: constructMobSlots()},
+        "npctest": {name: "npctest", symbol: "T", limbs: constructMobSlots()}
     };
-    globalThis.ITEMKINDSMAP = {
-        "oil lamp": {name: "oil lamp", symbol: "o", luminescence: new Colour(247, 91, 18), weight: 2700, space: 1, opacity: 0, blocking: false, lex: new Lex("is an oil lamp", ["are ", " oil lamps"]), stats: {insulation: 0}},
-        "rock": {name: "rock", symbol: ".", luminescence: new Colour(0, 0, 0), weight: 100, space: 0.1, opacity: 0, blocking: false, lex: new Lex("is a rock", ["are ", " rocks"]), stats: {insulation: 0}},
-        "chocolate thunder": {name: "chocolate thunder", symbol: "c", luminescence: new Colour(0, 0, 0), weight: 10, space: 0.01, opacity: 0, blocking: false, lex: new Lex("is a chocolate thunder", ["are ", " chocolate thunders"]), stats: {insulation: 0}},
-        "coat": {name: "coat", symbol: "/", luminescence: new Colour(0, 0, 0), weight: 5000, space: 3, opacity: 0, blocking: false, lex: new Lex("is a white winter coat", ["are ", " winter coats"]), stats: {insulation: 10}, equipSlot: [Slot.Torso]}
+    globalThis.ITEMKINDSMAP = {//                         space(l),                            opacity,
+        //"name"  :     constructItemKind("name"    , weight(g),  "symbol",            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)
+        "oil lamp":     constructItemKind("oil lamp",      2700, 1,    "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"]),          {insulation: 0}),
+        "rock":         constructItemKind("rock",          5000, 0.05, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"]),              {insulation: 0}),
+        "chocolate bar":constructItemKind("chocolate bar", 200,  0.05, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"]), {insulation: 0}),
+        "coat":         constructItemKind("coat",          800,  3,    "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"]),       {insulation: 10}, ["torso"])
     };
     globalThis.TERRAINFEATUREKINDSMAP = {
         "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},

@@ -8,7 +8,7 @@ export function updateInventory() {
     let totalWeight = 0;
 
     // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
-    for (let item of PLAYER.inventory.returnMinQuant(1)) {
+    for (let item of PLAYER.inventory.items) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace  += space;
         totalWeight += weight;
@@ -98,84 +98,41 @@ export class Inventory {
     }
 }
 
-export interface SlotStats {
-    name: string;
-    inInsul: number;
-    extInsul: number;
-}
-
 // each slot must have a name, inInsul and extInsul
 // item stats are multiplied against inInsul and extInsul to derive Mob stats "inInsul" & "extInsul"
 // inInsul and extInsul of Mob is used to calculate heat loss/temperature etc
-export const enum Slot {
-    Head,
-    Face,
-    Neck,
-    Torso,
-    Legs,
-    LFoot,
-    RFoot,
-    LeftHand,
-    RightHand
-};
 
 // how much of each stat each slot will imbue when correct items are worn
-type SlotBias = {[key in Slot]: MobStats};
-
-const SLOTBIAS: SlotBias = {
-    [Slot.Head]:      {inInsul: 1.0, extInsul: 1.2},
-    [Slot.Face]:      {inInsul: 0.5, extInsul: 1.2},
-    [Slot.Neck]:      {inInsul: 0.8, extInsul: 1.0},
-    [Slot.Torso]:     {inInsul: 1.5, extInsul: 1.0},
-    [Slot.Legs]:      {inInsul: 1.0, extInsul: 1.3},
-    [Slot.LFoot]:     {inInsul: 0.3, extInsul: 1.3},
-    [Slot.RFoot]:     {inInsul: 0.3, extInsul: 1.5},
-    [Slot.LeftHand]:  {inInsul: 0.2, extInsul: 1.5},
-    [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
+type SlotBias = {
+    [key: string]: MobStats;
 }
 
-// type MobSlots = {[key in Slot]?: Inventory}
+export const SLOTBIAS: SlotBias = {
+    "head":  {inInsul: 1.0, extInsul: 1.2},
+    "face":  {inInsul: 0.5, extInsul: 1.2},
+    "neck":  {inInsul: 0.8, extInsul: 1.0},
+    "torso": {inInsul: 1.5, extInsul: 1.0},
+    "legs":  {inInsul: 1.0, extInsul: 1.3},
+    "lFoot": {inInsul: 0.3, extInsul: 1.3},
+    "rFoot": {inInsul: 0.3, extInsul: 1.5},
+    "lHand": {inInsul: 0.2, extInsul: 1.5},
+    "rHand": {inInsul: 0.2, extInsul: 1.5}
+}
 
-// export class Equipment {
-//     mob: Mob;
-//     mobSlots: MobSlots;
-//     constructor(mob: Mob, mobSlots: ) {
+// MobSlots is 20150117--Jump3 MOB slots switched, OBVIOUSLY
+export type MobSlots =  {
+    [key: string]: Inventory;
+}
 
-//     }
-// }
-
-// export class EquipmentOld extends Inventory {
-//     mob: Mob;
-//     slots: {[key in Slot]?: Inventory}; // enums cant be used as keys unless ?
-//     constructor(mob: Mob, contents?: InventoryMap|undefined) {
-//         super(contents);
-//         this.mob = mob;
-//         this.slots = {};
-//     }
-
-//     getEquipment() {
-//         return this.slots[Slot.Torso]?.itemsArray;
-//     }
-
-//     equipSlot(slot: Slot, item: Item) {
-//         let slotObj = this.contents[slot];
-//         console.log(item.equipSlot);
-//         if (!item.equipSlot) {
-//             console.log("youre not meant to use this");
-//             return;
-//         }
-//         PLAYER.applyStats(slot in item.equipSlot ?
-//             {inInsul: item.stats.insulation * SLOTBIAS[slot].inInsul, extInsul: item.stats.insulation * SLOTBIAS[slot].extInsul}:
-//             {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
-
-//         if (!slotObj) {
-//             slotObj = {item: item, quantity: 1};
-//             this.mob.inventory.remove(slotObj.item.name, 1);
-//         }
-//         else {
-//             this.mob.inventory.add(slotObj.item.name, 1);
-//             slotObj = {item: item, quantity: 1};
-//             this.mob.inventory.remove(slotObj.item.name, 1);
-//         }
-//     }
-// }
+export function constructMobSlots(): MobSlots {
+    return {"head": new Inventory(),
+            "face": new Inventory(),
+            "neck": new Inventory(),
+            "torso": new Inventory(),
+            "legs":  new Inventory(),
+            "lFoot": new Inventory(),
+            "rFoot": new Inventory(),
+            "lHand": new Inventory(),
+            "rHand": new Inventory()
+        };
+    }

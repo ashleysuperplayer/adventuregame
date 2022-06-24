@@ -1,3 +1,5 @@
+import { Item } from "./world.js";
+
 export function getElementFromID(id: string): HTMLElement {
     let element = document.getElementById(id);
     if (element) {
@@ -55,25 +57,6 @@ export function createGrid(parentID: string, sideLength: number, cellClass: stri
     parent.style.gridTemplateColumns = gridAutoColumn;
 }
 
-// function convertListToString(someList: number[] | string[], delimiter="") {
-//     let someString = "";
-//     for (let i of someList) {
-//         someString += i + delimiter;
-//     }
-
-//     if (delimiter) {
-//         return someString.slice(0, -1);
-//     }
-//     else {
-//         return someString;
-//     }
-// }
-
-export interface Dim2 {
-    height: number;
-    width:  number;
-}
-
 export class Vector2 {
     x: number;
     y: number;
@@ -95,7 +78,7 @@ export class Vector2 {
     lengthsq() {
         return this.x*this.x + this.y*this.y;
     }
-    
+
     dot(v: Vector2) {
         return this.x*v.x + this.y*v.y;
     }
@@ -105,3 +88,12 @@ export class Vector2 {
     }
 }
 
+// these can't be static or they're inaccessible during runtime
+export class Debugger {
+    constructor() {
+    }
+
+    createItem(itemName: string) {
+        return [new Item(ITEMKINDSMAP[itemName])];
+    }
+}
