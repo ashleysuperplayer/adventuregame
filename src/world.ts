@@ -331,7 +331,7 @@ class NPCHuman extends Mob {
     }
 
     tick(): void {
-        let rand = Math.random();
+        let rand = Math.random() * 10;
         if (rand <= 0.2) {
             this.currentAction = "north";
         }
