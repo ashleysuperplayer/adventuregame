@@ -1,7 +1,7 @@
 import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
 import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick, constructItemKind } from "./world.js";
 import { Colour } from "./light.js";
-import { Slot } from "./inventory.js";
+import { Slot, constructMobSlots } from "./inventory.js";
 import { Viewport } from "./display.js";
 import { Debugger } from "./util.js";
 
@@ -48,8 +48,8 @@ function setGlobals() {
     globalThis.TICKSPERDAY = 86400;
     globalThis.MOBSMAP = {};
     globalThis.MOBKINDSMAP = {
-        "player": {name: "player", symbol: "@"},
-        "npctest": {name: "npctest", symbol: "T"}
+        "player": {name: "player", symbol: "@", limbs: constructMobSlots()},
+        "npctest": {name: "npctest", symbol: "T", limbs: constructMobSlots()}
     };
     globalThis.ITEMKINDSMAP = {//                         space(l),                            opacity,
         //"name"  :     constructItemKind("name"    , weight(g),  "symbol",            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)

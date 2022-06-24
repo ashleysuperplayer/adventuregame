@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { Inventory, Slot, updateInventory } from "./inventory.js";
+import { Inventory, MobSlots, Slot, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -187,10 +187,13 @@ function stringCoordsToNum(stringCoords: string): number[] {
 export interface MobKind {
     name: string;
     symbol: string;
+    limbs: MobSlots;
 }
 
 export abstract class Mob {
     name: string;
+    // limbs will be of type Limb[], for now it is MobSlots
+    limbs: MobSlots;
     pos: Vector2;
     currentAction: string;
     symbol: string;
@@ -202,6 +205,7 @@ export abstract class Mob {
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
+        this.limbs = kind.limbs;
         this.pos = new Vector2(x, y);
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";

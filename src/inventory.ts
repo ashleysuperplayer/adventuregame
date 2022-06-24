@@ -134,15 +134,31 @@ const SLOTBIAS: SlotBias = {
     [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
 }
 
-// type MobSlots = {[key in Slot]?: Inventory}
+export type MobSlots = {[key in Slot]?: Inventory};
 
-// export class Equipment {
-//     mob: Mob;
-//     mobSlots: MobSlots;
-//     constructor(mob: Mob, mobSlots: ) {
+export function constructMobSlots() {
+    return {[Slot.Head]:      new Inventory(),
+            [Slot.Face]:      new Inventory(),
+            [Slot.Neck]:      new Inventory(),
+            [Slot.Torso]:     new Inventory(),
+            [Slot.Legs]:      new Inventory(),
+            [Slot.LFoot]:     new Inventory(),
+            [Slot.RFoot]:     new Inventory(),
+            [Slot.LeftHand]:  new Inventory(),
+            [Slot.RightHand]: new Inventory()
+        };
+    }
 
-//     }
-// }
+
+// equipment
+export class EquipmentSet {
+    mob: Mob;
+    mobSlots: MobSlots;
+    constructor(mob: Mob) {
+        this.mob = mob;
+        this.mobSlots = mob.limbs;
+    }
+}
 
 // export class EquipmentOld extends Inventory {
 //     mob: Mob;
