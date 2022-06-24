@@ -1,4 +1,4 @@
-import { Dim2, getElementFromID } from "./util.js";
+import { Dim2, getElementFromID, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, parseCell, setFocus } from "./world.js";
 import { Inventory, InventoryEntry, updateInventory } from "./inventory.js";
 
@@ -15,17 +15,15 @@ export function clearCTX() {
 }
 abstract class CtxMenuComponent {
     id:     string;
-    x:      number;
-    y:      number;
+    pos:    Vector2;
     ownCls: string;
     stackBase: number;
     HTMLElement: HTMLElement;
     constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
-        this.x      = x;
-        this.y      = y;
+        this.pos    = new Vector2(x, y);
         this.ownCls = ownCls;
-        this.stackBase = -1; // jank that it starts at 0
+        this.stackBase = -1; // jank
         this.HTMLElement = this.createBaseElement();
     }
 
@@ -37,13 +35,8 @@ abstract class CtxMenuComponent {
         return this.stackBase * 20;
     }
 
-    checkDimensions(dimensions: Dim2) {
-        if (dimensions) {
-            return {"height": dimensions.height, "width": dimensions.width};
-        }
-        else { // default
-            return {"height": 20, "width" : 50};
-        }
+    static baseDimensions() {
+        return new Vector2(60, 20);
     }
 
     // basic menu item, every subclass should use this in their createElement method
@@ -53,8 +46,8 @@ abstract class CtxMenuComponent {
         element.id = this.id;
         element.classList.add(this.ownCls);
 
-        element.style.left   = `${this.x}px`;
-        element.style.top    = `${this.y}px`;
+        element.style.left   = `${this.pos.x}px`;
+        element.style.top    = `${this.pos.y}px`;
 
         return element;
     }
@@ -148,17 +141,17 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
 
     createDebugMenu() {
         this.addToStack()
-        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.cellCtx);
+        return new CtxDebugMenu(this.pos.x, this.pos.y + this.stack(), this, this.cellCtx);
     }
 
     createLookButton() {
         this.addToStack()
-        return new CtxButton_Cell("ctxLookButton", this.x, this.y + this.stack(), this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
+        return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
     }
 
     createTakeHoverMenu() {
         this.addToStack()
-        return new CtxHoverMenu_Cell("ctxTakeHover", this.x, this.y + this.stack(), this);
+        return new CtxHoverMenu_Cell("ctxTakeHover", this.pos.x, this.pos.y + this.stack(), this);
     }
 }
 
@@ -184,7 +177,7 @@ class CtxHoverMenu_Cell extends CtxHoverMenu {
         for (let entry of this.parent.cellCtx.inventory.entriesArray()) {
             for (let quantity = entry.quantity; quantity--; quantity > 0) {
                 this.addToStack()
-                children.push(new CtxButton_Cell(`${entry.item.name + this.stack}Button`, this.x + this.dimensions.width, this.y + this.stack(), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
+                children.push(new CtxButton_Cell(`${entry.item.name + this.stack}Button`, this.pos.x + this.dimensions.width, this.pos.y + this.stack(), this, () => {PLAYER.take(entry.item.name, this.parent.cellCtx)}, entry.item.name, true))
             }
         }
         return children;
@@ -252,13 +245,13 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 
     createDebugMenu() {
         this.addToStack();
-        return new CtxDebugMenu(this.x, this.y + this.stack(), this, this.entry.item);
+        return new CtxDebugMenu(this.pos.x, this.pos.y + this.stack(), this, this.entry.item);
     }
 
     createDropButton() {
         this.addToStack();
         let itemName = this.entry.item.name;
-        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.x, this.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, 1); PLAYER.getCell().inventory.add(itemName, 1)}, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
@@ -267,7 +260,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.addToStack();
         let itemName  = this.entry.item.name;
         let itemQuant = this.entry.quantity;
-        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.x, this.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
+        let button    = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.remove(itemName, itemQuant); PLAYER.getCell().inventory.add(itemName, itemQuant)}, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }
