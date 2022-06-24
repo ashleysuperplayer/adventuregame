@@ -113,16 +113,18 @@ export class Inventory {
     }
 }
 
-enum Slots {
+export enum Slots {
     Head = "head",
     Face = "face",
     Neck = "neck",
     Torso = "torso",
     Legs = "legs",
-    Feet = "feet"
+    Feet = "feet",
+    LeftHand = "lefthand",
+    RightHand = "righthand"
 }
 
-class Equipment extends Inventory {
+export class Equipment extends Inventory {
     mob: Mob;
     constructor( mob: Mob, contents?: InventoryMap|undefined) {
         super(contents);

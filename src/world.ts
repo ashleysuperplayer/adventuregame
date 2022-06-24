@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression } from "./util.js";
-import { Inventory, updateInventory } from "./inventory.js";
+import { Equipment, Inventory, Slots, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -200,6 +200,7 @@ export abstract class Mob {
     symbol: string;
     facing: string;
     blocking: boolean;
+    equipment: Equipment;
     inventory: Inventory;
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
@@ -211,6 +212,7 @@ export abstract class Mob {
         CELLMAP[`${this.x},${this.y}`].mobs.push(this);
         this.facing = "n";
         this.blocking = true;
+        this.equipment = new Equipment(this);
         this.inventory = new Inventory();
     }
 
