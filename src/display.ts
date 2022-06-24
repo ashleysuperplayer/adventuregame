@@ -39,7 +39,7 @@ function displayCell(displayElementCoords: string, cellCoords: string) {
     lightElement.style.mixBlendMode = "multiply";
     lightElement.style.backgroundColor = `${cell.lightLevel}`;
 
-    displayElement.style.backgroundColor = `RGB(${cell.color})` // band aid
+    displayElement.style.backgroundColor = `${cell.color}` // band aid
 }
 
 export let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};

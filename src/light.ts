@@ -18,6 +18,11 @@ export class Colour {
         return new Colour(0, 0, 0);
     }
 
+    // returns random colour each component independent and between 0 and 1
+    static Random(): Colour{
+        return new Colour(Math.random(), Math.random(), Math.random());
+    }
+
     static sum(colours: Colour[]): Colour {
         let out = Colour.Zero();
         for (let colour of colours) {

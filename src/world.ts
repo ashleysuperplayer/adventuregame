@@ -479,7 +479,7 @@ export class Cell {
     terrain: TerrainFeature[];
     ground: GroundType;
     lightLevel: Colour;
-    color: [number, number, number];
+    color: Colour;
     inventory: Inventory;
     isVisible: Boolean;
     constructor(x: number, y: number) {
@@ -569,10 +569,10 @@ class ControlState {
 
 export class GroundType {
     name: string;
-    color: [number, number, number];
+    color: Colour;
     blendMode: Function;
     lex: Lex;
-    constructor(name: string, color: [number, number, number], blendMode: string, lex: Lex) {
+    constructor(name: string, color: Colour, blendMode: string, lex: Lex) {
         this.name = name;
         this.color = color;
         this.blendMode = this.getBlendMode(blendMode);
@@ -592,18 +592,18 @@ export class GroundType {
         }
     }
 
-    mudBlend() {
-        const random = Math.random() * 30;
-        return this.color.map((rgb)=>{return rgb+random});
+    mudBlend(): Colour {
+        const r = Math.random()*400-200;
+        return this.color.add(new Colour(r, r, r));
     }
 
-    clayBlend() {
+    clayBlend(): Colour {
         const random = Math.random();
         if (random > 0.5) {
-            return [169, 108, 80];
+            return new Colour(169, 108, 80);
         }
         else {
-            return [172, 160, 125];
+            return new Colour(172, 160, 125);
         }
     }
 }

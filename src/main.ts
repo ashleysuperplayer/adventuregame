@@ -56,9 +56,9 @@ function setGlobals() {
         "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
     };
     globalThis.GROUNDTYPEKINDSMAP = {
-        "mud":  new GroundType("mud", [109, 81, 60], "mudBlend", new Lex("is muddy")),
-        "snow": new GroundType("snow", [240, 240, 240], "mudBlend", new Lex("is covered in snow")),
-        "clay": new GroundType("clay", [0, 0, 0], "clayBlend", new Lex("is slippery, clay-rich soil"))
+        "mud":  new GroundType("mud", new Colour(109, 81, 60), "mudBlend", new Lex("is muddy")),
+        "snow": new GroundType("snow", new Colour(240, 240, 240), "mudBlend", new Lex("is covered in snow")),
+        "clay": new GroundType("clay", new Colour(0, 0, 0), "clayBlend", new Lex("is slippery, clay-rich soil"))
     };
     globalThis.CTX = undefined;
 }
