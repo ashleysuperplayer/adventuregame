@@ -2,10 +2,12 @@ import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
 import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setup, tick } from "./world.js";
 import { Colour } from "./light.js";
 import { Slot } from "./inventory.js";
+import { Viewport } from "./display.js";
 
 declare global {
     var TICKER: number;
     var CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
+    var VIEWPORT: Viewport;
 
     var DEBUG: boolean;
     var PLAYER: Player;
@@ -61,6 +63,7 @@ function setGlobals() {
         "clay": new GroundType("clay", new Colour(0, 0, 0), "clayBlend", new Lex("is slippery, clay-rich soil"))
     };
     globalThis.CTX = undefined;
+    globalThis.VIEWPORT = new Viewport(0, 0, 33, 33);
 }
 
 window.addEventListener("load", (event) => {

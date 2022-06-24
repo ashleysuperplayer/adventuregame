@@ -74,6 +74,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     globalThis.CELLMAP = generateWorld(worldSideLength);
 
     globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    globalThis.VIEWPORT.pos = PLAYER.pos;
 
     globalThis.TIME = startTime;
     globalThis.MINSPERDAY = 1440;
@@ -202,7 +203,7 @@ export abstract class Mob {
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
         this.pos = new Vector2(x, y);
-        CELLMAP[`${this.pos.x},${this.pos.y}`].mobs.push(this);
+        CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
         this.facing = "n";
@@ -354,6 +355,7 @@ export class Player extends Mob {
     }
 
     tick() {
+        VIEWPORT.pos = this.pos;
         return;
     }
 }
