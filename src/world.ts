@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression } from "./util.js";
-import { Equipment, Inventory, Slots, updateInventory } from "./inventory.js";
+import { Equipment, Inventory, Slot, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -87,8 +87,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
 
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
-    // CTX = new CtxParentMenu_Cell(-500,-500,CELLMAP["0,50"]);
-    // debug stuff
+    PLAYER.equipment.equipSlot(Slot.Torso, ITEMKINDSMAP["coat"]);
 
     updateLighting();
     updateDisplay();
@@ -202,24 +201,44 @@ export abstract class Mob {
     blocking: boolean;
     equipment: Equipment;
     inventory: Inventory;
+    stats: MobStats;
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
         this.x = x;
         this.y = y;
+        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        CELLMAP[`${this.x},${this.y}`].mobs.push(this);
         this.facing = "n";
         this.blocking = true;
         this.equipment = new Equipment(this);
         this.inventory = new Inventory();
+        this.stats = this.baseStats();
     }
 
+    // apply stats to Mob based on StatDelta object
+    // definitely a much better way to do this once i figure out indexing by string without bypassing typescript
+    applyStats(statChange: StatDelta): void {
+        if (statChange.inInsul) {
+            this.stats.inInsul += statChange.inInsul;
+        }
+        if (statChange.extInsul) {
+            this.stats.extInsul += statChange.extInsul;
+        }
+    }
+
+    // return base MobStats object
+    baseStats(): MobStats {
+        return {inInsul: 0, extInsul: 0}
+    }
+
+    // returns the current cell of this Mob
     getCell() {
         return CELLMAP[`${this.x},${this.y}`];
     }
 
+    // initiates movement of Mob in direction
     move(direction: string, changeFacing: boolean) {
         // remove from old location
         let oldContents = CELLMAP[`${this.x},${this.y}`].mobs;
@@ -265,6 +284,7 @@ export abstract class Mob {
         this.currentAction = "moved";
     }
 
+    // remove 1 item from Cell Inventory and place into Mob's Inventory
     take(name: string, cell: Cell) {
         if (cell.inventory.remove(name, 1)) {
             this.inventory.add(name, 1);
@@ -274,6 +294,7 @@ export abstract class Mob {
         }
     }
 
+    // called every tick to execute Mob's currentAction, quantizes Mob actions into tick lengths
     executeAction() {
         switch(this.currentAction) {
             case "north":
@@ -307,6 +328,7 @@ export abstract class Mob {
     abstract tick(): void;
 }
 
+// TODO separate out into NPCHuman extends Human
 class NPCHuman extends Mob {
     constructor(x: number, y: number, mobKind: MobKind) {
         super(x, y, mobKind);
@@ -341,6 +363,7 @@ export class Player extends Mob {
     }
 }
 
+// convert the contents of Cell into a big paragraph using its components' Lex property
 export function parseCell(cell: Cell): string {
     let cellDescAppend = (x: string) => {cellDescription = cellDescription.concat(x)};
     if (cell.lightLevel.mag() < 11) {
@@ -379,6 +402,7 @@ export function parseCell(cell: Cell): string {
     return cellDescription;
 }
 
+// WIP, sets the content of the focus menu
 export function setFocus(focus: string, title: string) {
     getElementFromID("focusElementChild").remove();
     let focusElement      = getElementFromID("focus");
@@ -392,14 +416,18 @@ export function setFocus(focus: string, title: string) {
     focusElementChild.innerHTML = focus;
 }
 
+// aids parseCell in translation into sentences
 export class Lex {
+    // defined in the form "there " + cellDesc + "." i.e. "there [is a lamp]."
     cellDesc: string;
+    // defined in form "there ", cellDescP[0], quantity, cellDescP[1], "." i.e. "there [are ][7][ lamps]."
     cellDescP?: string[];
     constructor(cellDesc: string, cellDescP?: string[]) {
         this.cellDesc = cellDesc;
         this.cellDescP = cellDescP;
     }
 
+    // splice x into the middle of cellDescP
     cellDescXPlural(x: string|number) {
         if (typeof x === "number") {
             x = x.toString();
@@ -422,6 +450,22 @@ export interface Item {
     opacity: number;
     blocking: boolean;
     lex: Lex;
+    stats: ItemStats;
+    equipSlot?: Slot[];
+}
+
+export interface ItemStats {
+    insulation: number;
+}
+
+export interface MobStats {
+    inInsul: number;
+    extInsul: number;
+}
+
+interface StatDelta {
+    inInsul?: number;
+    extInsul?: number;
 }
 
 export interface TerrainFeature {
@@ -471,6 +515,7 @@ export class Cell {
         return terrainFeatures;
     }
 
+    // returns true if something on cell would block something else with collision
     isBlocked(): boolean {
         for (let content of [...this.terrain, ...this.mobs]) {
             if (content.blocking) {

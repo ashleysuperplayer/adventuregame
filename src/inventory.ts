@@ -1,4 +1,4 @@
-import { Item, Mob } from "./world.js";
+import { Item, Mob, MobStats } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
@@ -113,26 +113,67 @@ export class Inventory {
     }
 }
 
-export enum Slots {
-    Head = "head",
-    Face = "face",
-    Neck = "neck",
-    Torso = "torso",
-    Legs = "legs",
-    Feet = "feet",
-    LeftHand = "lefthand",
-    RightHand = "righthand"
+export interface SlotStats {
+    name: string;
+    inInsul: number;
+    extInsul: number;
+}
+
+// each slot must have a name, inInsul and extInsul
+// item stats are multiplied against inInsul and extInsul to derive Mob stats "inInsul" & "extInsul"
+// inInsul and extInsul of Mob is used to calculate heat loss/temperature etc
+
+export enum Slot {
+    Head,
+    Face,
+    Neck,
+    Torso,
+    Legs,
+    LFoot,
+    RFoot,
+    LeftHand,
+    RightHand
+}
+
+// how much of each stat each slot will imbue when correct items are worn
+type SlotBias = {[key in Slot]: MobStats};
+
+const SLOTBIAS: SlotBias = {
+    [Slot.Head]:      {inInsul: 1.0, extInsul: 1.2},
+    [Slot.Face]:      {inInsul: 0.5, extInsul: 1.2},
+    [Slot.Neck]:      {inInsul: 0.8, extInsul: 1.0},
+    [Slot.Torso]:     {inInsul: 1.5, extInsul: 1.0},
+    [Slot.Legs]:      {inInsul: 1.0, extInsul: 1.3},
+    [Slot.LFoot]:     {inInsul: 0.3, extInsul: 1.3},
+    [Slot.RFoot]:     {inInsul: 0.3, extInsul: 1.5},
+    [Slot.LeftHand]:  {inInsul: 0.2, extInsul: 1.5},
+    [Slot.RightHand]: {inInsul: 0.2, extInsul: 1.5}
 }
 
 export class Equipment extends Inventory {
     mob: Mob;
-    constructor( mob: Mob, contents?: InventoryMap|undefined) {
+    slots: {[key in Slot]?: Inventory}; // enums cant be used as keys unless ?
+    constructor(mob: Mob, contents?: InventoryMap|undefined) {
         super(contents);
         this.mob = mob;
+        this.slots = {};
     }
 
-    equipSlot(slot: Slots, item: Item) {
+    getEquipment() {
+        return this.slots[Slot.Torso]?.itemsArray;
+    }
+
+    equipSlot(slot: Slot, item: Item) {
         let slotObj = this.contents[slot];
+        console.log(item.equipSlot);
+        if (!item.equipSlot) {
+            console.log("youre not meant to use this");
+            return;
+        }
+        PLAYER.applyStats(slot in item.equipSlot ?
+            {inInsul: item.stats.insulation * SLOTBIAS[slot].inInsul, extInsul: item.stats.insulation * SLOTBIAS[slot].extInsul}:
+            {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
+
         if (!slotObj) {
             slotObj = {item: item, quantity: 1};
             this.mob.inventory.remove(slotObj.item.name, 1);

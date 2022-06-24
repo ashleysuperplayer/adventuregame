@@ -47,7 +47,7 @@ export class Colour {
     }
 }
 
-// adds two numbers in [0, 255], guaranteed to land in [0, 255], inspired by relativistic velocity addition
+// adds two numbers in [0, 255], guaranteed to land in [0, 255], inspired by relativistic velocity addition meow im a cat :-3
 function addcolours(c1: number, c2: number) {
     return 255*255*(c1+c2) / (255*255 + c1*c2);
 }
@@ -59,6 +59,9 @@ function attenuate(dx: number, dy: number) {
 
 // returns light level from 0 to 200
 function timeToLight(time: number) {
+    if (DEBUG) {
+        globalThis.MINSPERDAY = 20;
+    }
     const l = 200 * 0.5*(Math.cos(2*Math.PI * time / globalThis.MINSPERDAY / 10) + 1); // super fast for debug
     return new Colour(l*1.05, l, l);
 }
