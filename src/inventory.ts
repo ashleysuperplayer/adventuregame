@@ -1,4 +1,4 @@
-import { Item } from "./world.js";
+import { Item, Mob } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
@@ -109,6 +109,36 @@ export class Inventory {
         }
         else {
             return false;
+        }
+    }
+}
+
+enum Slots {
+    Head = "head",
+    Face = "face",
+    Neck = "neck",
+    Torso = "torso",
+    Legs = "legs",
+    Feet = "feet"
+}
+
+class Equipment extends Inventory {
+    mob: Mob;
+    constructor( mob: Mob, contents?: InventoryMap|undefined) {
+        super(contents);
+        this.mob = mob;
+    }
+
+    equipSlot(slot: Slots, item: Item) {
+        let slotObj = this.contents[slot];
+        if (!slotObj) {
+            slotObj = {item: item, quantity: 1};
+            this.mob.inventory.remove(slotObj.item.name, 1);
+        }
+        else {
+            this.mob.inventory.add(slotObj.item.name, 1);
+            slotObj = {item: item, quantity: 1};
+            this.mob.inventory.remove(slotObj.item.name, 1);
         }
     }
 }
