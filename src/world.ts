@@ -439,7 +439,45 @@ export class Lex {
     }
 }
 
-export interface Item {
+export class Item {
+    name: string;
+    weight: number;
+    space: number;
+    symbol: string;
+    luminescence: Colour;
+    opacity: number;
+    blocking: boolean;
+    lex: Lex;
+    stats: ItemStats;
+    preferredEquipSlot?: Slot[];
+    constructor(itemKind: ItemKind) {
+        this.name = itemKind.name;
+        this.weight = itemKind.weight;
+        this.space = itemKind.space;
+        this.symbol = itemKind.symbol;
+        this.luminescence = itemKind.luminescence;
+        this.opacity = itemKind.opacity;
+        this.blocking = itemKind.blocking;
+        this.lex = itemKind.lex;
+        this.stats = itemKind.stats;
+        this.preferredEquipSlot = itemKind.equipSlot;
+    }
+}
+
+export function constructItemKind(name: string, weight: number, space: number, symbol: string, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex, stats: ItemStats, equipSlot?: Slot[]) {
+    return {name: name,
+            weight: weight,
+            space: space,
+            symbol: symbol,
+            luminescence: luminescence,
+            opacity: opacity,
+            blocking: blocking,
+            lex: lex,
+            stats: stats,
+            equipSlot: equipSlot}
+}
+
+interface ItemKind {
     name: string;
     weight: number;
     space: number;
