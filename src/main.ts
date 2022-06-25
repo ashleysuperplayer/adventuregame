@@ -3,7 +3,7 @@ import { Player, Lex, Cell, Mob, MobKind, Item, TerrainFeature, GroundType, setu
 import { Colour } from "./light.js";
 import { constructMobSlots } from "./inventory.js";
 import { Viewport } from "./display.js";
-import { Debugger } from "./util.js";
+import { Debugger, Vector2 } from "./util.js";
 
 declare global {
     var DEBUGGER: Debugger;
@@ -35,7 +35,7 @@ declare global {
 
 function main() {
     setGlobals();
-    setup(1000, 0, [0,0]);
+    setup(1000, 0, new Vector2(0, 0));
     globalThis.TICKER = setInterval(tick, globalThis.TICKDURATION);
 }
 

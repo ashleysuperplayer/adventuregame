@@ -64,14 +64,14 @@ function checkIfCellBlocked(x?: number, y?: number, XY?: string) {
     else throw new Error(`missing parameters, x: ${x}, y; ${y}, XY: ${XY}`);
 }
 
-export function setup(worldSideLength: number, startTime: number, playerStartLocation: number[]) {
+export function setup(worldSideLength: number, startTime: number, playerStartLocation: Vector2) {
     createGrid("map", 33, "mapCell", DISPLAYELEMENTSDICT);
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
     globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone"); // for the context menus
     globalThis.CELLMAP = generateWorld(worldSideLength);
-    globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
     globalThis.TIME = startTime;
     globalThis.MINSPERDAY = 1440;
@@ -79,19 +79,11 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]); // add a lamp
-    MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
+    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Item.createItem("coat")]); // add a lamp
 
-    MOBSMAP["2"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
-    MOBSMAP["3"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
-    MOBSMAP["4"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
-    MOBSMAP["5"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
-    MOBSMAP["6"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
-
-
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
 
     updateLighting();
     updateDisplay();
@@ -239,7 +231,10 @@ export abstract class Mob {
             return;
         }
         this.equipment[slot]?.add([item]);
+        this.inventory.remove([item]);
         this.checkClothingStats();
+        // just in case
+        updateInventory();
     }
 
     checkClothingStats() {
@@ -420,7 +415,7 @@ export class Animal extends Mob {
     constructor(x: number, y: number, kind: MobKind) {
         super(x, y, kind);
         this.blocking = false;
-        this.inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]);
+        this.inventory.add([Item.createItem("oil lamp")]);
     }
 
     tick(): void {
@@ -503,7 +498,6 @@ function parseMob(mob: Mob) {
     let clothing = mob.getClothing();
 
     for (let i = 0; i < clothing.length; i++) {
-        console.log(clothing[i].name);
         if (i === clothing.length - 1) {
             mobDescription = mobDescription.concat(`and a ${clothing[i].name}.`);
             continue;

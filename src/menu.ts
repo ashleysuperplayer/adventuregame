@@ -235,9 +235,9 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.item          = item;
         this.quantity      = PLAYER.inventory.returnByName(item.name).length;
         this.HTMLElement   = this.createParentElement();
-        // if (item.preferredEquipSlot) {
-        //     this.
-        // }
+        if (item.preferredEquipSlot) {
+            this.equipButton = this.createEquipButton();
+        }
         this.dropButton    = this.createDropButton();
         if (this.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
@@ -245,6 +245,11 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         if (DEBUG) {
             this.debugMenu = this.createDebugMenu();
         }
+    }
+
+    createEquipButton() {
+        this.addToStack();
+        return new CtxButton_Inventory("ctxEquip_Inventory", this.pos.x, this.pos.y, this, () => {PLAYER.equipDefault(this.item)}, "equip", true);
     }
 
     createDebugMenu() {
