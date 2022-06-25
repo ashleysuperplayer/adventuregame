@@ -48,8 +48,9 @@ function setGlobals() {
     globalThis.TICKSPERDAY = 86400;
     globalThis.MOBSMAP = {};
     globalThis.MOBKINDSMAP = {
-        "player": {name: "player", symbol: "@", limbs: constructMobSlots()},
-        "npctest": {name: "npctest", symbol: "T", limbs: constructMobSlots()}
+        "player":  {name: "player",  symbol: "@", limbs: constructMobSlots()},
+        "npctest": {name: "npctest", symbol: "T", limbs: constructMobSlots()},
+        "rabbit":  {name: "rabbit",  symbol: "☮", limbs: constructMobSlots()}
     };
     globalThis.ITEMKINDSMAP = {//                         space(l),                            opacity,
         //"name"  :     constructItemKind("name"    , weight(g),  "symbol",            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)
@@ -62,7 +63,7 @@ function setGlobals() {
         "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
     };
     globalThis.GROUNDTYPEKINDSMAP = {
-        "mud":  new GroundType("mud", new Colour(109, 81, 60), "mudBlend", new Lex("is muddy")),
+        "mud":  new GroundType("mud",  new Colour(109, 81, 60), "mudBlend", new Lex("is muddy")),
         "snow": new GroundType("snow", new Colour(240, 240, 240), "mudBlend", new Lex("is covered in snow")),
         "clay": new GroundType("clay", new Colour(0, 0, 0), "clayBlend", new Lex("is slippery, clay-rich soil"))
     };

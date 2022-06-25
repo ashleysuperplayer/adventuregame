@@ -82,6 +82,13 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     CELLMAP["1,0"].inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]); // add a lamp
     MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
 
+    MOBSMAP["2"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
+    MOBSMAP["3"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
+    MOBSMAP["4"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
+    MOBSMAP["5"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
+    MOBSMAP["6"] = new Animal(2, 2, MOBKINDSMAP["rabbit"]);
+
+
     PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
@@ -400,6 +407,34 @@ class NPCHuman extends Mob {
     }
 }
 
+export class Animal extends Mob {
+    constructor(x: number, y: number, kind: MobKind) {
+        super(x, y, kind);
+        this.blocking = false;
+        this.inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]);
+    }
+
+    tick(): void {
+        let rand = Math.random();
+        if (rand <= 0.2) {
+            this.currentAction = "north";
+        }
+        else if (rand <= 0.4 && rand > 0.2) {
+            this.currentAction = "south";
+        }
+        else if (rand <= 0.6 && rand > 0.4) {
+            this.currentAction = "east";
+        }
+        else if (rand <= 0.8 && rand > 0.6) {
+            this.currentAction = "west";
+        }
+
+        this.inventory.items[0].luminescence = new Colour(Math.random()*255, Math.random()*255, Math.random()*255);
+
+        this.executeAction();
+    }
+}
+
 export class Player extends Mob {
     constructor(x: number, y: number) {
         super(x, y, MOBKINDSMAP["player"]);
@@ -434,6 +469,7 @@ export function parseCell(cell: Cell): string {
     for (let mob of cell.mobs) {
         if (mob === PLAYER) {
             cellDescAppend(`you are here. `);
+            cellDescAppend(parseMob(mob));
         }
         else {
             if ("fullName" in mob) {
@@ -444,6 +480,7 @@ export function parseCell(cell: Cell): string {
                     cellDescAppend(`there is a ${mob.name} here. `);
                 }
             }
+            cellDescAppend(parseMob(mob));
         }
     }
 
@@ -489,8 +526,8 @@ export function setFocus(focus: string, title: string) {
     let focusElementChild = document.createElement("div");
 
     focusElement.setAttribute("focus-title", title);
-
     focusElement.appendChild(focusElementChild);
+
     focusElementChild.id = "focusElementChild";
     focusElementChild.classList.add("focusElementChild");
     focusElementChild.innerHTML = focus;
