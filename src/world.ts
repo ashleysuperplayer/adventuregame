@@ -423,15 +423,13 @@ export function parseCell(cell: Cell): string {
     for (let terrain of cell.terrain) {
         cellDescAppend(`there ${terrain.lex.cellDesc}. `);
     }
-    for (let item of cell.inventory.items) {
+    for (let item of new Set(cell.inventory.items)) {
         const quantity = cell.inventory.returnByName(item.name).length;
-        if (cell.inventory.returnMinQuant(1).length > 1) {
+        if (quantity > 1) {
             cellDescAppend(`there ${item.lex.cellDescXPlural(quantity)}. `);
-            ["are ", quantity," rocks"]
+            continue;
         }
-        else {
-            cellDescAppend(`there ${item.lex.cellDesc}. `);
-        }
+        cellDescAppend(`there ${item.lex.cellDesc}. `);
     }
     for (let mob of cell.mobs) {
         if (mob === PLAYER) {
