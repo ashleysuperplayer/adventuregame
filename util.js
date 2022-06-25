@@ -8,11 +8,6 @@ export function getElementFromID(id) {
         throw new Error(`invalid ID: ${id}`);
     }
 }
-// function i stole from stackoverflow
-function getKeyByValue(object, value) {
-    // @ts-ignore // come back to this later
-    return Object.keys(object).find(key => object[key] === value);
-}
 // throw error when can't set variable
 export function throwExpression(errorMessage) {
     throw new Error(errorMessage);
@@ -70,12 +65,28 @@ export class Vector2 {
         return `${this.x},${this.y}`;
     }
 }
+function getElementFromPoint(x, y) {
+    let element = document.elementFromPoint(x, y);
+    if (element) {
+        return element;
+    }
+    throw new Error(`no element at point: ${x},${y}`);
+}
 // these can't be static or they're inaccessible during runtime
 export class Debugger {
     constructor() {
     }
     createItem(itemName) {
         return [new Item(ITEMKINDSMAP[itemName])];
+    }
+    // try and click all the points on the map
+    test_clickAllPointsOnMap() {
+        for (let pX = 0; pX < +getElementFromID("map").style.width; pX++) {
+            for (let pY = 0; pY < +getElementFromID("map").style.height; pY++) {
+                getElementFromPoint(pX, pY).click();
+            }
+        }
+        return true;
     }
 }
 //# sourceMappingURL=util.js.map
