@@ -224,6 +224,15 @@ export abstract class Mob {
         this.gender = Math.random() > 0.5 ? "male" : "female";
     }
 
+    // TODO make this work with more than one preferred slot e.g. with gloves
+    equipDefault(item: Item) {
+        if (item.preferredEquipSlot) {
+            this.equip(item, item.preferredEquipSlot[0]);
+            return;
+        }
+        console.log(`can't equip ${item.name}`);
+    }
+
     equip(item: Item, slot: string) {
         if (!item.preferredEquipSlot) {
             console.log("dont wear this, you'll thank me later");

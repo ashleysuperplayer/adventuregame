@@ -226,6 +226,7 @@ class CtxButton_Cell extends CtxButton {
 export class CtxParentMenu_Inventory extends CtxParentMenu {
     item:           Item;
     quantity:       number;
+    equipButton?:   CtxButton_Inventory;
     dropButton:     CtxButton_Inventory;
     dropAllButton?: CtxButton_Inventory;
     debugMenu?:     CtxDebugMenu;
@@ -234,6 +235,9 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.item          = item;
         this.quantity      = PLAYER.inventory.returnByName(item.name).length;
         this.HTMLElement   = this.createParentElement();
+        // if (item.preferredEquipSlot) {
+        //     this.
+        // }
         this.dropButton    = this.createDropButton();
         if (this.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
