@@ -63,7 +63,7 @@ export class Inventory {
 
     // return all objects with name
     returnByName(name: string): Item[] {
-        return this.items.filter((item) => {item.name === name});
+        return this.items.filter((item) => {return item.name === name});
     }
 
     // return items whose quantity > quant, redo
