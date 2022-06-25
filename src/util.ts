@@ -81,6 +81,14 @@ export class Vector2 {
     }
 }
 
+function getElementFromPoint(x: number, y: number): Element {
+    let element = document.elementFromPoint(x, y);
+    if (element) {
+        return element;
+    }
+    throw new Error(`no element at point: ${x},${y}`);
+}
+
 // these can't be static or they're inaccessible during runtime
 export class Debugger {
     constructor() {
@@ -88,5 +96,15 @@ export class Debugger {
 
     createItem(itemName: string) {
         return [new Item(ITEMKINDSMAP[itemName])];
+    }
+
+    // try and click all the points on the map
+    test_clickAllPointsOnMap() {
+        for (let pX = 0; pX < +getElementFromID("map").style.width; pX++) {
+            for (let pY = 0; pY < +getElementFromID("map").style.height; pY++) {
+                (getElementFromPoint(pX, pY) as HTMLElement).click();
+            }
+        }
+        return true;
     }
 }
