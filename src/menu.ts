@@ -338,7 +338,6 @@ class CtxDebugMenu extends CtxHoverMenu {
 
     createDebugChildren() {
         let children: CtxButton[] = [];
-        console.log(this.context); // TODO fix context not coming through sometimes on right side of screen
         for (let key of Object.keys(this.context)) {
             if (key in this.context) {
                 this.addToStack();

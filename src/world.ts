@@ -259,10 +259,11 @@ export abstract class Mob {
         return stats;
     }
 
-    // return unordered list of all clothing worn by a mob
+    // return unordered list of all clothing Items worn by a mob
     getClothing(): Item[] {
         let clothingList: Item[] = [];
         Object.values(this.equipment).forEach((i) => {clothingList = clothingList.concat(i.items)});
+        console.log(clothingList);
         return clothingList;
     }
 
@@ -496,6 +497,10 @@ function parseMob(mob: Mob) {
     let pronoun = getPronouns(mob);
     let mobDescription = `${pronoun} wearing `;
     let clothing = mob.getClothing();
+
+    if (clothing.length < 1) {
+        return `${pronoun} naked...`;
+    }
 
     for (let i = 0; i < clothing.length; i++) {
         if (i === clothing.length - 1) {
