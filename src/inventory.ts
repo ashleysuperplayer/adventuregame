@@ -1,4 +1,4 @@
-import { Item, Mob, MobStats } from "./world.js";
+import { Item, MobStats } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
