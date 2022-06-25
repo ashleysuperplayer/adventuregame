@@ -121,21 +121,23 @@ abstract class CtxButton extends CtxMenuComponent {
 
 export class CtxParentMenu_Cell extends CtxParentMenu {
     cellCtx:        Cell;
-    lookButton:     CtxButton_Cell;
+    lookButton?:     CtxButton_Cell;
     takeHoverMenu?: CtxHoverMenu_Cell;
     debugMenu?:     CtxDebugMenu;
     constructor(x: number, y: number, cellCtx: Cell) {
         super("ctxParentMenu_Cell", x, y, "ctxParentMenu");
         this.cellCtx    = cellCtx;
-        this.lookButton = this.createLookButton();
-        // this sucks, also 2 means every orthog
-        if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
-            if (this.cellCtx.inventory.items.length > 0) {
-                this.takeHoverMenu = this.createTakeHoverMenu();
+        if (!this.cellCtx === undefined) {
+            this.lookButton = this.createLookButton();
+            // this sucks, also 2 means every orthog
+            if (getSquareDistanceBetweenCells(PLAYER.getCell(), this.cellCtx) <= 2) {
+                if (this.cellCtx.inventory.items.length > 0) {
+                    this.takeHoverMenu = this.createTakeHoverMenu();
+                }
             }
-        }
-        if (DEBUG) {
-            this.debugMenu  = this.createDebugMenu();
+            if (DEBUG) {
+                this.debugMenu  = this.createDebugMenu();
+            }
         }
     }
 
