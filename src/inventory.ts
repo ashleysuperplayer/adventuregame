@@ -26,7 +26,7 @@ function inventoryDisplayEntry(item: Item): number[] {
     let nodeListOElements = document.getElementsByName(`${item.name}InventoryEntry`);
     let oldElements = [];
     if (nodeListOElements[0]) {
-        for(var i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i])); // stolen from SO
+        for (var i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i])); // stolen from SO
         oldElements.map((element) => {element.remove()});
     }
 

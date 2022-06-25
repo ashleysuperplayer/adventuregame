@@ -501,7 +501,10 @@ function parseMob(mob: Mob) {
     if (clothing.length < 1) {
         return `${pronoun} naked...`;
     }
-
+    if (clothing.length === 1) {
+        return `${pronoun} wearing a ${clothing[0].name}.`;
+    }
+    // why did i even do this. "coat, a coat and a coat" vs "3 coats" lol
     for (let i = 0; i < clothing.length; i++) {
         if (i === clothing.length - 1) {
             mobDescription = mobDescription.concat(`and a ${clothing[i].name}.`);
