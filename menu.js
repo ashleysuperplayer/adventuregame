@@ -187,6 +187,7 @@ class CtxButton_Cell extends CtxButton {
 export class CtxParentMenu_Inventory extends CtxParentMenu {
     item;
     quantity;
+    equipButton;
     dropButton;
     dropAllButton;
     debugMenu;
@@ -195,6 +196,9 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.item = item;
         this.quantity = PLAYER.inventory.returnByName(item.name).length;
         this.HTMLElement = this.createParentElement();
+        if (item.preferredEquipSlot) {
+            this.equipButton = this.createEquipButton();
+        }
         this.dropButton = this.createDropButton();
         if (this.quantity > 1) {
             this.dropAllButton = this.createDropAllButton();
@@ -202,6 +206,10 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         if (DEBUG) {
             this.debugMenu = this.createDebugMenu();
         }
+    }
+    createEquipButton() {
+        this.addToStack();
+        return new CtxButton_Inventory("ctxEquip_Inventory", this.pos.x, this.pos.y, this, () => { PLAYER.equipDefault(this.item); }, "equip", true);
     }
     createDebugMenu() {
         this.addToStack();
@@ -274,7 +282,6 @@ class CtxDebugMenu extends CtxHoverMenu {
     }
     createDebugChildren() {
         let children = [];
-        console.log(this.context); // TODO fix context not coming through sometimes on right side of screen
         for (let key of Object.keys(this.context)) {
             if (key in this.context) {
                 this.addToStack();

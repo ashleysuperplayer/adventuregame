@@ -58,17 +58,16 @@ export function setup(worldSideLength, startTime, playerStartLocation) {
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
     globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone"); // for the context menus
     globalThis.CELLMAP = generateWorld(worldSideLength);
-    globalThis.PLAYER = new Player(playerStartLocation[0], playerStartLocation[1]); // spread ???
+    globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
     globalThis.TIME = startTime;
     globalThis.MINSPERDAY = 1440;
     setupKeys();
     setupClicks();
-    CELLMAP["1,0"].inventory.add([new Item(ITEMKINDSMAP["oil lamp"])]); // add a lamp
-    MOBSMAP["1"] = new NPCHuman(2, 2, MOBKINDSMAP["npctest"]);
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
-    PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
+    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Item.createItem("coat")]); // add a lamp
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
+    // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
     updateLighting();
     updateDisplay();
     updateInventory();
@@ -169,6 +168,8 @@ export class Mob {
     equipment;
     inventory;
     stats;
+    kind;
+    gender;
     fullName;
     constructor(x, y, kind) {
         this.name = kind.name;
@@ -181,6 +182,16 @@ export class Mob {
         this.blocking = true;
         this.inventory = new Inventory();
         this.stats = this.baseStats();
+        this.kind = kind.name;
+        this.gender = Math.random() > 0.5 ? "male" : "female";
+    }
+    // TODO make this work with more than one preferred slot e.g. with gloves
+    equipDefault(item) {
+        if (item.preferredEquipSlot) {
+            this.equip(item, item.preferredEquipSlot[0]);
+            return;
+        }
+        console.log(`can't equip ${item.name}`);
     }
     equip(item, slot) {
         if (!item.preferredEquipSlot) {
@@ -188,7 +199,10 @@ export class Mob {
             return;
         }
         this.equipment[slot]?.add([item]);
+        this.inventory.remove([item]);
         this.checkClothingStats();
+        // just in case
+        updateInventory();
     }
     checkClothingStats() {
         return this.getClothingStats();
@@ -198,7 +212,7 @@ export class Mob {
     getClothingStats() {
         let stats = { inInsul: 0, extInsul: 0 };
         for (let currentSlotKey in this.equipment) { // go into this.equipment
-            for (let item of this.equipment[currentSlotKey].items) { // go into inventory on this.equipment
+            for (let item of this.equipment[currentSlotKey].items) { // go into items on inventory on this.equipment
                 if (!item.preferredEquipSlot) { // make sure item is wearable
                     console.log("impossible to have this item equipped");
                     continue;
@@ -209,6 +223,13 @@ export class Mob {
             }
         }
         return stats;
+    }
+    // return unordered list of all clothing Items worn by a mob
+    getClothing() {
+        let clothingList = [];
+        Object.values(this.equipment).forEach((i) => { clothingList = clothingList.concat(i.items); });
+        console.log(clothingList);
+        return clothingList;
     }
     // temporary function for debugging
     static sumStats(s1, s2) {
@@ -339,9 +360,34 @@ class NPCHuman extends Mob {
         this.executeAction();
     }
 }
+export class Animal extends Mob {
+    constructor(x, y, kind) {
+        super(x, y, kind);
+        this.blocking = false;
+        this.inventory.add([Item.createItem("oil lamp")]);
+    }
+    tick() {
+        let rand = Math.random();
+        if (rand <= 0.2) {
+            this.currentAction = "north";
+        }
+        else if (rand <= 0.4 && rand > 0.2) {
+            this.currentAction = "south";
+        }
+        else if (rand <= 0.6 && rand > 0.4) {
+            this.currentAction = "east";
+        }
+        else if (rand <= 0.8 && rand > 0.6) {
+            this.currentAction = "west";
+        }
+        this.inventory.items[0].luminescence = new Colour(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+        this.executeAction();
+    }
+}
 export class Player extends Mob {
     constructor(x, y) {
         super(x, y, MOBKINDSMAP["player"]);
+        this.gender = "male"; // TBC
     }
     tick() {
         VIEWPORT.pos = this.pos;
@@ -358,19 +404,18 @@ export function parseCell(cell) {
     for (let terrain of cell.terrain) {
         cellDescAppend(`there ${terrain.lex.cellDesc}. `);
     }
-    for (let item of cell.inventory.items) {
+    for (let item of new Set(cell.inventory.items)) {
         const quantity = cell.inventory.returnByName(item.name).length;
-        if (cell.inventory.returnMinQuant(1).length > 1) {
+        if (quantity > 1) {
             cellDescAppend(`there ${item.lex.cellDescXPlural(quantity)}. `);
-            ["are ", quantity, " rocks"];
+            continue;
         }
-        else {
-            cellDescAppend(`there ${item.lex.cellDesc}. `);
-        }
+        cellDescAppend(`there ${item.lex.cellDesc}. `);
     }
     for (let mob of cell.mobs) {
         if (mob === PLAYER) {
             cellDescAppend(`you are here. `);
+            cellDescAppend(parseMob(mob));
         }
         else {
             if ("fullName" in mob) {
@@ -381,9 +426,44 @@ export function parseCell(cell) {
                     cellDescAppend(`there is a ${mob.name} here. `);
                 }
             }
+            cellDescAppend(parseMob(mob));
         }
     }
     return cellDescription;
+}
+// TODO change this and items to work with Lex
+function parseMob(mob) {
+    let pronoun = getPronouns(mob);
+    let mobDescription = `${pronoun} wearing `;
+    let clothing = mob.getClothing();
+    if (clothing.length < 1) {
+        return `${pronoun} naked...`;
+    }
+    if (clothing.length === 1) {
+        return `${pronoun} wearing a ${clothing[0].name}.`;
+    }
+    // why did i even do this. "coat, a coat and a coat" vs "3 coats" lol
+    for (let i = 0; i < clothing.length; i++) {
+        if (i === clothing.length - 1) {
+            mobDescription = mobDescription.concat(`and a ${clothing[i].name}.`);
+            continue;
+        }
+        mobDescription = mobDescription.concat(`a ${clothing[i].name}, `);
+    }
+    return mobDescription;
+}
+// TODO add "they" for unknown gender etc.
+function getPronouns(mob) {
+    if (mob.kind === "player") {
+        return "you're";
+    }
+    if (mob.kind !== "human") {
+        return "it's";
+    }
+    if (mob.gender === "male") {
+        return "he's";
+    }
+    return "she's";
 }
 // WIP, sets the content of the focus menu
 export function setFocus(focus, title) {

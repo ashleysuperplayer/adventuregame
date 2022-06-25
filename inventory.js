@@ -5,7 +5,7 @@ export function updateInventory() {
     let totalSpace = 0;
     let totalWeight = 0;
     // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
-    for (let item of PLAYER.inventory.items) {
+    for (let item of new Set(PLAYER.inventory.items)) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace += space;
         totalWeight += weight;
@@ -14,7 +14,18 @@ export function updateInventory() {
     getElementFromID("invWeightLimit").textContent = `${totalWeight}g/5000g`;
 }
 function inventoryDisplayEntry(item) {
-    const quantity = PLAYER.inventory.returnByName.length;
+    // this has the disadvantage of displaying items out of their actual order in teh inventory. redo inventory display etc to display items in the order they appear
+    // on second thought, maybe the order that entries appear in Inventory.items shouldnt matter to gameplay??
+    // only reason i can see right now for making them ordered is in the case of your containers being overly packed,
+    // stuff falls out last in first out
+    let nodeListOElements = document.getElementsByName(`${item.name}InventoryEntry`);
+    let oldElements = [];
+    if (nodeListOElements[0]) {
+        for (var i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i]))
+            ; // stolen from SO
+        oldElements.map((element) => { element.remove(); });
+    }
+    const quantity = PLAYER.inventory.getQuantity(item);
     const space = item.space * quantity;
     const weight = item.weight * quantity;
     let nameE = document.createElement("div");
@@ -29,6 +40,10 @@ function inventoryDisplayEntry(item) {
     quantE.innerHTML = `${quantity}`;
     spaceE.innerHTML = `${space}`;
     weightE.innerHTML = `${weight}g`;
+    nameE.setAttribute("name", `${item.name}InventoryEntry`);
+    quantE.setAttribute("name", `${item.name}InventoryEntry`);
+    spaceE.setAttribute("name", `${item.name}InventoryEntry`);
+    weightE.setAttribute("name", `${item.name}InventoryEntry`);
     const parent = document.getElementById("inventoryDisplayList");
     parent?.appendChild(nameE);
     parent?.appendChild(quantE);
@@ -47,9 +62,12 @@ export class Inventory {
             this.items = [];
         }
     }
+    getQuantity(itemQ) {
+        return this.items.filter((item) => { return item.name === itemQ.name; }).length;
+    }
     // return all objects with name
     returnByName(name) {
-        return this.items.filter((item) => { item.name === name; });
+        return this.items.filter((item) => { return item.name === name; });
     }
     // return items whose quantity > quant, redo
     returnMinQuant(quant) {
