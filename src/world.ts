@@ -454,9 +454,16 @@ export class Player extends Mob {
     }
 }
 
-// function displayListContents(container: ) {
+function displayListContents(container: Mob[]|TerrainFeature[]|GroundType[]) {
+    let element = document.createElement("div");
+    for (let content of container) {
+        let contentElement = document.createElement("div");
+        contentElement.innerHTML = content.name;
+        element.appendChild(contentElement);
+    }
 
-// }
+    return element;
+}
 
 export function cellFocus(cell: Cell): HTMLElement {
     let elementNames = ["Parent", "Items", "Mobs", "Terrain", "Ground"];
@@ -473,6 +480,9 @@ export function cellFocus(cell: Cell): HTMLElement {
     }
 
     elements["Items"].appendChild(displayInventory(cell.inventory));
+    elements["Mobs"].appendChild(displayListContents(cell.mobs));
+    elements["Terrain"].appendChild(displayListContents(cell.terrain));
+    elements["Ground"].appendChild(displayListContents([cell.ground]));
 
     elements["Parent"].innerHTML = "";
 
