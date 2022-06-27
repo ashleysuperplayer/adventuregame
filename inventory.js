@@ -1,10 +1,20 @@
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
+// return a parent element containing all items in supplied Inventory
+export function displayInventoryForFocus(inventory) {
+    let element = document.createElement("div");
+    for (let item of inventory.items) {
+        let itemElement = document.createElement("div");
+        itemElement.innerHTML = item.name;
+        element.appendChild(itemElement);
+    }
+    return element;
+}
 export function updateInventory() {
-    getElementFromID("inventoryDisplayList").textContent = "";
+    let element = getElementFromID("inventoryDisplayList");
+    element.textContent = "";
     let totalSpace = 0;
     let totalWeight = 0;
-    // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
     for (let item of new Set(PLAYER.inventory.items)) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace += space;
@@ -86,13 +96,19 @@ export class Inventory {
         this.items.push(...items);
         updateInventory();
     }
-    // remove item from inventory and return removed item
+    // remove item from inventory and return true if successful/possible, else return false
     remove(items) {
-        return this.items = this.items.filter((x) => !items.includes(x));
+        for (let item of items) {
+            if (this.items.indexOf(item) === -1) {
+                return false;
+            }
+        }
+        this.items = this.items.filter((x) => !items.includes(x));
+        return true;
     }
-    // remove all objects with name and return them
+    // remove all objects with name
     removeAllByName(name) {
-        return this.remove(this.returnByName(name));
+        this.remove(this.returnByName(name));
     }
 }
 export const SLOTBIAS = {

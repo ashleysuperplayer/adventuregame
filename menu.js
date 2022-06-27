@@ -1,5 +1,5 @@
 import { getElementFromID, Vector2 } from "./util.js";
-import { getSquareDistanceBetweenCells, parseCell, setFocus } from "./world.js";
+import { getSquareDistanceBetweenCells, setFocus, cellFocus } from "./world.js";
 export function setCTX(newCTX) {
     if (CTX) {
         CTX.HTMLElement.remove();
@@ -120,7 +120,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
     }
     createLookButton() {
         this.addToStack();
-        return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, () => { setFocus(parseCell(this.cellCtx), "look"); }, "look", false);
+        return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, () => { setFocus(cellFocus(this.cellCtx), "look"); }, "look", false);
     }
     createTakeHoverMenu() {
         this.addToStack();
@@ -217,7 +217,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     }
     createDropButton() {
         this.addToStack();
-        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => { PLAYER.inventory.remove([this.item]); PLAYER.getCell().inventory.add([this.item]); }, "drop", false);
+        let button = new CtxButton_Inventory("ctxDrop_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => { PLAYER.inventory.remove([this.item]) ? PLAYER.getCell().inventory.add([this.item]) : this.HTMLElement.remove(); }, "drop", false);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }

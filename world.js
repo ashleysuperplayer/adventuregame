@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { constructMobSlots, Inventory, SLOTBIAS, updateInventory } from "./inventory.js";
+import { constructMobSlots, displayInventoryForFocus, Inventory, SLOTBIAS, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 export function getMapCellAtDisplayCell(x, y) {
@@ -16,6 +16,7 @@ function getSquareDistanceBetweenCoords(x1, y1, x2, y2) {
 export function tick() {
     globalThis.TIME += 1;
     PLAYER.executeAction();
+    PLAYER.tick();
     for (let mob in MOBSMAP) {
         MOBSMAP[mob].tick();
     }
@@ -41,22 +42,12 @@ function setPlayerAction(newAction) {
 function setMobAction(mobID, newAction) {
     MOBSMAP[mobID].currentAction = newAction;
 }
-// pass individual x and y values as numbers or the whole XY as a string to check if a cell is blocked
-function checkIfCellBlocked(x, y, XY) {
-    if (XY) {
-        return CELLMAP[XY].isBlocked();
-    }
-    else if (x && y || x == 0 || y == 0) {
-        return CELLMAP[`${x},${y}`].isBlocked();
-    }
-    else
-        throw new Error(`missing parameters, x: ${x}, y; ${y}, XY: ${XY}`);
-}
 export function setup(worldSideLength, startTime, playerStartLocation) {
     createGrid("map", 33, "mapCell", DISPLAYELEMENTSDICT);
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
-    globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone"); // for the context menus
+    globalThis.NAVIGATIONELEMENT = getElementFromID("navigation"); // for context menus
+    globalThis.INVENTORYELEMENT = getElementFromID("inventory");
     globalThis.CELLMAP = generateWorld(worldSideLength);
     globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
@@ -65,6 +56,7 @@ export function setup(worldSideLength, startTime, playerStartLocation) {
     setupKeys();
     setupClicks();
     CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Item.createItem("coat")]); // add a lamp
+    CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "legs");
@@ -150,6 +142,9 @@ function setupClicks() {
     NAVIGATIONELEMENT.addEventListener("click", (e) => {
         clearCTX();
     }, false);
+    INVENTORYELEMENT.addEventListener("click", (e) => {
+        clearCTX();
+    }, false);
 }
 function stringCoordsToNum(stringCoords) {
     let numCoords = [];
@@ -178,7 +173,7 @@ export class Mob {
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        this.facing = "n";
+        this.facing = new Vector2(0, +1);
         this.blocking = true;
         this.inventory = new Inventory();
         this.stats = this.baseStats();
@@ -258,43 +253,32 @@ export class Mob {
     }
     // initiates movement of Mob in direction
     move(direction, changeFacing) {
-        // remove from old location
-        let oldContents = CELLMAP[`${this.pos}`].mobs;
-        oldContents.splice(oldContents.indexOf(this), 1);
+        let dir, dest;
         switch (direction) {
             case "north":
-                if (!checkIfCellBlocked(this.pos.x, this.pos.y + 1)) {
-                    if (changeFacing) {
-                        this.facing = "n";
-                    }
-                    this.pos.y += 1;
-                }
+                dir = new Vector2(0, +1);
                 break;
             case "south":
-                if (!checkIfCellBlocked(this.pos.x, this.pos.y - 1)) {
-                    if (changeFacing) {
-                        this.facing = "s";
-                    }
-                    this.pos.y -= 1;
-                }
+                dir = new Vector2(0, -1);
                 break;
             case "east":
-                if (!checkIfCellBlocked(this.pos.x + 1, this.pos.y)) {
-                    if (changeFacing) {
-                        this.facing = "e";
-                    }
-                    this.pos.x += 1;
-                }
+                dir = new Vector2(+1, 0);
                 break;
             case "west":
-                if (!checkIfCellBlocked(this.pos.x - 1, this.pos.y)) {
-                    if (changeFacing) {
-                        this.facing = "w";
-                    }
-                    this.pos.x -= 1;
-                }
+                dir = new Vector2(-1, 0);
                 break;
+            default:
+                dir = new Vector2(0, 0);
         }
+        if (changeFacing)
+            this.facing = dir;
+        dest = Vector2.Add(this.pos, dir);
+        if (CELLMAP[`${dest}`].isBlocked())
+            return;
+        // remove from old location
+        let oldMobs = CELLMAP[`${this.pos}`].mobs;
+        oldMobs.splice(oldMobs.indexOf(this), 1);
+        this.pos = dest;
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "moved";
     }
@@ -394,44 +378,39 @@ export class Player extends Mob {
         return;
     }
 }
-// convert the contents of Cell into a big paragraph using its components' Lex property
-export function parseCell(cell) {
-    let cellDescAppend = (x) => { cellDescription = cellDescription.concat(x); };
-    if (cell.lightLevel.mag() < 11) {
-        return "you can't see a thing, but for the darkness.";
+function displayListContents(container) {
+    let element = document.createElement("div");
+    for (let content of container) {
+        let contentElement = document.createElement("div");
+        contentElement.innerHTML = content.name;
+        element.appendChild(contentElement);
     }
-    let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
-    for (let terrain of cell.terrain) {
-        cellDescAppend(`there ${terrain.lex.cellDesc}. `);
+    return element;
+}
+export function cellFocus(cell) {
+    let elementNames = ["Parent", "Items", "Mobs", "Terrain", "Ground"];
+    let elements = {};
+    for (let name of elementNames) {
+        elements[name] = document.createElement("div");
+        elements[name].id = `cellFocus${name}`;
+        let titleElement = document.createElement("div");
+        titleElement.classList.add(`cellFocusTitle`);
+        titleElement.innerHTML = name;
+        elements[name].appendChild(titleElement);
     }
-    for (let item of new Set(cell.inventory.items)) {
-        const quantity = cell.inventory.returnByName(item.name).length;
-        if (quantity > 1) {
-            cellDescAppend(`there ${item.lex.cellDescXPlural(quantity)}. `);
-            continue;
-        }
-        cellDescAppend(`there ${item.lex.cellDesc}. `);
-    }
-    for (let mob of cell.mobs) {
-        if (mob === PLAYER) {
-            cellDescAppend(`you are here. `);
-            cellDescAppend(parseMob(mob));
-        }
-        else {
-            if ("fullName" in mob) {
-                if (!mob.fullName === undefined) {
-                    cellDescAppend(`${mob.fullName} is here. `);
-                }
-                else {
-                    cellDescAppend(`there is a ${mob.name} here. `);
-                }
-            }
-            cellDescAppend(parseMob(mob));
-        }
-    }
-    return cellDescription;
+    elements["Items"].appendChild(displayInventoryForFocus(cell.inventory));
+    elements["Mobs"].appendChild(displayListContents(cell.mobs));
+    elements["Terrain"].appendChild(displayListContents(cell.terrain));
+    elements["Ground"].appendChild(displayListContents([cell.ground]));
+    elements["Parent"].innerHTML = "";
+    elements["Parent"].appendChild(elements["Items"]);
+    elements["Parent"].appendChild(elements["Mobs"]);
+    elements["Parent"].appendChild(elements["Terrain"]);
+    elements["Parent"].appendChild(elements["Ground"]);
+    return elements["Parent"];
 }
 // TODO change this and items to work with Lex
+// keeping this in
 function parseMob(mob) {
     let pronoun = getPronouns(mob);
     let mobDescription = `${pronoun} wearing `;
@@ -466,17 +445,15 @@ function getPronouns(mob) {
     return "she's";
 }
 // WIP, sets the content of the focus menu
-export function setFocus(focus, title) {
-    getElementFromID("focusElementChild").remove();
-    let focusElement = getElementFromID("focus");
-    let focusElementChild = document.createElement("div");
-    focusElement.setAttribute("focus-title", title);
-    focusElement.appendChild(focusElementChild);
-    focusElementChild.id = "focusElementChild";
-    focusElementChild.classList.add("focusElementChild");
-    focusElementChild.innerHTML = focus;
+export function setFocus(focusChild, title) {
+    getElementFromID("focusChild").remove();
+    let focusElementParent = getElementFromID("focus");
+    focusElementParent.setAttribute("focus-title", title);
+    focusElementParent.appendChild(focusChild);
+    focusChild.id = "focusChild";
+    focusChild.classList.add("focusChild");
 }
-// aids parseCell in translation into sentences
+// aids parser in translation into sentences
 export class Lex {
     // defined in the form "there " + cellDesc + "." i.e. "there [is a lamp]."
     cellDesc;
