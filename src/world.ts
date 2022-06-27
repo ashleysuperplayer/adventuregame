@@ -463,6 +463,7 @@ export function cellFocus(cell: Cell) {
 }
 
 // TODO change this and items to work with Lex
+// keeping this in
 function parseMob(mob: Mob) {
     let pronoun = getPronouns(mob);
     let mobDescription = `${pronoun} wearing `;
@@ -512,7 +513,7 @@ export function setFocus(focusChild: HTMLElement, title: string) {
     focusChild.classList.add("focusChild");
 }
 
-// aids parseCell in translation into sentences
+// aids parser in translation into sentences
 export class Lex {
     // defined in the form "there " + cellDesc + "." i.e. "there [is a lamp]."
     cellDesc: string;
