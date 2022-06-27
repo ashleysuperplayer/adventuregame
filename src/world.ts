@@ -20,6 +20,7 @@ function getSquareDistanceBetweenCoords(x1:number, y1:number, x2:number, y2:numb
 export function tick() {
     globalThis.TIME += 1;
     PLAYER.executeAction();
+    PLAYER.tick();
     for (let mob in MOBSMAP) {
         MOBSMAP[mob].tick();
     }
@@ -51,17 +52,6 @@ function setPlayerAction(newAction: string) {
 
 function setMobAction(mobID: string, newAction: string) {
     MOBSMAP[mobID].currentAction = newAction;
-}
-
-// pass individual x and y values as numbers or the whole XY as a string to check if a cell is blocked
-function checkIfCellBlocked(x?: number, y?: number, XY?: string) {
-    if (XY) {
-        return CELLMAP[XY].isBlocked();
-    }
-    else if (x && y || x == 0 || y == 0) {
-        return CELLMAP[`${x},${y}`].isBlocked();
-    }
-    else throw new Error(`missing parameters, x: ${x}, y; ${y}, XY: ${XY}`);
 }
 
 export function setup(worldSideLength: number, startTime: number, playerStartLocation: Vector2) {
@@ -195,7 +185,7 @@ export abstract class Mob {
     pos: Vector2;
     currentAction: string;
     symbol: string;
-    facing: string;
+    facing: Vector2;
     blocking: boolean;
     equipment: MobSlots;
     inventory: Inventory;
@@ -210,7 +200,7 @@ export abstract class Mob {
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        this.facing = "n";
+        this.facing = new Vector2(0, +1); 
         this.blocking = true;
         this.inventory = new Inventory();
         this.stats = this.baseStats();
@@ -302,44 +292,32 @@ export abstract class Mob {
 
     // initiates movement of Mob in direction
     move(direction: string, changeFacing: boolean) {
-        // remove from old location
-        let oldContents = CELLMAP[`${this.pos}`].mobs;
-        oldContents.splice(oldContents.indexOf(this),1);
+        let dir, dest: Vector2;
         switch(direction) {
             case "north":
-                if (!checkIfCellBlocked(this.pos.x, this.pos.y + 1)) {
-                    if (changeFacing) {
-                        this.facing = "n";
-                    }
-                    this.pos.y += 1;
-                }
+                dir = new Vector2(0, +1);
                 break;
             case "south":
-                if (!checkIfCellBlocked(this.pos.x, this.pos.y - 1)) {
-                    if (changeFacing) {
-                        this.facing = "s";
-                    }
-                    this.pos.y -= 1;
-                }
+                dir = new Vector2(0, -1);
                 break;
             case "east":
-                if (!checkIfCellBlocked(this.pos.x + 1, this.pos.y)) {
-                    if (changeFacing) {
-                        this.facing = "e";
-                    }
-                    this.pos.x += 1;
-                }
+                dir = new Vector2(+1, 0);
                 break;
             case "west":
-                if (!checkIfCellBlocked(this.pos.x - 1, this.pos.y)) {
-                    if (changeFacing) {
-                        this.facing = "w";
-                    }
-                    this.pos.x -= 1;
-                }
+                dir = new Vector2(-1, 0);
                 break;
+            default:
+                dir = new Vector2(0, 0);
         }
+        if (changeFacing) this.facing = dir;
+        dest = Vector2.Add(this.pos, dir);
+        if (CELLMAP[`${dest}`].isBlocked()) return;
 
+        // remove from old location
+        let oldMobs = CELLMAP[`${this.pos}`].mobs;
+        oldMobs.splice(oldMobs.indexOf(this),1);
+
+        this.pos = dest;
         CELLMAP[`${this.pos}`].mobs.push(this);
 
         this.currentAction = "moved";
