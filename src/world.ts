@@ -454,44 +454,12 @@ export class Player extends Mob {
     }
 }
 
-// convert the contents of Cell into a big paragraph using its components' Lex property
-export function parseCell(cell: Cell): string {
-    let cellDescAppend = (x: string) => {cellDescription = cellDescription.concat(x)};
-    if (cell.lightLevel.mag() < 11) {
-        return "you can't see a thing, but for the darkness.";
-    }
-    let cellDescription = `the ground ${cell.ground.lex.cellDesc}. `;
+export function cellFocus(cell: Cell) {
+    let cellFocusParent = document.createElement("div");
 
-    for (let terrain of cell.terrain) {
-        cellDescAppend(`there ${terrain.lex.cellDesc}. `);
-    }
-    for (let item of new Set(cell.inventory.items)) {
-        const quantity = cell.inventory.returnByName(item.name).length;
-        if (quantity > 1) {
-            cellDescAppend(`there ${item.lex.cellDescXPlural(quantity)}. `);
-            continue;
-        }
-        cellDescAppend(`there ${item.lex.cellDesc}. `);
-    }
-    for (let mob of cell.mobs) {
-        if (mob === PLAYER) {
-            cellDescAppend(`you are here. `);
-            cellDescAppend(parseMob(mob));
-        }
-        else {
-            if ("fullName" in mob) {
-                if (!mob.fullName === undefined) {
-                    cellDescAppend(`${mob.fullName} is here. `);
-                }
-                else {
-                    cellDescAppend(`there is a ${mob.name} here. `);
-                }
-            }
-            cellDescAppend(parseMob(mob));
-        }
-    }
 
-    return cellDescription;
+
+    return cellFocusParent;
 }
 
 // TODO change this and items to work with Lex
@@ -533,17 +501,15 @@ function getPronouns(mob: Mob) {
 }
 
 // WIP, sets the content of the focus menu
-export function setFocus(focus: string, title: string) {
-    getElementFromID("focusElementChild").remove();
-    let focusElement      = getElementFromID("focus");
-    let focusElementChild = document.createElement("div");
+export function setFocus(focusChild: HTMLElement, title: string) {
+    getElementFromID("focusChild").remove();
+    let focusElementParent = getElementFromID("focus");
 
-    focusElement.setAttribute("focus-title", title);
-    focusElement.appendChild(focusElementChild);
+    focusElementParent.setAttribute("focus-title", title);
+    focusElementParent.appendChild(focusChild);
 
-    focusElementChild.id = "focusElementChild";
-    focusElementChild.classList.add("focusElementChild");
-    focusElementChild.innerHTML = focus;
+    focusChild.id = "focusChild";
+    focusChild.classList.add("focusChild");
 }
 
 // aids parseCell in translation into sentences

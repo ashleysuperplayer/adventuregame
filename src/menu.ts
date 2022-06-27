@@ -1,5 +1,5 @@
 import { getElementFromID, Vector2 } from "./util.js";
-import { Cell, getSquareDistanceBetweenCells, Item, parseCell, setFocus } from "./world.js";
+import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus } from "./world.js";
 import { Inventory, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
@@ -146,7 +146,7 @@ export class CtxParentMenu_Cell extends CtxParentMenu {
 
     createLookButton() {
         this.addToStack();
-        return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, ()=>{setFocus(parseCell(this.cellCtx), "look")}, "look", false);
+        return new CtxButton_Cell("ctxLookButton", this.pos.x, this.pos.y + this.stack(), this, ()=>{setFocus(cellFocus(this.cellCtx), "look")}, "look", false);
     }
 
     createTakeHoverMenu() {

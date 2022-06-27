@@ -95,7 +95,7 @@ export class Inventory {
 
         let itemList = [];
         for (let bucketList of Object.values(bucket).filter((itemList) => {itemList.length > quant})) {
-            itemList.push(...bucketList)
+            itemList.push(...bucketList);
         }
 
         return itemList;
