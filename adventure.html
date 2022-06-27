@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="./adventure.css">
+<script src="./main.js" type="module"></script>
+</head>
+<body>
+    <div id="adventure">
+        <div id="ctx"></div>
+        <div id="navigation">
+            <div id="mapContainer">
+                <div id="map"></div>
+            </div>
+            <div id="itemsMapContainer">
+                <div id="itemsMap"></div>
+            </div>
+            <div id="lightMapContainer">
+                <div id="lightMap"></div>
+            </div>
+            <div id="navButtonContainer">
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("north")'>north</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("west")'>west</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("east")'>east</div>
+                <div class="navButton"> </div>
+                <div class="navButton" onclick='setPlayerAction("south")'>south</div>
+                <div class="navButton"> </div>
+            </div>
+        </div>
+        <div id="menus">
+            <div id="focus">
+                <!-- v placeholder v -->
+                <div id="focusElementChild">
+                    Controls
+                    <br>WASD or arrow keys to move around. Holding ctrl prevents you from turning while moving (not that that does anything yet).
+                    <br>Right click the ground to look at stuff or pick stuff up
+                    <br>Right click items in your inventory to *drop* them.!!Wow!
+                </div>
+            </div>
+            <div id="inventory">
+                <div id="invQuant" class="inventory" title="quantity">q.</div>
+                <div id="invWeightLimit" class="inventory" title="total weight/weight limit"></div>
+                <div id="invSpaceLimit" class="inventory" title="used space/space left"></div>
+                <div class="inventory inventoryList">
+                    <div class="displayInventory" id="inventoryDisplayList">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

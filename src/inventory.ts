@@ -3,7 +3,9 @@ import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
 export function updateInventory() {
-    getElementFromID("inventoryDisplayList").textContent = "";
+    let element = getElementFromID("inventoryDisplayList");
+    element.textContent = "";
+
     let totalSpace  = 0;
     let totalWeight = 0;
 
