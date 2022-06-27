@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { constructMobSlots, Inventory, MobSlots, SLOTBIAS, updateInventory } from "./inventory.js";
+import { constructMobSlots, displayInventory, Inventory, MobSlots, SLOTBIAS, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -454,15 +454,25 @@ export class Player extends Mob {
     }
 }
 
+// function displayListContents(container: ) {
+
+// }
+
 export function cellFocus(cell: Cell): HTMLElement {
     let elementNames = ["Parent", "Items", "Mobs", "Terrain", "Ground"];
     let elements: {[key: string]: HTMLElement} = {};
     for (let name of elementNames) {
         elements[name] = document.createElement("div");
         elements[name].id = `cellFocus${name}`;
-        // elements[name].classList.add(`cellFocus${name}`);
-        elements[name].innerHTML = name;
+
+        let titleElement = document.createElement("div");
+        titleElement.classList.add(`cellFocusTitle`);
+        titleElement.innerHTML = name;
+
+        elements[name].appendChild(titleElement);
     }
+
+    elements["Items"].appendChild(displayInventory(cell.inventory));
 
     elements["Parent"].innerHTML = "";
 

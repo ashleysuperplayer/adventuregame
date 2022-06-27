@@ -2,9 +2,17 @@ import { Item, MobStats } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
-// export function displayInventory(inventory: Inventory) {
-//     let element = 
-// }
+// return a parent element containing all items in supplied Inventory
+export function displayInventory(inventory: Inventory): HTMLElement {
+    let element = document.createElement("div");
+    for (let item of inventory.items) {
+        let itemElement = document.createElement("div");
+        itemElement.innerHTML = item.name;
+        element.appendChild(itemElement);
+    }
+
+    return element;
+}
 
 export function updateInventory() {
     let element = getElementFromID("inventoryDisplayList");
