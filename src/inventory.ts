@@ -2,6 +2,10 @@ import { Item, MobStats } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
+// export function displayInventory(inventory: Inventory) {
+//     let element = 
+// }
+
 export function updateInventory() {
     let element = getElementFromID("inventoryDisplayList");
     element.textContent = "";

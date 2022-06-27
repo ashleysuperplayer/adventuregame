@@ -454,12 +454,24 @@ export class Player extends Mob {
     }
 }
 
-export function cellFocus(cell: Cell) {
-    let cellFocusParent = document.createElement("div");
+export function cellFocus(cell: Cell): HTMLElement {
+    let elementNames = ["Parent", "Items", "Mobs", "Terrain", "Ground"];
+    let elements: {[key: string]: HTMLElement} = {};
+    for (let name of elementNames) {
+        elements[name] = document.createElement("div");
+        elements[name].id = `cellFocus${name}`;
+        // elements[name].classList.add(`cellFocus${name}`);
+        elements[name].innerHTML = name;
+    }
 
+    elements["Parent"].innerHTML = "";
 
+    elements["Parent"].appendChild(elements["Items"]);
+    elements["Parent"].appendChild(elements["Mobs"]);
+    elements["Parent"].appendChild(elements["Terrain"]);
+    elements["Parent"].appendChild(elements["Ground"]);
 
-    return cellFocusParent;
+    return elements["Parent"];
 }
 
 // TODO change this and items to work with Lex
