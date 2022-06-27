@@ -7,7 +7,6 @@ export function updateInventory() {
     let totalSpace  = 0;
     let totalWeight = 0;
 
-    // this way of using itemsArray is very silly, code an "entriesArray" to use the more useful InventoryEntry interface
     for (let item of new Set(PLAYER.inventory.items)) {
         let [space, weight] = inventoryDisplayEntry(item);
         totalSpace  += space;
@@ -106,14 +105,20 @@ export class Inventory {
         updateInventory();
     }
 
-    // remove item from inventory and return removed item
-    remove(items: Item[]): Item[] {
-        return this.items = this.items.filter((x) => !items.includes(x));
+    // remove item from inventory and return true if successful/possible, else return false
+    remove(items: Item[]): boolean {
+        for (let item of items) {
+            if (this.items.indexOf(item) === -1) {
+                return false;
+            }
+        }
+        this.items = this.items.filter((x) => !items.includes(x));
+        return true;
     }
 
-    // remove all objects with name and return them
-    removeAllByName(name: string): Item[] {
-        return this.remove(this.returnByName(name));
+    // remove all objects with name
+    removeAllByName(name: string): void {
+        this.remove(this.returnByName(name));
     }
 }
 

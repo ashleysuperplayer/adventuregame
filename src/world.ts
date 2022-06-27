@@ -75,11 +75,14 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     globalThis.VIEWPORT.pos = PLAYER.pos;
     globalThis.TIME = startTime;
     globalThis.MINSPERDAY = 1440;
+    console.log("shit")
 
     setupKeys();
     setupClicks();
 
     CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Item.createItem("coat")]); // add a lamp
+
+    CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
 
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
