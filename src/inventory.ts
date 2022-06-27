@@ -3,7 +3,7 @@ import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
 // return a parent element containing all items in supplied Inventory
-export function displayInventory(inventory: Inventory): HTMLElement {
+export function displayInventoryForFocus(inventory: Inventory): HTMLElement {
     let element = document.createElement("div");
     for (let item of inventory.items) {
         let itemElement = document.createElement("div");

@@ -16,6 +16,7 @@ declare global {
 
     var TIME: number;
     var NAVIGATIONELEMENT: HTMLElement;
+    var INVENTORYELEMENT: HTMLElement;
     var CONTROLSTATE: string;
 
     var MINSPERDAY: number;

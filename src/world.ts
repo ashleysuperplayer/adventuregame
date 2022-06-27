@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { constructMobSlots, displayInventory, Inventory, MobSlots, SLOTBIAS, updateInventory } from "./inventory.js";
+import { constructMobSlots, displayInventoryForFocus, Inventory, MobSlots, SLOTBIAS, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -59,7 +59,8 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
-    globalThis.NAVIGATIONELEMENT = document.getElementById("navigation") ?? throwExpression("navigation element gone"); // for the context menus
+    globalThis.NAVIGATIONELEMENT = getElementFromID("navigation"); // for context menus
+    globalThis.INVENTORYELEMENT  = getElementFromID("inventory");
     globalThis.CELLMAP = generateWorld(worldSideLength);
     globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
@@ -162,6 +163,9 @@ function setupClicks() {
         }
     },false);
     NAVIGATIONELEMENT.addEventListener("click", (e) => {
+        clearCTX();
+    },false);
+    INVENTORYELEMENT.addEventListener("click", (e) => {
         clearCTX();
     },false);
 }
@@ -457,7 +461,7 @@ export function cellFocus(cell: Cell): HTMLElement {
         elements[name].appendChild(titleElement);
     }
 
-    elements["Items"].appendChild(displayInventory(cell.inventory));
+    elements["Items"].appendChild(displayInventoryForFocus(cell.inventory));
     elements["Mobs"].appendChild(displayListContents(cell.mobs));
     elements["Terrain"].appendChild(displayListContents(cell.terrain));
     elements["Ground"].appendChild(displayListContents([cell.ground]));
