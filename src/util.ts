@@ -93,6 +93,17 @@ function getElementFromPoint(x: number, y: number): Element {
     throw new Error(`no element at point: ${x},${y}`);
 }
 
+function sumObjectsByKey(...objs: any) {
+    return objs.reduce((a: any, b: any) => {
+    for (let k in b) {
+        if (b.hasOwnProperty(k))
+            a[k] = (a[k] || 0) + b[k];
+    }
+    return a;
+    }, {});
+}
+
+
 // these can't be static or they're inaccessible during runtime
 export class Debugger {
     constructor() {

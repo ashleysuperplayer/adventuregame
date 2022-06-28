@@ -184,6 +184,7 @@ export interface MobKind {
     limbs: MobSlots;
 }
 
+//there should be a drop function oops
 export abstract class Mob {
     name: string;
     pos: Vector2;
@@ -196,6 +197,7 @@ export abstract class Mob {
     stats: MobStats;
     kind: string;
     gender: string;
+    status: {[key: string]: boolean};
     fullName?: string;
     constructor(x: number, y: number, kind: MobKind) {
         this.name = kind.name;
@@ -204,12 +206,13 @@ export abstract class Mob {
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
         this.symbol = kind.symbol;
-        this.facing = new Vector2(0, +1); 
+        this.facing = new Vector2(0, +1);
         this.blocking = true;
         this.inventory = new Inventory();
         this.stats = this.baseStats();
         this.kind = kind.name;
         this.gender = Math.random() > 0.5 ? "male" : "female";
+        this.status = {"overspace": false};
     }
 
     // TODO make this work with more than one preferred slot e.g. with gloves
@@ -240,11 +243,12 @@ export abstract class Mob {
     // for each slot, get all items, multiply them by SLOTBIAS if they are in correct slot,
     // else divide their effect by 10, add their calculacted values into inInsul and extInsul
     getClothingStats() {
-        let stats: MobStats = {inInsul: 0, extInsul: 0};
+        // all of this stuff is heavily coupled i will fix it later
+        let stats: MobStats = {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 0};
         for (let currentSlotKey in this.equipment) {                 // go into this.equipment
             for (let item of this.equipment[currentSlotKey].items) { // go into items on inventory on this.equipment
                 if (!item.preferredEquipSlot) {                      // make sure item is wearable
-                    console.log("impossible to have this item equipped")
+                    console.log("impossible to have this item equipped");
                     continue;
                 }
                 stats = Mob.sumStats(stats, (item.preferredEquipSlot.includes(currentSlotKey)) ?
@@ -264,9 +268,16 @@ export abstract class Mob {
     }
 
     // temporary function for debugging
-    static sumStats(s1: MobStats, s2: MobStats) {
-        let s3: MobStats = {inInsul: 0, extInsul: 0};
+    static sumStats(s1: MobStats, s2: {[key: string]: number}) {
+        let s3: MobStats = {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 0};
 
+        for (let key of Object.keys(s1)) {
+            if (s2[key]) {
+                // TODO LEARN UNION TYPES they r enums expect not bad
+                //@ts-ignore: this is dumb but i'm not good enough at TS yet to be able to index by strings
+                s3[key] = s1[key] + s2[key];
+            }
+        }
         s3.inInsul = s1.inInsul + s2.inInsul;
         s3.extInsul = s1.extInsul + s2.extInsul;
 
@@ -286,7 +297,7 @@ export abstract class Mob {
 
     // return base MobStats object
     baseStats(): MobStats {
-        return {inInsul: 0, extInsul: 0}
+        return {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 3};
     }
 
     // returns the current cell of this Mob
@@ -317,6 +328,13 @@ export abstract class Mob {
         dest = Vector2.Add(this.pos, dir);
         if (CELLMAP[`${dest}`].isBlocked()) return;
 
+        // if you're carrying too much stuff, start dropping stuff
+        let rand = Math.random();
+        // roll to check if you'll drop something
+        if (rand * this.inventory.getTotalSpace() > this.stats.maxSpace) {
+            this.drop(this.inventory.items[this.inventory.items.length - 1]);
+        }
+
         // remove from old location
         let oldMobs = CELLMAP[`${this.pos}`].mobs;
         oldMobs.splice(oldMobs.indexOf(this),1);
@@ -327,13 +345,29 @@ export abstract class Mob {
         this.currentAction = "moved";
     }
 
+    checkEncumbranceAndSpace() {
+        if (this.inventory.getTotalSpace() > this.stats.maxSpace) {
+            this.status.overspace = true;
+            return;
+        }
+        this.status.overspace = false;
+    }
+
     // remove 1 item from Cell Inventory and place into Mob's Inventory
     take(item: Item, cell: Cell) {
         if (cell.inventory.remove([item])) {
             this.inventory.add([item]);
+            this.checkEncumbranceAndSpace();
         }
         else {
             console.log("not there");
+        }
+    }
+
+    drop(item: Item) {
+        if (this.inventory.remove([item])) {
+            this.getCell().inventory.add([item]);
+            this.checkEncumbranceAndSpace();
         }
     }
 
@@ -617,6 +651,8 @@ export interface ItemStats {
 export interface MobStats {
     inInsul: number;
     extInsul: number;
+    maxEncumbrance: number;
+    maxSpace: number;
 }
 
 interface StatDelta {
