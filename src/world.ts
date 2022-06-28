@@ -248,7 +248,7 @@ export abstract class Mob {
         for (let currentSlotKey in this.equipment) {                 // go into this.equipment
             for (let item of this.equipment[currentSlotKey].items) { // go into items on inventory on this.equipment
                 if (!item.preferredEquipSlot) {                      // make sure item is wearable
-                    console.log("impossible to have this item equipped")
+                    console.log("impossible to have this item equipped");
                     continue;
                 }
                 stats = Mob.sumStats(stats, (item.preferredEquipSlot.includes(currentSlotKey)) ?
@@ -329,19 +329,10 @@ export abstract class Mob {
         if (CELLMAP[`${dest}`].isBlocked()) return;
 
         // if you're carrying too much stuff, start dropping stuff
-        // i don't need the overencumbered stat. maybe store "overencumbered-ness" as a number to effect speed and energy etc
-        // but you can just run this check every time the player moves because random * totalSpace will never > maxSpace unless overencumbered
-        if (this.status.overspace) {
-            console.log("moved while overencumbered");
-            let rand = Math.random();
-            // roll to check if you'll drop something
-            console.log(rand * this.inventory.getTotalSpace())
-            if (rand * this.inventory.getTotalSpace() > this.stats.maxSpace) {
-                // drop random item. change this so it's FIFO
-                let itemDropped = [this.inventory.items[Math.floor(Math.random()*this.inventory.items.length)]]
-                this.inventory.remove(itemDropped);
-                this.getCell().inventory.add(itemDropped);
-            }
+        let rand = Math.random();
+        // roll to check if you'll drop something
+        if (rand * this.inventory.getTotalSpace() > this.stats.maxSpace) {
+            this.drop(this.inventory.items[this.inventory.items.length-1]);
         }
 
         // remove from old location
@@ -370,6 +361,13 @@ export abstract class Mob {
         }
         else {
             console.log("not there");
+        }
+    }
+
+    drop(item: Item) {
+        if (this.inventory.remove([item])) {
+            this.getCell().inventory.add([item]);
+            this.checkEncumbranceAndSpace();
         }
     }
 
