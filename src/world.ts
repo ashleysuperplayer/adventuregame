@@ -332,7 +332,7 @@ export abstract class Mob {
         let rand = Math.random();
         // roll to check if you'll drop something
         if (rand * this.inventory.getTotalSpace() > this.stats.maxSpace) {
-            this.drop(this.inventory.items[this.inventory.items.length-1]);
+            this.drop(this.inventory.items[this.inventory.items.length - 1]);
         }
 
         // remove from old location
