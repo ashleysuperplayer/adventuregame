@@ -603,7 +603,7 @@ export class Clothing extends Item {
     preferredEquipSlot: HumanLimbsPossible[];
     constructor(kind: ItemKind, prefESlot: HumanLimbsPossible[]) {
         super(kind, 0); // TODO usable volume
-        this.insulation = 0;
+        this.insulation = 10;
         this.preferredEquipSlot = prefESlot;
     }
 }
