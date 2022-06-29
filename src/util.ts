@@ -110,7 +110,7 @@ export class Debugger {
     }
 
     createItem(itemName: string) {
-        return [new Item(ITEMKINDSMAP[itemName])];
+        return [new Item(ITEMKINDSMAP[itemName], 0)]; // TODO gut the way items are generated
     }
 
     // try and click all the points on the map

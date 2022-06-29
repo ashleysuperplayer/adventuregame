@@ -1,6 +1,6 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { constructMobSlots, displayInventoryForFocus, Inventory, MobSlots, SLOTBIAS, updateInventory } from "./inventory.js";
+import { ClothingInventory, displayInventoryForFocus, Inventory, updateInventory } from "./inventory.js";
 import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
@@ -70,9 +70,11 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Item.createItem("coat")]); // add a lamp
+    let coat = new Clothing(ITEMKINDSMAP["coat"], ["torso"]);
+    coat.usableVolume = 5;
+    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp", 0), coat]); // add a lamp and coat
 
-    CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
+    // CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
 
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
@@ -178,10 +180,50 @@ function stringCoordsToNum(stringCoords: string): number[] {
     return numCoords;
 }
 
-export interface MobKind {
-    name: string;
-    symbol: string;
-    limbs: MobSlots;
+// consider adding "neck"
+type HumanLimbsPossible = "head"|"torso"|"rArm"|"lArm"|"rHand"|"lHand"|"rLeg"|"lLeg"|"rFoot"|"lFoot";
+// interface HumanLimbs {
+//     HumanLimbsPossible?: Limb,
+// }
+
+type CanineLimbsPossible = "head"|"lPaw"; // etc..
+interface CanineLimbs {
+    limbs: {[key in CanineLimbsPossible]?: Limb},
+}
+
+type MobLimbs = HumanLimbs | CanineLimbs;
+
+class Limb {
+    insulation: number;
+    equipment: ClothingInventory;
+    temperature: number;
+    constructor(baseTemp: number) {
+        this.insulation  = 0;
+        this.temperature = baseTemp;
+        this.equipment   = new ClothingInventory();
+    }
+
+    sumVolume() {
+        let c = 0;
+        for (let equipment of this.equipment.items) {
+            c += equipment.usableVolume;
+            console.log(c);
+        }
+        return c;
+    }
+
+    recalculateInsulation() {
+        let ins = 0;
+        for (let item of this.equipment.items) {
+            ins += item.insulation;
+        }
+        this.insulation = ins;
+    }
+
+    equip(item: Item) {
+        this.equipment.add([item]);
+        this.recalculateInsulation();
+    }
 }
 
 //there should be a drop function oops
@@ -192,112 +234,33 @@ export abstract class Mob {
     symbol: string;
     facing: Vector2;
     blocking: boolean;
-    equipment: MobSlots;
     inventory: Inventory;
-    stats: MobStats;
-    kind: string;
+    abstract maxVolume: number;
+    abstract maxEncumbrance: number;
     gender: string;
-    status: {[key: string]: boolean};
-    fullName?: string;
-    constructor(x: number, y: number, kind: MobKind) {
-        this.name = kind.name;
-        this.equipment = constructMobSlots();
+    abstract limbs: MobLimbs;
+    constructor(name: string, blocking: boolean, inventory: Inventory, gender: string, x: number, y: number) {
+        this.name = name;
         this.pos = new Vector2(x, y);
         CELLMAP[`${this.pos}`].mobs.push(this);
         this.currentAction = "wait";
-        this.symbol = kind.symbol;
+        this.symbol = this.getSymbol();
         this.facing = new Vector2(0, +1);
         this.blocking = true;
         this.inventory = new Inventory();
-        this.stats = this.baseStats();
-        this.kind = kind.name;
-        this.gender = Math.random() > 0.5 ? "male" : "female";
-        this.status = {"overspace": false};
+        this.gender = this.getGender();
     }
 
-    // TODO make this work with more than one preferred slot e.g. with gloves
-    equipDefault(item: Item) {
-        if (item.preferredEquipSlot) {
-            this.equip(item, item.preferredEquipSlot[0]);
-            return;
-        }
-        console.log(`can't equip ${item.name}`);
-    }
+    abstract getSymbol(): string;
 
-    equip(item: Item, slot: string) {
-        if (!item.preferredEquipSlot) {
-            console.log("dont wear this, you'll thank me later");
-            return;
-        }
-        this.equipment[slot]?.add([item]);
-        this.inventory.remove([item]);
-        this.checkClothingStats();
-        // just in case
-        updateInventory();
-    }
-
-    checkClothingStats() {
-        return this.getClothingStats();
-    }
-
-    // for each slot, get all items, multiply them by SLOTBIAS if they are in correct slot,
-    // else divide their effect by 10, add their calculacted values into inInsul and extInsul
-    getClothingStats() {
-        // all of this stuff is heavily coupled i will fix it later
-        let stats: MobStats = {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 0};
-        for (let currentSlotKey in this.equipment) {                 // go into this.equipment
-            for (let item of this.equipment[currentSlotKey].items) { // go into items on inventory on this.equipment
-                if (!item.preferredEquipSlot) {                      // make sure item is wearable
-                    console.log("impossible to have this item equipped");
-                    continue;
-                }
-                stats = Mob.sumStats(stats, (item.preferredEquipSlot.includes(currentSlotKey)) ?
-                {inInsul: item.stats.insulation * SLOTBIAS[currentSlotKey].inInsul, extInsul: item.stats.insulation * SLOTBIAS[currentSlotKey].extInsul}:
-                {inInsul: item.stats.insulation * 0.1, extInsul: item.stats.insulation * 0.1});
-            }
-        }
-        return stats;
-    }
+    abstract getGender(): string;
 
     // return unordered list of all clothing Items worn by a mob
     getClothing(): Item[] {
         let clothingList: Item[] = [];
-        Object.values(this.equipment).forEach((i) => {clothingList = clothingList.concat(i.items)});
+        Object.values(this.limbs).forEach((i) => {clothingList = clothingList.concat(i.items)});
         console.log(clothingList);
         return clothingList;
-    }
-
-    // temporary function for debugging
-    static sumStats(s1: MobStats, s2: {[key: string]: number}) {
-        let s3: MobStats = {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 0};
-
-        for (let key of Object.keys(s1)) {
-            if (s2[key]) {
-                // TODO LEARN UNION TYPES they r enums expect not bad
-                //@ts-ignore: this is dumb but i'm not good enough at TS yet to be able to index by strings
-                s3[key] = s1[key] + s2[key];
-            }
-        }
-        s3.inInsul = s1.inInsul + s2.inInsul;
-        s3.extInsul = s1.extInsul + s2.extInsul;
-
-        return s3;
-    }
-
-    // apply stats to Mob based on StatDelta object
-    // definitely a much better way to do this once i figure out indexing by string without bypassing typescript
-    applyStats(statChange: StatDelta): void {
-        if (statChange.inInsul) {
-            this.stats.inInsul += statChange.inInsul;
-        }
-        if (statChange.extInsul) {
-            this.stats.extInsul += statChange.extInsul;
-        }
-    }
-
-    // return base MobStats object
-    baseStats(): MobStats {
-        return {inInsul: 0, extInsul: 0, maxEncumbrance: 0, maxSpace: 3};
     }
 
     // returns the current cell of this Mob
@@ -331,7 +294,7 @@ export abstract class Mob {
         // if you're carrying too much stuff, start dropping stuff
         let rand = Math.random();
         // roll to check if you'll drop something
-        if (rand * this.inventory.getTotalSpace() > this.stats.maxSpace) {
+        if (rand * this.inventory.getTotalUsedVolume() > this.maxVolume) {
             this.drop(this.inventory.items[this.inventory.items.length - 1]);
         }
 
@@ -345,19 +308,10 @@ export abstract class Mob {
         this.currentAction = "moved";
     }
 
-    checkEncumbranceAndSpace() {
-        if (this.inventory.getTotalSpace() > this.stats.maxSpace) {
-            this.status.overspace = true;
-            return;
-        }
-        this.status.overspace = false;
-    }
-
     // remove 1 item from Cell Inventory and place into Mob's Inventory
     take(item: Item, cell: Cell) {
         if (cell.inventory.remove([item])) {
             this.inventory.add([item]);
-            this.checkEncumbranceAndSpace();
         }
         else {
             console.log("not there");
@@ -367,7 +321,6 @@ export abstract class Mob {
     drop(item: Item) {
         if (this.inventory.remove([item])) {
             this.getCell().inventory.add([item]);
-            this.checkEncumbranceAndSpace();
         }
     }
 
@@ -405,36 +358,82 @@ export abstract class Mob {
     abstract tick(): void;
 }
 
-// TODO separate out into NPCHuman extends Human
-class NPCHuman extends Mob {
-    constructor(x: number, y: number, mobKind: MobKind) {
-        super(x, y, mobKind);
+type HumanLimbs = {[key in HumanLimbsPossible]?: Limb}
+
+export abstract class Human extends Mob {
+    limbs:          HumanLimbs;
+    maxVolume:      number;
+    maxEncumbrance: number;
+    fullName?:      string;
+    constructor(x: number, y: number, player: boolean) {
+        super("human", true, new Inventory(), "neither", x, y); //TODO proper generation of mobs
+        this.limbs     = Human.createLimbs();
+        this.maxVolume = this.getMaxVolume();
+        this.maxEncumbrance = 30000; // calculate based on strenght o r somethign
     }
 
-    tick(): void {
-        let rand = Math.random() * 10;
-        if (rand <= 0.2) {
-            this.currentAction = "north";
-        }
-        else if (rand <= 0.4 && rand > 0.2) {
-            this.currentAction = "south";
-        }
-        else if (rand <= 0.6 && rand > 0.4) {
-            this.currentAction = "east";
-        }
-        else if (rand <= 0.8 && rand > 0.6) {
-            this.currentAction = "west";
-        }
+    getSymbol() {
+        return "O";
+    }
 
-        this.executeAction();
+    getMaxVolume() {
+        let c = 2;
+        for (let limb of Object.values(this.limbs)) {
+            c += limb.sumVolume();
+        }
+        return c;
+    }
+
+    // TODO make this work with more than one preferred slot e.g. with gloves
+    equipDefault(clothing: Clothing) {
+        if (clothing.preferredEquipSlot) {
+            this.equip(clothing, clothing.preferredEquipSlot[0]);
+            return;
+        }
+        console.log(`can't equip ${clothing.name}`);
+    }
+
+    equip(item: Clothing, slot: HumanLimbsPossible) {
+        if (!item.preferredEquipSlot) {
+            console.log("dont wear this, you'll thank me later");
+            return;
+        }
+        this.limbs[slot]?.equipment.add([item]);
+        this.inventory.remove([item]);
+        // just in case
+        this.maxVolume = this.getMaxVolume();
+        updateInventory();
+    }
+
+    static createLimbs(): HumanLimbs {
+        return {head: new Limb(40), torso: new Limb(40), rArm: new Limb(40), lArm: new Limb(40), rHand: new Limb(40),
+                lHand: new Limb(40), rLeg: new Limb(40), lLeg: new Limb(40), rFoot: new Limb(40), lFoot: new Limb(40)}
     }
 }
 
-export class Animal extends Mob {
-    constructor(x: number, y: number, kind: MobKind) {
-        super(x, y, kind);
-        this.blocking = false;
-        this.inventory.add([Item.createItem("oil lamp")]);
+export class Player extends Human {
+    constructor(x: number, y: number) {
+        super(x, y, true);
+    }
+
+    getGender(): string {
+        return "male"; //TBC
+    }
+
+    getSymbol(): string {
+        return "@";
+    }
+
+    tick() {
+        VIEWPORT.pos = this.pos;
+        return;
+    }
+}
+
+abstract class Animal extends Mob {
+    constructor(x: number, y: number) {
+        super("animal", false, new Inventory(), "neither", x, y); //TODO implement proper animal generation
+        this.inventory.add([Item.createItem("oil lamp", 0)]);
     }
 
     tick(): void {
@@ -455,18 +454,6 @@ export class Animal extends Mob {
         this.inventory.items[0].luminescence = new Colour(Math.random()*255, Math.random()*255, Math.random()*255);
 
         this.executeAction();
-    }
-}
-
-export class Player extends Mob {
-    constructor(x: number, y: number) {
-        super(x, y, MOBKINDSMAP["player"]);
-        this.gender = "male"; // TBC
-    }
-
-    tick() {
-        VIEWPORT.pos = this.pos;
-        return;
     }
 }
 
@@ -512,42 +499,42 @@ export function cellFocus(cell: Cell): HTMLElement {
 
 // TODO change this and items to work with Lex
 // keeping this in
-function parseMob(mob: Mob) {
-    let pronoun = getPronouns(mob);
-    let mobDescription = `${pronoun} wearing `;
-    let clothing = mob.getClothing();
+// function parseMob(mob: Mob) {
+//     // let pronoun = getPronouns(mob);
+//     let mobDescription = `${pronoun} wearing `;
+//     let clothing = mob.getClothing();
 
-    if (clothing.length < 1) {
-        return `${pronoun} naked...`;
-    }
-    if (clothing.length === 1) {
-        return `${pronoun} wearing a ${clothing[0].name}.`;
-    }
-    // why did i even do this. "coat, a coat and a coat" vs "3 coats" lol
-    for (let i = 0; i < clothing.length; i++) {
-        if (i === clothing.length - 1) {
-            mobDescription = mobDescription.concat(`and a ${clothing[i].name}.`);
-            continue;
-        }
-        mobDescription = mobDescription.concat(`a ${clothing[i].name}, `);
+//     if (clothing.length < 1) {
+//         return `${pronoun} naked...`;
+//     }
+//     if (clothing.length === 1) {
+//         return `${pronoun} wearing a ${clothing[0].name}.`;
+//     }
+//     // why did i even do this. "coat, a coat and a coat" vs "3 coats" lol
+//     for (let i = 0; i < clothing.length; i++) {
+//         if (i === clothing.length - 1) {
+//             mobDescription = mobDescription.concat(`and a ${clothing[i].name}.`);
+//             continue;
+//         }
+//         mobDescription = mobDescription.concat(`a ${clothing[i].name}, `);
 
-    }
-    return mobDescription;
-}
+//     }
+//     return mobDescription;
+// }
 
 // TODO add "they" for unknown gender etc.
-function getPronouns(mob: Mob) {
-    if (mob.kind === "player") {
-        return "you're";
-    }
-    if (mob.kind !== "human") {
-        return "it's";
-    }
-    if (mob.gender === "male") {
-        return "he's";
-    }
-    return "she's";
-}
+// function getPronouns(mob: Mob) {
+//     if (mob.kind === "player") {
+//         return "you're";
+//     }
+//     if (mob.kind !== "human") {
+//         return "it's";
+//     }
+//     if (mob.gender === "male") {
+//         return "he's";
+//     }
+//     return "she's";
+// }
 
 // WIP, sets the content of the focus menu
 export function setFocus(focusChild: HTMLElement, title: string) {
@@ -589,71 +576,71 @@ export class Lex {
 export class Item {
     name: string;
     weight: number;
-    space: number;
+    usableVolume: number;
+    volume: number;
     symbol: string;
     luminescence: Colour;
     opacity: number;
     blocking: boolean;
     lex: Lex;
-    stats: ItemStats;
-    preferredEquipSlot?: string[];
-    constructor(itemKind: ItemKind) {
+    // stats: ItemStats; // phase out
+    constructor(itemKind: ItemKind, usableVolume: number) {
         this.name = itemKind.name;
         this.weight = itemKind.weight;
-        this.space = itemKind.space;
+        this.volume = itemKind.volume;
+        this.usableVolume = usableVolume;
         this.symbol = itemKind.symbol;
         this.luminescence = itemKind.luminescence;
         this.opacity = itemKind.opacity;
         this.blocking = itemKind.blocking;
         this.lex = itemKind.lex;
-        this.stats = itemKind.stats;
-        this.preferredEquipSlot = itemKind.preferredEquipSlot;
+        // this.stats = itemKind.stats;
     }
 
-    static createItem(itemName: string) {
-        return new Item(ITEMKINDSMAP[itemName]);
+    static createItem(itemName: string, usableVolume: number) { // TODO implement proper generation of items
+        return new Item(ITEMKINDSMAP[itemName], usableVolume);
     }
 }
 
-export function constructItemKind(name: string, weight: number, space: number, symbol: string, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex, stats: ItemStats, preferredEquipSlot?: string[]) {
+export class Clothing extends Item {
+    insulation: number;
+    preferredEquipSlot: HumanLimbsPossible[];
+    constructor(kind: ItemKind, prefESlot: HumanLimbsPossible[]) {
+        super(kind, 0); // TODO usable volume
+        this.insulation = 10;
+        this.preferredEquipSlot = prefESlot;
+    }
+}
+
+export function constructItemKind(name: string, weight: number, volume: number, symbol: string, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex) {
     let kind: ItemKind = {name: name,
         weight: weight,
-        space: space,
+        volume: volume,
         symbol: symbol,
         luminescence: luminescence,
         opacity: opacity,
         blocking: blocking,
-        lex: lex,
-        stats: stats}
-    if (preferredEquipSlot) {
-        kind.preferredEquipSlot = preferredEquipSlot;
-    }
+        lex: lex,}
     return kind;
 }
 
-interface ItemKind {
+export interface ItemKind {
     name: string;
     weight: number;
-    space: number;
+    volume: number;
     symbol: string;
     luminescence: Colour;
     opacity: number;
     blocking: boolean;
     lex: Lex;
-    stats: ItemStats;
-    preferredEquipSlot?: string[];
 }
 
+// this whole stats thing needs redoing
 export interface ItemStats {
     insulation: number;
+    maxSpace?: number;
 }
 
-export interface MobStats {
-    inInsul: number;
-    extInsul: number;
-    maxEncumbrance: number;
-    maxSpace: number;
-}
 
 interface StatDelta {
     inInsul?: number;
