@@ -1,5 +1,5 @@
 import { getElementFromID, Vector2 } from "./util.js";
-import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus } from "./world.js";
+import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
 import { Inventory, updateInventory } from "./inventory.js";
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
@@ -232,10 +232,10 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     debugMenu?:     CtxDebugMenu;
     constructor(x: number, y: number, item: Item) {
         super("ctxParentMenu_Inventory", x, y, "ctxParentMenu");
-        this.item          = item;
-        this.quantity      = PLAYER.inventory.returnByName(item.name).length;
-        this.HTMLElement   = this.createParentElement();
-        if (item.preferredEquipSlot) {
+        this.item        = item;
+        this.quantity    = PLAYER.inventory.returnByName(item.name).length;
+        this.HTMLElement = this.createParentElement();
+        if (this.item instanceof Clothing) {
             this.equipButton = this.createEquipButton();
         }
         this.dropButton    = this.createDropButton();
@@ -249,7 +249,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 
     createEquipButton() {
         this.addToStack();
-        return new CtxButton_Inventory("ctxEquip_Inventory", this.pos.x, this.pos.y, this, () => {PLAYER.equipDefault(this.item)}, "equip", true);
+        return new CtxButton_Inventory("ctxEquip_Inventory", this.pos.x, this.pos.y, this, () => {PLAYER.equipDefault(this.item as Clothing)}, "equip", true);
     }
 
     createDebugMenu() {

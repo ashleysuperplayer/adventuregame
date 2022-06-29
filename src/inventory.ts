@@ -1,4 +1,4 @@
-import { Item, MobStats } from "./world.js";
+import { Clothing, Item } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
@@ -27,8 +27,8 @@ export function updateInventory() {
         totalWeight += weight;
     }
 
-    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/${PLAYER.stats.maxSpace}`;
-    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/${PLAYER.stats.maxEncumbrance}g`
+    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/${PLAYER.maxVolume}`;
+    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/${PLAYER.maxEncumbrance}g`
 }
 
 function inventoryDisplayEntry(item: Item): number[] {
@@ -44,7 +44,7 @@ function inventoryDisplayEntry(item: Item): number[] {
     }
 
     const quantity = PLAYER.inventory.getQuantity(item);
-    const space    = item.space  * quantity;
+    const space    = item.volume  * quantity;
     const weight   = item.weight * quantity;
 
     let nameE   = document.createElement("div");
@@ -89,9 +89,9 @@ export class Inventory {
         }
     }
 
-    getTotalSpace() {
+    getTotalUsedVolume() {
         let sum = 0;
-        this.items.forEach((item)=>{sum+=item.space});
+        this.items.forEach((item)=>{sum+=item.volume});
         return sum;
     }
 
@@ -142,26 +142,31 @@ export class Inventory {
     }
 }
 
+export class ClothingInventory extends Inventory{
+    items: Clothing[];
+    constructor() {
+        super();
+        this.items = [];
+    }
+}
+
 // each slot must have a name, inInsul and extInsul
 // item stats are multiplied against inInsul and extInsul to derive Mob stats "inInsul" & "extInsul"
 // inInsul and extInsul of Mob is used to calculate heat loss/temperature etc
 
 // how much of each stat each slot will imbue when correct items are worn
-type SlotBias = {
-    [key: string]: MobStats;
-}
 
-export const SLOTBIAS: SlotBias = {
-    "head":  {inInsul: 1.0, extInsul: 1.2, maxEncumbrance: 0, maxSpace: 0},
-    "face":  {inInsul: 0.5, extInsul: 1.2, maxEncumbrance: 0, maxSpace: 0},
-    "neck":  {inInsul: 0.8, extInsul: 1.0, maxEncumbrance: 0, maxSpace: 0},
-    "torso": {inInsul: 1.5, extInsul: 1.0, maxEncumbrance: 0, maxSpace: 0},
-    "legs":  {inInsul: 1.0, extInsul: 1.3, maxEncumbrance: 0, maxSpace: 0},
-    "lFoot": {inInsul: 0.3, extInsul: 1.3, maxEncumbrance: 0, maxSpace: 0},
-    "rFoot": {inInsul: 0.3, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0},
-    "lHand": {inInsul: 0.2, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0},
-    "rHand": {inInsul: 0.2, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0}
-}
+// export const SLOTBIAS: SlotBias = {
+//     "head":  {inInsul: 1.0, extInsul: 1.2, maxEncumbrance: 0, maxSpace: 0},
+//     "face":  {inInsul: 0.5, extInsul: 1.2, maxEncumbrance: 0, maxSpace: 0},
+//     "neck":  {inInsul: 0.8, extInsul: 1.0, maxEncumbrance: 0, maxSpace: 0},
+//     "torso": {inInsul: 1.5, extInsul: 1.0, maxEncumbrance: 0, maxSpace: 0},
+//     "legs":  {inInsul: 1.0, extInsul: 1.3, maxEncumbrance: 0, maxSpace: 0},
+//     "lFoot": {inInsul: 0.3, extInsul: 1.3, maxEncumbrance: 0, maxSpace: 0},
+//     "rFoot": {inInsul: 0.3, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0},
+//     "lHand": {inInsul: 0.2, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0},
+//     "rHand": {inInsul: 0.2, extInsul: 1.5, maxEncumbrance: 0, maxSpace: 0}
+// }
 
 // MobSlots is 20150117--Jump3 MOB slots switched, OBVIOUSLY
 export type MobSlots =  {
