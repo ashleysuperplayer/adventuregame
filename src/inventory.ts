@@ -18,16 +18,16 @@ export function updateInventory() {
     let element = getElementFromID("inventoryDisplayList");
     element.textContent = "";
 
-    let totalSpace  = 0;
+    let totalVolume = 0;
     let totalWeight = 0;
 
     for (let item of new Set(PLAYER.inventory.items)) {
-        let [space, weight] = inventoryDisplayEntry(item);
-        totalSpace  += space;
+        let [volume, weight] = inventoryDisplayEntry(item);
+        totalVolume += volume;
         totalWeight += weight;
     }
 
-    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/${PLAYER.maxVolume}`;
+    getElementFromID("invSpaceLimit").textContent  = `${totalVolume}/${PLAYER.maxVolume}L`;
     getElementFromID("invWeightLimit").textContent = `${totalWeight}g/${PLAYER.maxEncumbrance}g`
 }
 
@@ -39,13 +39,13 @@ function inventoryDisplayEntry(item: Item): number[] {
     let nodeListOElements = document.getElementsByName(`${item.name}InventoryEntry`);
     let oldElements = [];
     if (nodeListOElements[0]) {
-        for (var i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i])); // stolen from SO
+        for (let i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i])); // stolen from SO
         oldElements.map((element) => {element.remove()});
     }
 
     const quantity = PLAYER.inventory.getQuantity(item);
     const space    = item.volume  * quantity;
-    const weight   = item.weight * quantity;
+    const weight   = item.weight  * quantity;
 
     let nameE   = document.createElement("div");
     nameE.addEventListener("contextmenu", (event) => {

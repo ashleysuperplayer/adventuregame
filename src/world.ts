@@ -70,7 +70,9 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp", 0), new Clothing(ITEMKINDSMAP["coat"], ["torso"])]); // add a lamp and coat
+    let coat = new Clothing(ITEMKINDSMAP["coat"], ["torso"]);
+    coat.usableVolume = 5;
+    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp", 0), coat]); // add a lamp and coat
 
     // CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
 
@@ -201,10 +203,11 @@ class Limb {
         this.equipment   = new ClothingInventory();
     }
 
-    sumSpace() {
+    sumVolume() {
         let c = 0;
         for (let equipment of this.equipment.items) {
-            c += equipment.volume;
+            c += equipment.usableVolume;
+            console.log(c);
         }
         return c;
     }
@@ -365,18 +368,18 @@ export abstract class Human extends Mob {
     constructor(x: number, y: number, player: boolean) {
         super("human", true, new Inventory(), "neither", x, y); //TODO proper generation of mobs
         this.limbs     = Human.createLimbs();
-        this.maxVolume = this.getMaxSpace();
-        this.maxEncumbrance = 10; // calculate based on strenght o r somethign
+        this.maxVolume = this.getMaxVolume();
+        this.maxEncumbrance = 30000; // calculate based on strenght o r somethign
     }
 
     getSymbol() {
         return "O";
     }
 
-    getMaxSpace() {
-        let c = 0;
+    getMaxVolume() {
+        let c = 2;
         for (let limb of Object.values(this.limbs)) {
-            c += limb.sumSpace();
+            c += limb.sumVolume();
         }
         return c;
     }
@@ -398,6 +401,7 @@ export abstract class Human extends Mob {
         this.limbs[slot]?.equipment.add([item]);
         this.inventory.remove([item]);
         // just in case
+        this.maxVolume = this.getMaxVolume();
         updateInventory();
     }
 
