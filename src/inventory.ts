@@ -1,4 +1,4 @@
-import { Item, MobStats } from "./world.js";
+import { Clothing, Item, MobStats } from "./world.js";
 import { getElementFromID } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
@@ -139,6 +139,14 @@ export class Inventory {
     // remove all objects with name
     removeAllByName(name: string): void {
         this.remove(this.returnByName(name));
+    }
+}
+
+export class ClothingInventory extends Inventory{
+    items: Clothing[];
+    constructor() {
+        super();
+        this.items = [];
     }
 }
 

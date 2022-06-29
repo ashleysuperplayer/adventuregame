@@ -55,10 +55,11 @@ function setGlobals() {
     };
     globalThis.ITEMKINDSMAP = {//                         space(l),                            opacity,
         //"name"  :     constructItemKind("name"    , weight(g),  "symbol",            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)
-        "oil lamp":     constructItemKind("oil lamp",      2700, 1,    "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"]),          {insulation: 0}),
-        "rock":         constructItemKind("rock",          5000, 0.05, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"]),              {insulation: 0}),
-        "chocolate bar":constructItemKind("chocolate bar", 200,  0.05, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"]), {insulation: 0}),
-        "coat":         constructItemKind("coat",          3000,  3,    "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"]),       {insulation: 10}, ["torso"])
+        "oil lamp":     constructItemKind("oil lamp",      2700,    1, "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"])),
+        "rock":         constructItemKind("rock",          5000, 0.05, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"])),
+        "chocolate bar":constructItemKind("chocolate bar", 200,  0.05, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"])),
+        "coat":         constructItemKind("coat",          3000,    3, "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"])),
+        "bag":          constructItemKind("bag",           500,   0.3, "U", new Colour(0, 0, 0),     0, false, new Lex("NA", ["NA","NA"]))
     };
     globalThis.TERRAINFEATUREKINDSMAP = {
         "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
