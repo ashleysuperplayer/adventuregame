@@ -1,13 +1,19 @@
 import { Item } from "./world.js";
 
+let fart = 0;
+
 export function getElementFromID(id: string): HTMLElement {
     let element = document.getElementById(id);
+
+    // console.log(randomGradient(fart, fart++));
+
     if (element) {
         return element;
     }
     else {
         throw new Error(`invalid ID: ${id}`);
     }
+
 }
 // throw error when can't set variable
 export function throwExpression(errorMessage: string): never {
@@ -122,4 +128,63 @@ export class Debugger {
         }
         return true;
     }
+}
+
+interface Vector3 {
+    x: number,
+    y: number,
+    z: number
+}
+
+// rewrite, stolen from wikipedia
+export function randomGradient(ix: number, iy: number, iz: number): Vector3 {
+    // No precomputed gradients mean this works for any number of grid coordinates
+    const w = 32;
+    const s = w / 2; // rotation width
+    let a = ix, b = iy;
+
+    a *= 3284157443; b ^= a << s | a >> w-s;
+    b *= 1911520717; a ^= b << s | b >> w-s;
+    a *= 2048419325 * iz; // hehe
+    let r1 = a * (Math.PI / (1 << 31)); // in [0, 2*Pi]
+    let r2 = r1 + 348474384;
+    return {x: Math.cos(r1), y: Math.sin(r1)*Math.cos(r2), z: Math.sin(r1)*Math.sin(r2)};
+}
+
+function dotOffsetGridVector(corner: Vector3, p: Vector3) {
+    let offX = p.x - corner.x;
+    let offY = p.y - corner.y;
+    let offZ = p.z - corner.z;
+
+    let gridVector = randomGradient(corner.x, corner.y, corner.z);
+
+    return offX * gridVector.x + offY * gridVector.y + offZ * gridVector.z;
+}
+
+// function interpolate(x: number, y: number) {
+//     let w = 
+// }
+
+function perlin3d(p: Vector3) {
+    let fX = Math.floor(p.x); // add 1
+    let fY = Math.floor(p.y);
+    let fZ = Math.floor(p.z);
+
+    let c1 = dotOffsetGridVector({x: fX    , y: fY    , z: fZ    }, p);
+    let c2 = dotOffsetGridVector({x: fX    , y: fY    , z: fZ + 1}, p);
+
+    let c3 = dotOffsetGridVector({x: fX    , y: fY + 1, z: fZ    }, p);
+    let c4 = dotOffsetGridVector({x: fX    , y: fY + 1, z: fZ + 1}, p);
+
+
+    let c5 = dotOffsetGridVector({x: fX + 1, y: fY    , z: fZ    }, p);
+    let c6 = dotOffsetGridVector({x: fX + 1, y: fY    , z: fZ + 1}, p);
+
+    let c7 = dotOffsetGridVector({x: fX + 1, y: fY + 1, z: fZ    }, p);
+    let c8 = dotOffsetGridVector({x: fX + 1, y: fY + 1, z: fZ + 1}, p);
+
+
+    let value;
+
+    return value;
 }

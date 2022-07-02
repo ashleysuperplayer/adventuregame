@@ -207,7 +207,6 @@ class Limb {
         let c = 0;
         for (let equipment of this.equipment.items) {
             c += equipment.usableVolume;
-            console.log(c);
         }
         return c;
     }
@@ -394,11 +393,8 @@ export abstract class Human extends Mob {
     }
 
     equip(item: Clothing, slot: HumanLimbsPossible) {
-        if (!item.preferredEquipSlot) {
-            console.log("dont wear this, you'll thank me later");
-            return;
-        }
         this.limbs[slot]?.equipment.add([item]);
+        this.limbs[slot]?.recalculateInsulation();
         this.inventory.remove([item]);
         // just in case
         this.maxVolume = this.getMaxVolume();
