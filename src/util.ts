@@ -81,7 +81,7 @@ export class Vector2 {
     dot(v: Vector2) {
         return this.x*v.x + this.y*v.y;
     }
-    
+
     static Add(v1: Vector2, v2: Vector2) {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
@@ -137,6 +137,10 @@ interface Vector3 {
     x: number,
     y: number,
     z: number
+}
+
+export function gramsToKG(grams: number) {
+    return grams > 1000 ? `${(grams / 1000).toFixed(1)}kg` : `${grams.toFixed(1)}g`;
 }
 
 // rewrite, stolen from wikipedia

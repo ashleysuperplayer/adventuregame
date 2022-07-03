@@ -1,5 +1,5 @@
 import { Clothing, Item } from "./world.js";
-import { getElementFromID } from "./util.js";
+import { getElementFromID, gramsToKG } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
 // return a parent element containing all items in supplied Inventory
@@ -28,7 +28,7 @@ export function updateInventory() {
     }
 
     getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
-    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/${PLAYER.maxEncumbrance}g`
+    getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`
 }
 
 function inventoryDisplayEntry(item: Item): number[] {
@@ -59,7 +59,7 @@ function inventoryDisplayEntry(item: Item): number[] {
     nameE.innerHTML   = `${item.name}`;
     quantE.innerHTML  = `${quantity}`;
     spaceE.innerHTML  = `${space}`;
-    weightE.innerHTML = `${weight}g`;
+    weightE.innerHTML = `${gramsToKG(weight)}`;
 
     nameE.setAttribute("name", `${item.name}InventoryEntry`);
     quantE.setAttribute("name", `${item.name}InventoryEntry`);
