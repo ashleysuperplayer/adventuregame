@@ -1,4 +1,4 @@
-import { Item } from "./world.js";
+import { Clothing, ClothingKind, Item } from "./world.js";
 
 let fart = 0;
 
@@ -109,14 +109,17 @@ function sumObjectsByKey(...objs: any) {
     }, {});
 }
 
-
-// these can't be static or they're inaccessible during runtime
+// these can't be static or they're inaccessible at runtime
 export class Debugger {
     constructor() {
     }
 
-    createItem(itemName: string) {
-        return [new Item(ITEMKINDSMAP[itemName], 0)]; // TODO gut the way items are generated
+    createItem(itemName: string): Item[] {
+        return [new Item(ITEMKINDSMAP[itemName])]; // TODO gut the way items are generated
+    }
+
+    createClothing(clothingName: string): Clothing[] {
+        return [new Clothing(ITEMKINDSMAP[clothingName] as ClothingKind)];
     }
 
     // try and click all the points on the map
