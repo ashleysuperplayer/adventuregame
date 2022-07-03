@@ -122,6 +122,10 @@ export class Debugger {
         return [new Clothing(ITEMKINDSMAP[clothingName] as ClothingKind)];
     }
 
+    perlin(p: Vector3) {
+        return perlin3d(p);
+    }
+
     // try and click all the points on the map
     test_clickAllPointsOnMap() {
         for (let pX = 0; pX < +getElementFromID("map").style.width; pX++) {
@@ -155,6 +159,7 @@ export function randomGradient(ix: number, iy: number, iz: number): Vector3 {
     a *= 2048419325 * iz; // hehe
     let r1 = a * (Math.PI / (1 << 31)); // in [0, 2*Pi]
     let r2 = r1 + 348474384;
+    // console.log("x", Math.cos(r1), "y", Math.sin(r1)*Math.cos(r2), "z", Math.sin(r1)*Math.sin(r2));
     return {x: Math.cos(r1), y: Math.sin(r1)*Math.cos(r2), z: Math.sin(r1)*Math.sin(r2)};
 }
 
@@ -165,33 +170,37 @@ function dotOffsetGridVector(corner: Vector3, p: Vector3) {
 
     let gridVector = randomGradient(corner.x, corner.y, corner.z);
 
+    // console.log("dot product", offX * gridVector.x + offY * gridVector.y + offZ * gridVector.z)
     return offX * gridVector.x + offY * gridVector.y + offZ * gridVector.z;
 }
 
-// function interpolate(x: number, y: number) {
-//     let w = 
-// }
+function interpolate(l: number, r: number, w: number) {
+    return l*(1 - w) + r*w;
+}
 
-function perlin3d(p: Vector3) {
+export function perlin3d(p: Vector3) {
     let fX = Math.floor(p.x); // add 1
     let fY = Math.floor(p.y);
     let fZ = Math.floor(p.z);
 
     let c1 = dotOffsetGridVector({x: fX    , y: fY    , z: fZ    }, p);
     let c2 = dotOffsetGridVector({x: fX    , y: fY    , z: fZ + 1}, p);
+    let c12 = interpolate(c1, c2, p.z - fZ);
 
     let c3 = dotOffsetGridVector({x: fX    , y: fY + 1, z: fZ    }, p);
     let c4 = dotOffsetGridVector({x: fX    , y: fY + 1, z: fZ + 1}, p);
-
+    let c34 = interpolate(c3, c4, p.z - fZ);
 
     let c5 = dotOffsetGridVector({x: fX + 1, y: fY    , z: fZ    }, p);
     let c6 = dotOffsetGridVector({x: fX + 1, y: fY    , z: fZ + 1}, p);
+    let c56 = interpolate(c5, c6, p.z - fZ);
 
     let c7 = dotOffsetGridVector({x: fX + 1, y: fY + 1, z: fZ    }, p);
     let c8 = dotOffsetGridVector({x: fX + 1, y: fY + 1, z: fZ + 1}, p);
+    let c78 = interpolate(c7, c8, p.z - fZ);
 
+    let c1234 = interpolate(c12, c34, p.y - fY);
+    let c5678 = interpolate(c56, c78, p.y - fY);
 
-    let value;
-
-    return value;
+    return interpolate(c1234, c5678, p.x - fX);
 }

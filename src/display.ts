@@ -1,4 +1,5 @@
-import { throwExpression, Vector2 } from "./util.js";
+import { Colour } from "./light.js";
+import { perlin3d, throwExpression, Vector2 } from "./util.js";
 
 export function updateDisplay() {
     for (let y = 0; y < VIEWPORT.size.y; ++y) {
@@ -37,7 +38,13 @@ function displayCell(x: number, y: number) {
     itemsElement.innerHTML = itemsDisplay;
 
     lightElement.style.mixBlendMode = "multiply";
-    lightElement.style.backgroundColor = `${cell.lightLevel}`;
+
+    let fart = (perlin3d({x: x / 11, y: y / 11, z: TIME / 11}) + 1) * 255;
+    // console.log(fart);
+
+    lightElement.style.backgroundColor = `${new Colour(fart, fart, fart)}`;
+
+    // lightElement.style.backgroundColor = `${cell.lightLevel}`;
 
     displayElement.style.backgroundColor = `${cell.color}` // band aid
 }
