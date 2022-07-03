@@ -1,5 +1,5 @@
 import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
-import { Player, Lex, Cell, Mob, TerrainFeature, GroundType, setup, tick, constructItemKind, Human, ItemKind } from "./world.js";
+import { Player, Lex, Cell, Mob, TerrainFeature, GroundType, setup, tick, constructItemKind, Human, ItemKind, ClothingKind, constructClothingKind } from "./world.js";
 import { Colour } from "./light.js";
 import { Viewport } from "./display.js";
 import { Debugger, Vector2 } from "./util.js";
@@ -53,16 +53,17 @@ function setGlobals() {
     //     "npctest": {name: "npctest", symbol: "T", limbs: Human.createLimbs()},
     //     "rabbit":  {name: "rabbit",  symbol: "☮", limbs: constructMobSlots()}
     // };
-    globalThis.ITEMKINDSMAP = {//                         volume(l),                            opacity,
-        //"name"  :     constructItemKind("name"    , weight(g),  "symbol",            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)
-        "oil lamp":     constructItemKind("oil lamp",      2700,    1, "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"])),
-        "rock":         constructItemKind("rock",          5000, 0.05, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"])),
-        "chocolate bar":constructItemKind("chocolate bar", 200,  0.05, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"])),
-        "coat":         constructItemKind("coat",          3000,    3, "/", new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"])),
-        "bag":          constructItemKind("bag",           500,   0.3, "U", new Colour(0, 0, 0),     0, false, new Lex("NA", ["NA","NA"]))
+    globalThis.ITEMKINDSMAP = {//                         volume(l), "symbol",                     opacity,
+        //"name"  :     constructItemKind("name"    , weight(g), useableVolume(L),            luminescence,   blocks, new Lex("cellDesc",               ["plural","plural2",   itemStats: {insulation: n}), equipslot)
+        "oil lamp":     constructItemKind("oil lamp",      2700,    1,  0, "o", new Colour(247, 91, 18), 0, false, new Lex("is an oil lamp",         ["are ", " oil lamps"])),
+        "rock":         constructItemKind("rock",          5000, 0.05,  0, ".", new Colour(0, 0, 0),     0, false, new Lex("is a rock",              ["are ", " rocks"])),
+        "chocolate bar":constructItemKind("chocolate bar",  200, 0.05,  0, "c", new Colour(0, 0, 0),     0, false, new Lex("is a chocolate thunder", ["are ", " chocolate thunders"])),
+
+        "coat":         constructClothingKind("coat",      3000,    3,  4, ["torso"], "/", 50, new Colour(0, 0, 0),     0, false, new Lex("is a white winter coat", ["are ", " winter coats"])),
+        "small bag":    constructClothingKind("small bag",  500,  0.3, 10, ["torso"], "U",  5, new Colour(0, 0, 0),     0, false, new Lex("NA", ["NA","NA"]))
     };
     globalThis.TERRAINFEATUREKINDSMAP = {
-        "tree": {name: "tree", symbol: "#", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
+        "tree": {name: "tree", symbol: "‖", luminescence: new Colour(0, 0, 0), opacity: 0, blocking: true, lex: new Lex("is a tree")},
     };
     globalThis.GROUNDTYPEKINDSMAP = {
         "mud":  new GroundType("mud",  new Colour(109, 81, 60), "mudBlend", new Lex("is muddy")),
