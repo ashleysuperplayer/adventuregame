@@ -267,7 +267,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
 
     createDropAllButton() {
         this.addToStack();
-        let button = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.inventory.removeAllByName(this.item.name); PLAYER.getCell().inventory.add([])}, "drop all", true);
+        let button = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => {PLAYER.dropAllByName(this.item.name)}, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }

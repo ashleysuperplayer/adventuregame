@@ -70,9 +70,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
-    let coat = new Clothing(ITEMKINDSMAP["coat"], ["torso"]);
-    coat.usableVolume = 5;
-    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp", 0), coat]); // add a lamp and coat
+    CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Clothing.createItem("coat") as Clothing, Clothing.createItem("small bag")]); // add a lamp and coat
 
     // CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
 
@@ -194,16 +192,18 @@ interface CanineLimbs {
 type MobLimbs = HumanLimbs | CanineLimbs;
 
 class Limb {
+    name: HumanLimbsPossible;
     insulation: number;
     equipment: ClothingInventory;
     temperature: number;
-    constructor(baseTemp: number) {
+    constructor(name: HumanLimbsPossible, baseTemp: number) {
+        this.name        = name;
         this.insulation  = 0;
         this.temperature = baseTemp;
         this.equipment   = new ClothingInventory();
     }
 
-    sumVolume() {
+    sumUsableVolume() {
         let c = 0;
         for (let equipment of this.equipment.items) {
             c += equipment.usableVolume;
@@ -214,7 +214,13 @@ class Limb {
     recalculateInsulation() {
         let ins = 0;
         for (let item of this.equipment.items) {
-            ins += item.insulation;
+            // console.log(item);
+            if (this.name in item.preferredEquipSlot) {
+                ins += item.insulation;
+            }
+            else {
+                ins += item.insulation / 5;
+            }
         }
         this.insulation = ins;
     }
@@ -317,6 +323,12 @@ export abstract class Mob {
         }
     }
 
+    dropAllByName(itemName: string) {
+        for (let item of this.inventory.returnByName(itemName)) { // TODO this kind of sucks
+            this.drop(item);
+        }
+    }
+
     drop(item: Item) {
         if (this.inventory.remove([item])) {
             this.getCell().inventory.add([item]);
@@ -378,7 +390,7 @@ export abstract class Human extends Mob {
     getMaxVolume() {
         let c = 2;
         for (let limb of Object.values(this.limbs)) {
-            c += limb.sumVolume();
+            c += limb.sumUsableVolume();
         }
         return c;
     }
@@ -394,7 +406,6 @@ export abstract class Human extends Mob {
 
     equip(item: Clothing, slot: HumanLimbsPossible) {
         this.limbs[slot]?.equipment.add([item]);
-        this.limbs[slot]?.recalculateInsulation();
         this.inventory.remove([item]);
         // just in case
         this.maxVolume = this.getMaxVolume();
@@ -402,14 +413,18 @@ export abstract class Human extends Mob {
     }
 
     static createLimbs(): HumanLimbs {
-        return {head: new Limb(40), torso: new Limb(40), rArm: new Limb(40), lArm: new Limb(40), rHand: new Limb(40),
-                lHand: new Limb(40), rLeg: new Limb(40), lLeg: new Limb(40), rFoot: new Limb(40), lFoot: new Limb(40)}
+        return {head: new Limb("head", 40), torso: new Limb("torso", 40), rArm: new Limb("rArm", 40), lArm: new Limb("lArm", 40), rHand: new Limb("rHand", 40),
+                lHand: new Limb("lHand", 40), rLeg: new Limb("rLeg", 40), lLeg: new Limb("lLeg", 40), rFoot: new Limb("rFoot", 40), lFoot: new Limb("lFoot", 40)}
     }
 }
 
 export class Player extends Human {
     constructor(x: number, y: number) {
         super(x, y, true);
+    }
+
+    static createKind(): Player {
+        return new Player(0, 0);
     }
 
     getGender(): string {
@@ -429,7 +444,7 @@ export class Player extends Human {
 abstract class Animal extends Mob {
     constructor(x: number, y: number) {
         super("animal", false, new Inventory(), "neither", x, y); //TODO implement proper animal generation
-        this.inventory.add([Item.createItem("oil lamp", 0)]);
+        this.inventory.add([Item.createItem("oil lamp")]);
     }
 
     tick(): void {
@@ -579,39 +594,59 @@ export class Item {
     opacity: number;
     blocking: boolean;
     lex: Lex;
-    // stats: ItemStats; // phase out
-    constructor(itemKind: ItemKind, usableVolume: number) {
+    constructor(itemKind: ItemKind) {
         this.name = itemKind.name;
         this.weight = itemKind.weight;
         this.volume = itemKind.volume;
-        this.usableVolume = usableVolume;
+        this.usableVolume = itemKind.usableVolume;
         this.symbol = itemKind.symbol;
         this.luminescence = itemKind.luminescence;
         this.opacity = itemKind.opacity;
         this.blocking = itemKind.blocking;
         this.lex = itemKind.lex;
-        // this.stats = itemKind.stats;
     }
 
-    static createItem(itemName: string, usableVolume: number) { // TODO implement proper generation of items
-        return new Item(ITEMKINDSMAP[itemName], usableVolume);
+    static createItem(itemName: string) { // TODO implement proper generation of items
+        return new Item(ITEMKINDSMAP[itemName]);
     }
 }
 
 export class Clothing extends Item {
     insulation: number;
     preferredEquipSlot: HumanLimbsPossible[];
-    constructor(kind: ItemKind, prefESlot: HumanLimbsPossible[]) {
-        super(kind, 0); // TODO usable volume
-        this.insulation = 10;
-        this.preferredEquipSlot = prefESlot;
+    constructor(kind: ClothingKind) {
+        super(kind);
+        this.insulation = kind.insulation;
+        this.preferredEquipSlot = kind.prefESlots;
+    }
+
+    static createItem(itemName: string): Clothing {
+        return new Clothing(ITEMKINDSMAP[itemName] as ClothingKind);
     }
 }
 
-export function constructItemKind(name: string, weight: number, volume: number, symbol: string, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex) {
-    let kind: ItemKind = {name: name,
+export function constructClothingKind(name: string, weight: number, volume: number, usableVolume: number, prefESlots: HumanLimbsPossible[], symbol: string, insulation: number, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex) {
+    let kind: ClothingKind =
+        {name:  name,
         weight: weight,
         volume: volume,
+        usableVolume: usableVolume,
+        prefESlots: prefESlots,
+        symbol: symbol,
+        insulation: insulation,
+        luminescence: luminescence,
+        opacity: opacity,
+        blocking: blocking,
+        lex: lex,}
+    return kind;
+}
+
+export function constructItemKind(name: string, weight: number, volume: number, usableVolume: number, symbol: string, luminescence: Colour, opacity: number, blocking: boolean, lex: Lex) {
+    let kind: ItemKind =
+        {name:  name,
+        weight: weight,
+        volume: volume,
+        usableVolume: usableVolume,
         symbol: symbol,
         luminescence: luminescence,
         opacity: opacity,
@@ -624,6 +659,21 @@ export interface ItemKind {
     name: string;
     weight: number;
     volume: number;
+    usableVolume: number;
+    symbol: string;
+    luminescence: Colour;
+    opacity: number;
+    blocking: boolean;
+    lex: Lex;
+}
+
+export interface ClothingKind {
+    name: string;
+    weight: number;
+    volume: number;
+    prefESlots: HumanLimbsPossible[];
+    usableVolume: number;
+    insulation: number;
     symbol: string;
     luminescence: Colour;
     opacity: number;

@@ -27,7 +27,7 @@ export function updateInventory() {
         totalWeight += weight;
     }
 
-    getElementFromID("invSpaceLimit").textContent  = `${totalVolume}/${PLAYER.maxVolume}L`;
+    getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
     getElementFromID("invWeightLimit").textContent = `${totalWeight}g/${PLAYER.maxEncumbrance}g`
 }
 
@@ -60,6 +60,7 @@ function inventoryDisplayEntry(item: Item): number[] {
     quantE.innerHTML  = `${quantity}`;
     spaceE.innerHTML  = `${space}`;
     weightE.innerHTML = `${weight}g`;
+
     nameE.setAttribute("name", `${item.name}InventoryEntry`);
     quantE.setAttribute("name", `${item.name}InventoryEntry`);
     spaceE.setAttribute("name", `${item.name}InventoryEntry`);
@@ -72,7 +73,7 @@ function inventoryDisplayEntry(item: Item): number[] {
     parent?.appendChild(spaceE);
     parent?.appendChild(weightE);
 
-    return [space, weight];
+    return [space/quantity, weight/quantity]; // TODO dividing by quantity is temporary solution, find better way
 }
 
 // in an Inventory is an Array of Items
