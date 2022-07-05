@@ -65,7 +65,10 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
     globalThis.TIME = startTime;
-    globalThis.MINSPERDAY = 1440;
+
+    // if (DEBUG) {
+    //     globalThis.MINSPERDAY = 20;
+    // }
 
     setupKeys();
     setupClicks();
