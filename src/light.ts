@@ -70,7 +70,7 @@ function getSunlight(time: number) {
 //test comment please remove
 export function updateLighting() {
     let lights = []; // TODO
-    const sunlight = getSunlight(globalThis.TIME);
+    const sunlight = getSunlight(TIME);
     const lightrange = 8;
 
     // reset light level of all cells to the ambient level
@@ -78,7 +78,7 @@ export function updateLighting() {
         for (let cellX = -lightrange; cellX < VIEWPORT.size.x + lightrange; ++cellX) {
             const cell = CELLMAP[`${VIEWPORT.Disp2Real(cellX, cellY)}`];
             if (!cell) continue;
-            let perlinCloud = (perlin3d({x: cell.x / 51, y: cell.y / 51, z: TIME / 101}) + 1) * 0.5;
+            let perlinCloud = (perlin3d({x: cell.x / 25, y: cell.y / 25, z: TIME / 101}) + 1) * 0.5;
             cell.lightLevel = sunlight.scalarmult(perlinCloud);
         }
     }
