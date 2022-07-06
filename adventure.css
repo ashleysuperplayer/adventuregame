@@ -18,15 +18,15 @@ body {
 #navigation {
     display: grid;
     grid-template-columns: auto auto;
-    height: 300px;
-    width: 300px;
+    height: 100px;
+    width: 100px;
 }
 
 #navButtonContainer {
     display: inline-grid;
     grid-template-columns: auto auto auto;
     width: 300px;
-    padding: 20px;
+    /* padding: 20px; */
 }
 
 .navButton {
@@ -34,27 +34,29 @@ body {
     background-color: rgb(83, 83, 83);
     /* height: 1fr;
     width: 1fr; */
-    padding: 25px;
+    /* padding: 25px; */
     text-align: center;
 }
 
 #mapContainer {
-    background-color: #5c5c5c;
+    background-color: white;
     position: absolute;
-    padding: 3px;
+    padding: 0px;
     margin: 0;
 }
 
 #map {
     font-size: 16px;
     text-align: center;
-    height: 600px;
-    width: 600px;
+    height: 594px;
+    width: 594px;
     display: grid;
     gap: 0;
     background-color: rgb(82, 76, 76);
-    padding: 5px;
-    padding-bottom: 10px;
+    grid-row-gap: 0px;
+    grid-column-gap: 0px;
+    /* padding: 5px; */
+    /* padding-bottom: 10px; */
 }
 
 .mapCell {
@@ -70,17 +72,17 @@ body {
     word-wrap: break-word;
     line-height: 80%;
     position: absolute;
-    padding: 3px;
+    /* padding: 3px; */
     margin: 0;
 }
 
 #itemsMap {
     display: grid;
-    height: 600px;
-    width: 600px;
+    height: 594px;
+    width: 594px;
     gap: 0;
-    padding: 5px;
-    padding-bottom: 10px;
+    /* padding: 5px; */
+    /* padding-bottom: 10px; */
 }
 
 .itemsMapCell {
@@ -93,17 +95,14 @@ body {
 
 #lightMapContainer {
     position: absolute;
-    padding: 3px;
     margin: 0;
 }
 
 #lightMap {
     display: grid;
-    height: 600px;
-    width: 600px;
+    height: 594px;
+    width: 594px;
     gap: 0;
-    padding: 5px;
-    padding-bottom: 10px;
 }
 
 .lightMapCell {
@@ -142,7 +141,6 @@ body {
     left: 5px;
     color: white;
     opacity: 1;
-    text-decoration: underline;
     content: attr(focus-title);
 }
 
