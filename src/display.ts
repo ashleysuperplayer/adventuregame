@@ -25,7 +25,7 @@ function displayCell(x: number, y: number) {
         }
 
     if (cell.mobs.length > 0) {
-        const symbol = cell.mobs.at(-1)?.symbol
+        const symbol = cell.mobs.at(-1)?.symbol;
         if (symbol) {
             displayElement.innerHTML = symbol;
         }
@@ -39,12 +39,7 @@ function displayCell(x: number, y: number) {
 
     lightElement.style.mixBlendMode = "multiply";
 
-    let fart = (perlin3d({x: x / 11, y: y / 11, z: TIME / 11}) + 1) * 255;
-    // console.log(fart);
-
-    lightElement.style.backgroundColor = `${new Colour(fart, fart, fart)}`;
-
-    // lightElement.style.backgroundColor = `${cell.lightLevel}`;
+    lightElement.style.backgroundColor = `${cell.lightLevel}`;
 
     displayElement.style.backgroundColor = `${cell.color}` // band aid
 }
