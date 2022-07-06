@@ -1,4 +1,4 @@
-import { clamp } from "./util.js";
+import { clamp, perlin3d } from "./util.js";
 export class Colour {
     r;
     g;
@@ -47,17 +47,14 @@ function attenuate(dx, dy) {
     return 1 / (0.5 * (dx * dx + dy * dy) + 1);
 }
 // returns light level from 0 to 200
-function timeToLight(time) {
-    if (DEBUG) {
-        globalThis.MINSPERDAY = 20;
-    }
+function getSunlight(time) {
     const l = 200 * 0.5 * (Math.cos(2 * Math.PI * time / globalThis.MINSPERDAY / 10) + 1); // super fast for debug
     return new Colour(l * 1.05, l, l);
 }
 //test comment please remove
 export function updateLighting() {
-    let lights = [];
-    const amblight = timeToLight(globalThis.TIME);
+    let lights = []; // TODO
+    const sunlight = getSunlight(TIME);
     const lightrange = 8;
     // reset light level of all cells to the ambient level
     for (let cellY = -lightrange; cellY < VIEWPORT.size.y + lightrange; ++cellY) {
@@ -65,10 +62,11 @@ export function updateLighting() {
             const cell = CELLMAP[`${VIEWPORT.Disp2Real(cellX, cellY)}`];
             if (!cell)
                 continue;
-            cell.lightLevel = amblight;
+            let perlinCloud = (perlin3d({ x: cell.x / 25, y: cell.y / 25, z: TIME / 101 }) + 1) * 0.5;
+            cell.lightLevel = sunlight.scalarmult(perlinCloud);
         }
     }
-    // find all light sources among visible(+epsilon) cells, and add their influences
+    // find all light sources among visible(+lightrange) cells, and add their influences
     for (let cellY = -lightrange; cellY < VIEWPORT.size.y + lightrange; ++cellY) {
         for (let cellX = -lightrange; cellX < VIEWPORT.size.x + lightrange; ++cellX) {
             const cell = CELLMAP[`${VIEWPORT.Disp2Real(cellX, cellY)}`];

@@ -1,5 +1,5 @@
 import { getElementFromID, Vector2 } from "./util.js";
-import { getSquareDistanceBetweenCells, setFocus, cellFocus } from "./world.js";
+import { getSquareDistanceBetweenCells, setFocus, cellFocus, Clothing } from "./world.js";
 export function setCTX(newCTX) {
     if (CTX) {
         CTX.HTMLElement.remove();
@@ -196,7 +196,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
         this.item = item;
         this.quantity = PLAYER.inventory.returnByName(item.name).length;
         this.HTMLElement = this.createParentElement();
-        if (item.preferredEquipSlot) {
+        if (this.item instanceof Clothing) {
             this.equipButton = this.createEquipButton();
         }
         this.dropButton = this.createDropButton();
@@ -223,7 +223,7 @@ export class CtxParentMenu_Inventory extends CtxParentMenu {
     }
     createDropAllButton() {
         this.addToStack();
-        let button = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => { PLAYER.inventory.removeAllByName(this.item.name); PLAYER.getCell().inventory.add([]); }, "drop all", true);
+        let button = new CtxButton_Inventory("ctxDropAll_Inventory", this.pos.x, this.pos.y + this.stack(), this, () => { PLAYER.dropAllByName(this.item.name); }, "drop all", true);
         this.HTMLElement.appendChild(button.HTMLElement);
         return button;
     }

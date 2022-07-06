@@ -1,4 +1,4 @@
-import { getElementFromID } from "./util.js";
+import { getElementFromID, gramsToKG } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 // return a parent element containing all items in supplied Inventory
 export function displayInventoryForFocus(inventory) {
@@ -13,15 +13,15 @@ export function displayInventoryForFocus(inventory) {
 export function updateInventory() {
     let element = getElementFromID("inventoryDisplayList");
     element.textContent = "";
-    let totalSpace = 0;
+    let totalVolume = 0;
     let totalWeight = 0;
     for (let item of new Set(PLAYER.inventory.items)) {
-        let [space, weight] = inventoryDisplayEntry(item);
-        totalSpace += space;
+        let [volume, weight] = inventoryDisplayEntry(item);
+        totalVolume += volume;
         totalWeight += weight;
     }
-    getElementFromID("invSpaceLimit").textContent = `${totalSpace}/100`;
-    getElementFromID("invWeightLimit").textContent = `${totalWeight}g/5000g`;
+    getElementFromID("invSpaceLimit").textContent = `${totalVolume}L/${PLAYER.maxVolume}L`;
+    getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`;
 }
 function inventoryDisplayEntry(item) {
     // this has the disadvantage of displaying items out of their actual order in teh inventory. redo inventory display etc to display items in the order they appear
@@ -31,12 +31,12 @@ function inventoryDisplayEntry(item) {
     let nodeListOElements = document.getElementsByName(`${item.name}InventoryEntry`);
     let oldElements = [];
     if (nodeListOElements[0]) {
-        for (var i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i]))
+        for (let i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i]))
             ; // stolen from SO
         oldElements.map((element) => { element.remove(); });
     }
     const quantity = PLAYER.inventory.getQuantity(item);
-    const space = item.space * quantity;
+    const space = item.volume * quantity;
     const weight = item.weight * quantity;
     let nameE = document.createElement("div");
     nameE.addEventListener("contextmenu", (event) => {
@@ -49,7 +49,7 @@ function inventoryDisplayEntry(item) {
     nameE.innerHTML = `${item.name}`;
     quantE.innerHTML = `${quantity}`;
     spaceE.innerHTML = `${space}`;
-    weightE.innerHTML = `${weight}g`;
+    weightE.innerHTML = `${gramsToKG(weight)}`;
     nameE.setAttribute("name", `${item.name}InventoryEntry`);
     quantE.setAttribute("name", `${item.name}InventoryEntry`);
     spaceE.setAttribute("name", `${item.name}InventoryEntry`);
@@ -59,7 +59,7 @@ function inventoryDisplayEntry(item) {
     parent?.appendChild(quantE);
     parent?.appendChild(spaceE);
     parent?.appendChild(weightE);
-    return [space, weight];
+    return [space / quantity, weight / quantity]; // TODO dividing by quantity is temporary solution, find better way
 }
 // in an Inventory is an Array of Items
 export class Inventory {
@@ -71,6 +71,11 @@ export class Inventory {
         else {
             this.items = [];
         }
+    }
+    getTotalUsedVolume() {
+        let sum = 0;
+        this.items.forEach((item) => { sum += item.volume; });
+        return sum;
     }
     getQuantity(itemQ) {
         return this.items.filter((item) => { return item.name === itemQ.name; }).length;
@@ -111,17 +116,13 @@ export class Inventory {
         this.remove(this.returnByName(name));
     }
 }
-export const SLOTBIAS = {
-    "head": { inInsul: 1.0, extInsul: 1.2 },
-    "face": { inInsul: 0.5, extInsul: 1.2 },
-    "neck": { inInsul: 0.8, extInsul: 1.0 },
-    "torso": { inInsul: 1.5, extInsul: 1.0 },
-    "legs": { inInsul: 1.0, extInsul: 1.3 },
-    "lFoot": { inInsul: 0.3, extInsul: 1.3 },
-    "rFoot": { inInsul: 0.3, extInsul: 1.5 },
-    "lHand": { inInsul: 0.2, extInsul: 1.5 },
-    "rHand": { inInsul: 0.2, extInsul: 1.5 }
-};
+export class ClothingInventory extends Inventory {
+    items;
+    constructor() {
+        super();
+        this.items = [];
+    }
+}
 export function constructMobSlots() {
     return { "head": new Inventory(),
         "face": new Inventory(),
