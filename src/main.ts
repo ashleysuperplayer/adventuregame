@@ -6,11 +6,11 @@ import { Debugger, Vector2 } from "./util.js";
 
 declare global {
     var DEBUGGER: Debugger;
-    var TICKER: number;
-    var CTX: CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
+    var TICKER:   number;
+    var CTX:      CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
     var VIEWPORT: Viewport;
 
-    var DEBUG: boolean;
+    var DEBUG:  boolean;
     var PLAYER: Player;
 
     var TIME: number;
