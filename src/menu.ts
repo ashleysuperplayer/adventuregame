@@ -31,7 +31,7 @@ abstract class CtxMenuComponent {
         this.stackBase += 1;
     }
 
-    stack() {
+    stack() { // idk why this wont push to remote
         return this.stackBase * 20;
     }
 
