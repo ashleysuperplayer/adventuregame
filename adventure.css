@@ -233,7 +233,6 @@ body {
 }
 
 .ctxHoverMenu {
-    /* border: white solid 1px; */
     position: fixed;
     background-color: black;
 }
@@ -244,10 +243,51 @@ body {
 }
 
 .ctxButton {
-    /* border: white 1px solid; */
     position: fixed;
-    /* padding-left: 1px; */
     color: white;
     background-color: black;
-    /* border-left: 2px solid rgb(82, 76, 76); */
+}
+
+#cellFocusItems {
+    position: absolute;
+    width: 409px;
+    height: 300px;
+    left: 5px;
+    top: 5px;
+    padding-left: 2px;
+    border: 1px white solid;
+}
+
+#cellFocusMobs {
+    position: absolute;
+    top: 310px;
+    width: 132px;
+    border: 1px white solid;
+    left: 5px;
+    padding-left: 2px;
+    height: 292px;
+}
+
+#cellFocusTerrain {
+    position: absolute;
+    top: 310px;
+    width: 132px;
+    border: 1px white solid;
+    left: 144px;
+    padding-left: 2px;
+    height: 292px;
+}
+
+#cellFocusGround {
+    position: absolute;
+    top: 310px;
+    width: 131px;
+    border: 1px white solid;
+    left: 283px;
+    padding-left: 2px;
+    height: 292px;
+}
+
+.cellFocusTitle {
+    text-decoration: underline;
 }
