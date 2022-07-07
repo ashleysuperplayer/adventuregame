@@ -26,7 +26,7 @@ abstract class CtxMenuComponent {
         this.stackBase = -1; // jank
         this.HTMLElement = this.createBaseElement();
     }
-
+    
     addToStack() {
         this.stackBase += 1;
     }
@@ -286,6 +286,7 @@ class CtxHoverMenu_Inventory extends CtxHoverMenu {
     }
 
     createChildren() {
+        this.addToStack();
         return [new CtxButton_Inventory("test", 0, 0, this, Function(), "test", false)];
     }
 }
