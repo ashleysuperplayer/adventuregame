@@ -73,8 +73,18 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     setupKeys();
     setupClicks();
 
+    MOBSMAP["Denzel"]=new Cat(5,5);
+    MOBSMAP["Denzel"].name= "Denzel";
     CELLMAP["1,0"].inventory.add([Item.createItem("oil lamp"), Clothing.createItem("coat") as Clothing, Clothing.createItem("small bag")]); // add a lamp and coat
 
+    MOBSMAP["Lola"]=new Dog(3,3);
+    MOBSMAP["Lola"].name= "Lola";
+
+    MOBSMAP["Wolf"]=new Wolf(-5,-5);
+    MOBSMAP["Wolf"].name= "Wolf";
+
+    MOBSMAP["Wolf"]=new Wolf(-10,-10);
+    MOBSMAP["Wolf"].name= "Wol";
     // CELLMAP["0,1"].mobs.push(new Animal(0, 1, MOBKINDSMAP["rabbit"]));
 
     // PLAYER.equip(new Item(ITEMKINDSMAP["coat"]), "torso");
@@ -465,11 +475,76 @@ abstract class Animal extends Mob {
             this.currentAction = "west";
         }
 
-        this.inventory.items[0].luminescence = new Colour(Math.random()*255, Math.random()*255, Math.random()*255);
+        // this.inventory.items[0].luminescence = new Colour(Math.random()*255, Math.random()*255, Math.random()*255);
 
         this.executeAction();
     }
 }
+
+export class Cat extends Animal {
+    limbs: MobLimbs;
+    maxEncumbrance: number;
+    maxVolume: number;
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.limbs     = Human.createLimbs();
+        this.maxEncumbrance=0;
+        this.maxVolume=0;
+    }
+
+    getGender() {
+        return "male";
+    }
+
+    getSymbol() {
+        return "🐱";
+    }
+
+
+
+}
+export class Dog extends Animal {
+    limbs: MobLimbs;
+    maxEncumbrance: number;
+    maxVolume: number;
+    constructor(x: number, y: number) {
+        super(x, y);
+        this.limbs     = Human.createLimbs();
+        this.maxEncumbrance=0;
+        this.maxVolume=0;
+    }
+
+    getGender() {
+        return "female";
+    }
+
+    getSymbol() {
+        return "🐶";
+    }
+}
+
+    export class Wolf extends Animal {
+        limbs: MobLimbs;
+        maxEncumbrance: number;
+        maxVolume: number;
+        constructor(x: number, y: number) {
+            super(x, y);
+            this.limbs     = Human.createLimbs();
+            this.maxEncumbrance=0;
+            this.maxVolume=0;
+        }
+    
+        getGender() {
+            return "male";
+        }
+    
+        getSymbol() {
+            return "🐺";
+        }
+        
+        }
+       
+
 
 function displayListContents(container: Mob[]|TerrainFeature[]|GroundType[]) {
     let element = document.createElement("div");
