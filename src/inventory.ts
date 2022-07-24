@@ -76,9 +76,6 @@ function inventoryDisplayEntry(item: Item): number[] {
     return [space/quantity, weight/quantity]; // TODO dividing by quantity is temporary solution, find better way
 }
 
-// in an Inventory is an Array of Items
-
-
 export class Inventory {
     items: Item[];
     constructor(items?: Item[]) {

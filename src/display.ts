@@ -1,5 +1,4 @@
-import { Colour } from "./light.js";
-import { perlin3d, throwExpression, Vector2 } from "./util.js";
+import { throwExpression, Vector2 } from "./util.js";
 
 export function updateDisplay() {
     for (let y = 0; y < VIEWPORT.size.y; ++y) {
@@ -41,7 +40,7 @@ function displayCell(x: number, y: number) {
 
     lightElement.style.backgroundColor = `${cell.lightLevel}`;
 
-    displayElement.style.backgroundColor = `${cell.color}` // band aid
+    displayElement.style.backgroundColor = `${cell.color}`; // band aid
 }
 
 export let DISPLAYELEMENTSDICT: { [key: string]: HTMLElement} = {};

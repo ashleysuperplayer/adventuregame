@@ -1,6 +1,43 @@
 import { getElementFromID, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
-import { Inventory, updateInventory } from "./inventory.js";
+
+export abstract class MenuDisplay { // rename
+    constructor() {
+    }
+
+    basePrimaryDisplay() {
+        let element = document.createElement("div");
+
+
+
+        return element
+    }
+
+    baseSecondaryDisplay() {
+        let element = document.createElement("div");
+
+        return element;
+    }
+
+    abstract displayPrimary(): HTMLElement;
+    abstract displaySecondary(): HTMLElement;
+}
+
+class InventoryDisplay extends MenuDisplay{
+    constructor() {
+        super();
+    }
+
+    displayPrimary(): HTMLElement {
+        let element = this.basePrimaryDisplay();
+        return element;
+    }
+
+    displaySecondary(): HTMLElement {
+        let element = this.baseSecondaryDisplay();
+        return element;
+    }
+}
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
     if (CTX) {
@@ -14,10 +51,10 @@ export function clearCTX() {
     }
 }
 abstract class CtxMenuComponent {
-    id:     string;
-    pos:    Vector2;
-    ownCls: string;
-    stackBase: number;
+    id:          string;
+    pos:         Vector2;
+    ownCls:      string;
+    stackBase:   number;
     HTMLElement: HTMLElement;
     constructor(id: string, x: number, y: number, ownCls: string) {
         this.id     = id;
@@ -26,7 +63,7 @@ abstract class CtxMenuComponent {
         this.stackBase = -1; // jank
         this.HTMLElement = this.createBaseElement();
     }
-    
+
     addToStack() {
         this.stackBase += 1;
     }

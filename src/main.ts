@@ -3,12 +3,17 @@ import { Player, Lex, Cell, Mob, TerrainFeature, GroundType, setup, tick, constr
 import { Colour } from "./light.js";
 import { Viewport } from "./display.js";
 import { Debugger, Vector2 } from "./util.js";
+import { MenuDisplay } from "./menu.js"
 
 declare global {
     var DEBUGGER: Debugger;
     var TICKER:   number;
     var CTX:      CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
     var VIEWPORT: Viewport;
+
+    var CURRPRIMARYMENU:    string;
+    var CURRSECONDARYMENU:  string;
+    var MENUDISPLAYS:       MenuDisplay;
 
     var DEBUG:  boolean;
     var PLAYER: Player;
