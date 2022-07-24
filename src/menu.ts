@@ -1,6 +1,11 @@
 import { getElementFromID, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
 
+export function setPrimaryDisplay(displayMenuName: string) {
+    CURRSECONDARYMENU = CURRPRIMARYMENU;
+    CURRPRIMARYMENU   = displayMenuName;
+}
+
 export abstract class MenuDisplay { // rename
     constructor() {
     }
@@ -8,13 +13,15 @@ export abstract class MenuDisplay { // rename
     basePrimaryDisplay() {
         let element = document.createElement("div");
 
-
+        element.classList.add("primaryMenuDisplay");
 
         return element
     }
 
     baseSecondaryDisplay() {
         let element = document.createElement("div");
+
+        element.classList.add("secondaryMenuDisplay");
 
         return element;
     }

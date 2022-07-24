@@ -1,7 +1,7 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
 import { ClothingInventory, displayInventoryForFocus, Inventory, updateInventory } from "./inventory.js";
-import { CtxParentMenu_Cell, setCTX, clearCTX } from "./menu.js";
+import { CtxParentMenu_Cell, setCTX, clearCTX, setPrimaryDisplay } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
 export function getMapCellAtDisplayCell(x: number, y: number): Cell {
@@ -142,6 +142,11 @@ function setupKeys() {
                     break;
                 case "d":
                     setPlayerAction("east");
+                    break;
+
+                // hotkeys/menu control
+                case "i":
+                    setPrimaryDisplay("inventory");
                     break;
             }
         }
