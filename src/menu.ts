@@ -2,6 +2,7 @@ import { Inventory } from "./inventory.js";
 import { getElementFromID, gramsToKG, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
 
+// menu system name is "focus" as in "primaryFocusContainer" and "secondaryFocusContainer", TODO change names etc
 // NEW MENU SYSTEM
 // menus operate on a cycle. when a menu is "focused," for example by clicking on an item of interest or
 // hotkey, it will be moved into the "primary menu display slot." when another menu is focused, the menu
@@ -48,19 +49,18 @@ import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothin
 
 // TODO should be class methods
 export function updateMenus() {
-    CURRPRIMARYMENU.displayPrimary();
-    CURRSECONDARYMENU.displaySecondary();
+    clearMenus();
+    getElementFromID("primaryMenuDisplayContainer").appendChild(CURRPRIMARYMENU.displayPrimary());
+    getElementFromID("secondaryMenuDisplayContainer").appendChild(CURRSECONDARYMENU.displaySecondary());
 }
 
 // remove first (only) children of menu display containers
 export function clearMenus() {
-    getElementFromID("primaryMenuDisplayContainer").firstChild?.remove();
-    getElementFromID("secondaryMenuDisplayContainer").firstChild?.remove();
-
+    getElementFromID("primaryMenuDisplayContainer").children[0]?.remove();
+    getElementFromID("secondaryMenuDisplayContainer").children[0]?.remove();
 }
 
 export function setPrimaryDisplay(menuDisplay: MenuDisplay) {
-    clearMenus();
     CURRSECONDARYMENU = CURRPRIMARYMENU;
     CURRPRIMARYMENU   = menuDisplay;
     updateMenus();
@@ -101,14 +101,14 @@ export class SenseDisplay extends MenuDisplay {
 
     displayPrimary(): HTMLElement {
         let element = this.basePrimaryDisplay();
-        element.innerHTML = "inventory";
+        element.innerHTML = "sense";
         console.log("sense primary")
         return element;
     }
 
     displaySecondary(): HTMLElement {
         let element = this.basePrimaryDisplay();
-        element.innerHTML = "inventory";
+        element.innerHTML = "sense";
         console.log("sense secondary")
         return element;
     }
