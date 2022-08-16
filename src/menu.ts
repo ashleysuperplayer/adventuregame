@@ -1,9 +1,69 @@
-import { getElementFromID, Vector2 } from "./util.js";
+import { Inventory } from "./inventory.js";
+import { getElementFromID, gramsToKG, Vector2 } from "./util.js";
 import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
 
-export function setPrimaryDisplay(displayMenuName: string) {
+// NEW MENU SYSTEM
+// menus operate on a cycle. when a menu is "focused," for example by clicking on an item of interest or
+// hotkey, it will be moved into the "primary menu display slot." when another menu is focused, the menu
+// in the primary slot will be moved into the smaller, secondary slot. this serves a double purpose. the
+// first is in breaking up the large amounts of information the player will be using into context-driven
+// pieces. the second is in the service of "realism." in real life, you cannot realistically focus on
+// cooking, equipping equipment, the finer details about your environment, AND talking to someone, all at
+// the same time. this is true in the game world, too. you can focus on a maximum of two things at once,
+// which will balance the relative "ommnipotence" afforded to the player, which npc's obviously won't enjoy
+
+// DMenuDisplay
+// technically speaking, a menu is an instance of a class inheriting from MenuDisplay. the Menu will be
+// created with modularity as a primary concern. i like modularity, it's cool! for example, the same
+// Menu should be used for displaying any Inventory object, be it player, npc or container. obviously,
+// each Menu should be rich with clickable and right-clickable stuff to allow a full-bodied suite of
+// interactions with your environment.
+// MenuDisplay should be instantiated with all of the context it needs to display and be interactable.
+
+// DMenuDisplay.displayPrimary DMenuDisplay.displaySecondary
+// every Menu will have displayPrimary and displaySecondary functions. these will handle gathering
+// information about what the menu is displaying and display it. they will do this by using a function that:
+// gathers the information and returns it (preferably a function/property that already exists to gather such information,
+// for example Inventory.items), a function that operates on the return of the information gathering function
+// and returns an HTMLElement to display it. the display function will also serve the secondary purpose of
+// sanitizing the data, as the data needs to be formatted/sanitized in different ways depending on if it's
+// primary or secondary display.
+
+// DsetPrimaryDisplay
+// handles setting of CURRPRIMARYMENU and movement of CURRPRIMARYMENU to CURRSECONDARYMENU, then calls updateMenus
+// there will be a final, global "setPrimaryDisplay" function that takes the
+// new primary display (class instance) as an argument.
+// old primary/secondaryDisplay HTMLElement's child elements and replace them with the new ones, handling movement of
+// primary to secondary and calling the required function, too.
+
+// primary and secondary display MenuDisplays live in the global variables "CURRPIMARYMENU" and "CURRSECONDARYMENU".
+// every tick(? optimize). the displayPrimary() and displaySecondary() of these will be called, respectively.
+
+// the HTMLElement will be directly appended to the respective primary and secondary display HTML elements.
+
+// MenuDisplay defines two methods for basic MenuDisplay HTMLElement functionality. these are basePrimary/SecondaryDisplay.
+// everything that any menu HTMLElement does (create HTMLElement, give it css classes, etc) will be implemented on these
+// functions. the functions will return an HTMLElement to be used by any child classes to use as a base, in the service of
+// reduced code duplication and standardized form.
+
+// TODO should be class methods
+export function updateMenus() {
+    CURRPRIMARYMENU.displayPrimary();
+    CURRSECONDARYMENU.displaySecondary();
+}
+
+// remove first (only) children of menu display containers
+export function clearMenus() {
+    getElementFromID("primaryMenuDisplayContainer").firstChild?.remove();
+    getElementFromID("secondaryMenuDisplayContainer").firstChild?.remove();
+
+}
+
+export function setPrimaryDisplay(menuDisplay: MenuDisplay) {
+    clearMenus();
     CURRSECONDARYMENU = CURRPRIMARYMENU;
-    CURRPRIMARYMENU   = displayMenuName;
+    CURRPRIMARYMENU   = menuDisplay;
+    updateMenus();
 }
 
 export abstract class MenuDisplay { // rename
@@ -26,22 +86,78 @@ export abstract class MenuDisplay { // rename
         return element;
     }
 
-    abstract displayPrimary(): HTMLElement;
+    // return HTMLElement that fits directly into primaryMenuDisplayContainer
+    abstract displayPrimary():   HTMLElement;
     abstract displaySecondary(): HTMLElement;
+    // get the information using whatever context is necessary
+    // format as HTML and return
 }
 
-class InventoryDisplay extends MenuDisplay{
+// dumb class that just outputs whatever message it's sent. sense handling will be another system in world
+export class SenseDisplay extends MenuDisplay {
     constructor() {
         super();
     }
 
     displayPrimary(): HTMLElement {
         let element = this.basePrimaryDisplay();
+        element.innerHTML = "inventory";
+        console.log("sense primary")
         return element;
     }
 
     displaySecondary(): HTMLElement {
+        let element = this.basePrimaryDisplay();
+        element.innerHTML = "inventory";
+        console.log("sense secondary")
+        return element;
+    }
+}
+
+// secondary display should always condense items that have the same name
+export class InventoryDisplay extends MenuDisplay {
+    inventory: Inventory;
+    constructor(inventory: Inventory) {
+        super();
+        this.inventory = inventory;
+    }
+
+    // this function needs to be split up into a few other functions: generateDisplayEntry
+    // getInventoryPHN() { // PHN as in "placeholder name"
+    //     let element = getElementFromID("inventoryDisplayList");
+    //     element.textContent = ""; // remove old inventory display list
+
+    //     let totalVolume = 0;
+    //     let totalWeight = 0;
+
+    //     for (let item of new Set(PLAYER.inventory.items)) {
+    //         let [volume, weight] = inventoryDisplayEntry(item); // actually displays the item in inventory display (oops)
+    //         totalVolume += volume;
+    //         totalWeight += weight;
+    //     }
+
+    //     getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
+    //     getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`;
+    // }
+
+    // probably needs some kind of scroll bar in case player is holding millions of crumpled up bits of paper
+    displayPrimary(): HTMLElement {
+        // retrieve information
+        // create element
+        let element = this.basePrimaryDisplay();
+        element.innerHTML = "inventory";
+        console.log("inventory primary");
+
+        return element;
+    }
+
+    displaySecondary(): HTMLElement {
+        // retrieve information
+        // create element
         let element = this.baseSecondaryDisplay();
+        element.innerHTML = "inventory";
+        console.log("inventory secondary");
+
         return element;
     }
 }

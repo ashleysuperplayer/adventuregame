@@ -1,7 +1,7 @@
 import { updateLighting, Colour } from "./light.js";
 import { createGrid, getElementFromID, throwExpression, Vector2 } from "./util.js";
-import { ClothingInventory, displayInventoryForFocus, Inventory, updateInventory } from "./inventory.js";
-import { CtxParentMenu_Cell, setCTX, clearCTX, setPrimaryDisplay } from "./menu.js";
+import { ClothingInventory, displayInventoryList, Inventory } from "./inventory.js";
+import { CtxParentMenu_Cell, setCTX, clearCTX, setPrimaryDisplay, updateMenus, InventoryDisplay, SenseDisplay } from "./menu.js";
 import { DISPLAYELEMENTSDICT, LIGHTELEMENTSDICT, ITEMSELEMENTSDICT, updateDisplay } from "./display.js";
 
 export function getMapCellAtDisplayCell(x: number, y: number): Cell {
@@ -25,8 +25,11 @@ export function tick() {
         MOBSMAP[mob].tick();
     }
 
+    // doing this every tick is temporary
+
     updateLighting();
     updateDisplay();
+    updateMenus();
     // updateInventory();
 }
 
@@ -59,12 +62,18 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
     createGrid("lightMap", 33, "lightMapCell", LIGHTELEMENTSDICT);
     createGrid("itemsMap", 33, "itemsMapCell", ITEMSELEMENTSDICT);
 
-    globalThis.NAVIGATIONELEMENT = getElementFromID("navigation"); // for context menus
-    globalThis.INVENTORYELEMENT  = getElementFromID("inventory");
+    globalThis.NAVIGATIONELEMENT    = getElementFromID("navigation"); // for context menus
+    globalThis.PRIMARYMENUELEMENT   = getElementFromID("primaryMenuDisplayContainer");
+    globalThis.SECONDARYMENUELEMENT = getElementFromID("secondaryMenuDisplayContainer");
+
+    // globalThis.INVENTORYELEMENT  = getElementFromID("inventory");
     globalThis.CELLMAP = generateWorld(worldSideLength);
     globalThis.PLAYER = new Player(playerStartLocation.x, playerStartLocation.y);
     globalThis.VIEWPORT.pos = PLAYER.pos;
     globalThis.TIME = startTime;
+ 
+    globalThis.CURRPRIMARYMENU = new InventoryDisplay(PLAYER.inventory);
+    globalThis.CURRSECONDARYMENU = new SenseDisplay();
 
     // if (DEBUG) {
     //     globalThis.MINSPERDAY = 20;
@@ -83,7 +92,7 @@ export function setup(worldSideLength: number, startTime: number, playerStartLoc
 
     updateLighting();
     updateDisplay();
-    updateInventory();
+    // updateInventory();
 }
 
 function setupKeys() {
@@ -145,8 +154,12 @@ function setupKeys() {
                     break;
 
                 // hotkeys/menu control
+                // TODO holding shift sets secondary?
                 case "i":
-                    setPrimaryDisplay("inventory");
+                    setPrimaryDisplay(new InventoryDisplay(PLAYER.inventory));
+                    break;
+                case "e":
+                    setPrimaryDisplay(new SenseDisplay());
                     break;
             }
         }
@@ -173,7 +186,10 @@ function setupClicks() {
     NAVIGATIONELEMENT.addEventListener("click", (e) => {
         clearCTX();
     },false);
-    INVENTORYELEMENT.addEventListener("click", (e) => {
+    PRIMARYMENUELEMENT.addEventListener("click", (e) => {
+        clearCTX();
+    },false);
+    SECONDARYMENUELEMENT.addEventListener("click", (e) => {
         clearCTX();
     },false);
 }
@@ -417,7 +433,7 @@ export abstract class Human extends Mob {
         this.inventory.remove([item]);
         // just in case
         this.maxVolume = this.getMaxVolume();
-        updateInventory();
+        // updateInventory();
     }
 
     static createLimbs(): HumanLimbs {
@@ -501,7 +517,7 @@ export function cellFocus(cell: Cell): HTMLElement {
         elements[name].appendChild(titleElement);
     }
 
-    elements["Items"].appendChild(displayInventoryForFocus(cell.inventory));
+    elements["Items"].appendChild(displayInventoryList(cell.inventory));
     elements["Mobs"].appendChild(displayListContents(cell.mobs));
     elements["Terrain"].appendChild(displayListContents(cell.terrain));
     elements["Ground"].appendChild(displayListContents([cell.ground]));

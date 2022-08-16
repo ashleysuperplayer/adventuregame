@@ -11,16 +11,17 @@ declare global {
     var CTX:      CtxParentMenu_Cell|CtxParentMenu_Inventory|undefined;
     var VIEWPORT: Viewport;
 
-    var CURRPRIMARYMENU:    string;
-    var CURRSECONDARYMENU:  string;
-    var MENUDISPLAYS:       MenuDisplay;
+    var CURRPRIMARYMENU:    MenuDisplay;
+    var CURRSECONDARYMENU:  MenuDisplay;
 
     var DEBUG:  boolean;
     var PLAYER: Player;
 
     var TIME: number;
-    var NAVIGATIONELEMENT: HTMLElement;
-    var INVENTORYELEMENT: HTMLElement;
+    var NAVIGATIONELEMENT:      HTMLElement;
+    var PRIMARYMENUELEMENT:     HTMLElement;
+    var SECONDARYMENUELEMENT:   HTMLElement;
+    // var INVENTORYELEMENT: HTMLElement;
     var CONTROLSTATE: string;
 
     var MINSPERDAY: number;

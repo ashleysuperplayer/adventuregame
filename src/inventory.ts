@@ -2,34 +2,33 @@ import { Clothing, Item } from "./world.js";
 import { getElementFromID, gramsToKG } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
-// return a parent element containing all items in supplied Inventory
-export function displayInventoryForFocus(inventory: Inventory): HTMLElement {
-    let element = document.createElement("div");
-    for (let item of inventory.items) {
-        let itemElement = document.createElement("div");
-        itemElement.innerHTML = item.name;
-        element.appendChild(itemElement);
+    // return an element containing the names of all items in supplied Inventory
+export function displayInventoryList(inventory: Inventory): HTMLElement {
+        let element = document.createElement("div");
+        for (let item of inventory.items) {
+            let itemElement = document.createElement("div");
+            itemElement.innerHTML = item.name;
+            element.appendChild(itemElement);
+        }
+        return element;
     }
 
-    return element;
-}
+// export function updateInventory() {
+//     let element = getElementFromID("inventoryDisplayList");
+//     element.textContent = "";
 
-export function updateInventory() {
-    let element = getElementFromID("inventoryDisplayList");
-    element.textContent = "";
+//     let totalVolume = 0;
+//     let totalWeight = 0;
 
-    let totalVolume = 0;
-    let totalWeight = 0;
+//     for (let item of new Set(PLAYER.inventory.items)) {
+//         let [volume, weight] = inventoryDisplayEntry(item);
+//         totalVolume += volume;
+//         totalWeight += weight;
+//     }
 
-    for (let item of new Set(PLAYER.inventory.items)) {
-        let [volume, weight] = inventoryDisplayEntry(item);
-        totalVolume += volume;
-        totalWeight += weight;
-    }
-
-    getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
-    getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`
-}
+//     getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
+//     getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`
+// }
 
 function inventoryDisplayEntry(item: Item): number[] {
     // this has the disadvantage of displaying items out of their actual order in teh inventory. redo inventory display etc to display items in the order they appear
@@ -93,6 +92,7 @@ export class Inventory {
         return sum;
     }
 
+    // return quantity of an item, obsolete?
     getQuantity(itemQ: Item): number {
         return this.items.filter((item) => {return item.name === itemQ.name}).length;
     }
@@ -120,7 +120,7 @@ export class Inventory {
     // add an item into the inventory
     add(items: Item[]): void {
         this.items.push(...items);
-        updateInventory();
+        // updateInventory();
     }
 
     // remove item from inventory and return true if successful/possible, else return false
