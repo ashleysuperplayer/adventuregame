@@ -2,7 +2,7 @@ import { Clothing, Item } from "./world.js";
 import { getElementFromID, gramsToKG } from "./util.js";
 import { setCTX, CtxParentMenu_Inventory } from "./menu.js";
 
-    // return an element containing the names of all items in supplied Inventory
+// return an element containing the names of all items in supplied Inventory
 export function displayInventoryList(inventory: Inventory): HTMLElement {
         let element = document.createElement("div");
         for (let item of inventory.items) {
@@ -12,68 +12,6 @@ export function displayInventoryList(inventory: Inventory): HTMLElement {
         }
         return element;
     }
-
-// export function updateInventory() {
-//     let element = getElementFromID("inventoryDisplayList");
-//     element.textContent = "";
-
-//     let totalVolume = 0;
-//     let totalWeight = 0;
-
-//     for (let item of new Set(PLAYER.inventory.items)) {
-//         let [volume, weight] = inventoryDisplayEntry(item);
-//         totalVolume += volume;
-//         totalWeight += weight;
-//     }
-
-//     getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
-//     getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`
-// }
-
-function inventoryDisplayEntry(item: Item): number[] {
-    // this has the disadvantage of displaying items out of their actual order in teh inventory. redo inventory display etc to display items in the order they appear
-    // on second thought, maybe the order that entries appear in Inventory.items shouldnt matter to gameplay??
-    // only reason i can see right now for making them ordered is in the case of your containers being overly packed,
-    // stuff falls out last in first out
-    let nodeListOElements = document.getElementsByName(`${item.name}InventoryEntry`);
-    let oldElements = [];
-    if (nodeListOElements[0]) {
-        for (let i = nodeListOElements.length; i--; oldElements.unshift(nodeListOElements[i])); // stolen from SO
-        oldElements.map((element) => {element.remove()});
-    }
-
-    const quantity = PLAYER.inventory.getQuantity(item);
-    const space    = item.volume  * quantity;
-    const weight   = item.weight  * quantity;
-
-    let nameE   = document.createElement("div");
-    nameE.addEventListener("contextmenu", (event) => {
-        event.preventDefault();
-        setCTX(new CtxParentMenu_Inventory(event.clientX, event.clientY, item));
-    })
-    let quantE  = document.createElement("div");
-    let spaceE  = document.createElement("div");
-    let weightE = document.createElement("div");
-
-    nameE.innerHTML   = `${item.name}`;
-    quantE.innerHTML  = `${quantity}`;
-    spaceE.innerHTML  = `${space}`;
-    weightE.innerHTML = `${gramsToKG(weight)}`;
-
-    nameE.setAttribute("name", `${item.name}InventoryEntry`);
-    quantE.setAttribute("name", `${item.name}InventoryEntry`);
-    spaceE.setAttribute("name", `${item.name}InventoryEntry`);
-    weightE.setAttribute("name", `${item.name}InventoryEntry`);
-
-    const parent = document.getElementById("inventoryDisplayList");
-
-    parent?.appendChild(nameE);
-    parent?.appendChild(quantE);
-    parent?.appendChild(spaceE);
-    parent?.appendChild(weightE);
-
-    return [space/quantity, weight/quantity]; // TODO dividing by quantity is temporary solution, find better way
-}
 
 export class Inventory {
     items: Item[];

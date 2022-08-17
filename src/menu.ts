@@ -60,9 +60,9 @@ export function clearMenus() {
     getElementFromID("secondaryMenuDisplayContainer").children[0]?.remove();
 }
 
-export function setPrimaryDisplay(menuDisplay: MenuDisplay) {
+export function setPrimaryDisplay(newMenu: MenuDisplay) {
     CURRSECONDARYMENU = CURRPRIMARYMENU;
-    CURRPRIMARYMENU   = menuDisplay;
+    CURRPRIMARYMENU   = newMenu;
     updateMenus();
 }
 
@@ -73,15 +73,11 @@ export abstract class MenuDisplay { // rename
     basePrimaryDisplay() {
         let element = document.createElement("div");
 
-        element.classList.add("primaryMenuDisplay");
-
         return element
     }
 
     baseSecondaryDisplay() {
         let element = document.createElement("div");
-
-        element.classList.add("secondaryMenuDisplay");
 
         return element;
     }
@@ -122,44 +118,79 @@ export class InventoryDisplay extends MenuDisplay {
         this.inventory = inventory;
     }
 
-    // this function needs to be split up into a few other functions: generateDisplayEntry
-    // getInventoryPHN() { // PHN as in "placeholder name"
-    //     let element = getElementFromID("inventoryDisplayList");
-    //     element.textContent = ""; // remove old inventory display list
-
-    //     let totalVolume = 0;
-    //     let totalWeight = 0;
-
-    //     for (let item of new Set(PLAYER.inventory.items)) {
-    //         let [volume, weight] = inventoryDisplayEntry(item); // actually displays the item in inventory display (oops)
-    //         totalVolume += volume;
-    //         totalWeight += weight;
-    //     }
-
-    //     getElementFromID("invSpaceLimit").textContent  = `${totalVolume}L/${PLAYER.maxVolume}L`;
-    //     getElementFromID("invWeightLimit").textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`;
-    // }
-
     // probably needs some kind of scroll bar in case player is holding millions of crumpled up bits of paper
     displayPrimary(): HTMLElement {
-        // retrieve information
         // create element
         let element = this.basePrimaryDisplay();
         element.innerHTML = "inventory";
-        console.log("inventory primary");
+        // console.log("inventory primary");
 
         return element;
     }
 
     displaySecondary(): HTMLElement {
-        // retrieve information
         // create element
         let element = this.baseSecondaryDisplay();
-        element.innerHTML = "inventory";
-        console.log("inventory secondary");
+        let totalVolume = 0;
+        let totalWeight = 0;
+
+        for (let item of new Set(this.inventory.items)) {
+            let itemEntry = inventoryDisplayEntry(item);
+            for (let entry of itemEntry) {
+                element.appendChild(entry);
+            }
+            totalVolume += item.volume;
+            totalWeight += item.weight;
+        }
+
+        element.classList.add("displayInventory");
+
+        // add auxiliary stuff
+        let nHeading  = document.createElement("div");
+        let qHeading = document.createElement("div");
+        let vHeading = document.createElement("div");
+        let wHeading = document.createElement("div");
+
+        nHeading.textContent  = "name";
+        qHeading.textContent = "q.";
+        vHeading.textContent = `${totalVolume}L/${PLAYER.maxVolume}L`; // TODO/NEXT change weight and volume displays to occlude numbers
+        wHeading.textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`;
+
+        element.prepend(vHeading);
+        element.prepend(wHeading);
+        element.prepend(qHeading);
+        element.prepend(nHeading);
 
         return element;
     }
+}
+
+function inventoryDisplayEntry(item: Item): HTMLElement[] {
+    // this has the disadvantage of displaying items out of their actual order in teh inventory. redo inventory display etc to display items in the order they appear
+    // on second thought, maybe the order that entries appear in Inventory.items shouldnt matter to gameplay??
+    // only reason i can see right now for making them ordered is in the case of your containers being overly packed,
+    // stuff falls out last in first out
+
+    const quantity = PLAYER.inventory.getQuantity(item); // this needs to work with inventories other than the player's
+    const space    = item.volume  * quantity;
+    const weight   = item.weight  * quantity;
+
+    let nameE   = document.createElement("div");
+    let quantE  = document.createElement("div");
+    let spaceE  = document.createElement("div");
+    let weightE = document.createElement("div");
+
+    nameE.innerHTML   = `${item.name}`;
+    quantE.innerHTML  = `${quantity}`;
+    spaceE.innerHTML  = `${space}`;
+    weightE.innerHTML = `${gramsToKG(weight)}`;
+
+    nameE.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        setCTX(new CtxParentMenu_Inventory(event.clientX, event.clientY, item));
+    })
+
+    return [nameE, quantE, spaceE, weightE];
 }
 
 export function setCTX(newCTX: CtxParentMenu_Cell|CtxParentMenu_Inventory) {
