@@ -123,7 +123,6 @@ export class InventoryDisplay extends MenuDisplay {
         // create element
         let element = this.basePrimaryDisplay();
         element.innerHTML = "inventory";
-        // console.log("inventory primary");
 
         return element;
     }
@@ -131,35 +130,48 @@ export class InventoryDisplay extends MenuDisplay {
     displaySecondary(): HTMLElement {
         // create element
         let element = this.baseSecondaryDisplay();
+        let headingsElement = document.createElement("div");
+        let itemsElement = document.createElement("div");
+
         let totalVolume = 0;
         let totalWeight = 0;
 
         for (let item of new Set(this.inventory.items)) {
             let itemEntry = inventoryDisplayEntry(item);
             for (let entry of itemEntry) {
-                element.appendChild(entry);
+                itemsElement.appendChild(entry);
             }
             totalVolume += item.volume;
             totalWeight += item.weight;
         }
 
-        element.classList.add("displayInventory");
+        itemsElement.classList.add("invSecItemContainer"); // should be an id
 
         // add auxiliary stuff
-        let nHeading  = document.createElement("div");
+        let nHeading = document.createElement("div");
         let qHeading = document.createElement("div");
         let vHeading = document.createElement("div");
         let wHeading = document.createElement("div");
 
-        nHeading.textContent  = "name";
+        nHeading.id = "inventorySecN";
+        qHeading.id = "inventorySecQ";
+        vHeading.id = "inventorySecV";
+        wHeading.id = "inventorySecW";
+
+        // nHeading.classList.add("inventorySecName");
+
+        nHeading.textContent = "name";
         qHeading.textContent = "q.";
         vHeading.textContent = `${totalVolume}L/${PLAYER.maxVolume}L`; // TODO/NEXT change weight and volume displays to occlude numbers
         wHeading.textContent = `${gramsToKG(totalWeight)}/${gramsToKG(PLAYER.maxEncumbrance)}`;
 
-        element.prepend(vHeading);
-        element.prepend(wHeading);
-        element.prepend(qHeading);
-        element.prepend(nHeading);
+        headingsElement.appendChild(nHeading)
+        headingsElement.appendChild(qHeading)
+        headingsElement.appendChild(wHeading)
+        headingsElement.appendChild(vHeading)
+
+        element.appendChild(headingsElement);
+        element.appendChild(itemsElement);
 
         return element;
     }
