@@ -1,6 +1,6 @@
 import { Inventory } from "./inventory.js";
 import { getElementFromID, gramsToKG, Vector2 } from "./util.js";
-import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing } from "./world.js";
+import { Cell, getSquareDistanceBetweenCells, Item, setFocus, cellFocus, Clothing, Sense } from "./world.js";
 
 // menu system name is "focus" as in "primaryFocusContainer" and "secondaryFocusContainer", TODO change names etc
 // NEW MENU SYSTEM
@@ -95,17 +95,28 @@ export class SenseDisplay extends MenuDisplay {
         super();
     }
 
+    getSenseElement(sense: Sense): HTMLElement {
+        let element = document.createElement("div");
+        element.textContent = `you ${sense} ${sense.name}`;
+
+        return element;
+    }
+
     displayPrimary(): HTMLElement {
         let element = this.basePrimaryDisplay();
-        element.innerHTML = "sense";
-        console.log("sense primary")
+        for (let sense of SENSECACHE) {
+            element.appendChild(this.getSenseElement(sense));
+        }
+
         return element;
     }
 
     displaySecondary(): HTMLElement {
-        let element = this.basePrimaryDisplay();
-        element.innerHTML = "sense";
-        console.log("sense secondary")
+        let element = this.baseSecondaryDisplay();
+        element.id = "senseDisplaySecondary";
+        for (let sense of SENSECACHE) {
+            element.appendChild(this.getSenseElement(sense));
+        }
         return element;
     }
 }
@@ -157,8 +168,6 @@ export class InventoryDisplay extends MenuDisplay {
         qHeading.id = "inventorySecQ";
         vHeading.id = "inventorySecV";
         wHeading.id = "inventorySecW";
-
-        // nHeading.classList.add("inventorySecName");
 
         nHeading.textContent = "name";
         qHeading.textContent = "q.";

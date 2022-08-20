@@ -1,5 +1,5 @@
 import { CtxParentMenu_Cell, CtxParentMenu_Inventory } from "./menu.js";
-import { Player, Lex, Cell, Mob, TerrainFeature, GroundType, setup, tick, constructItemKind, Human, ItemKind, ClothingKind, constructClothingKind } from "./world.js";
+import { Player, Lex, Cell, Mob, TerrainFeature, GroundType, setup, tick, constructItemKind, ItemKind, constructClothingKind, Sense } from "./world.js";
 import { Colour } from "./light.js";
 import { Viewport } from "./display.js";
 import { Debugger, Vector2 } from "./util.js";
@@ -16,6 +16,8 @@ declare global {
 
     var DEBUG:  boolean;
     var PLAYER: Player;
+
+    var SENSECACHE: Sense[];
 
     var TIME: number;
     var NAVIGATIONELEMENT:      HTMLElement;
@@ -78,6 +80,7 @@ function setGlobals() {
     };
     globalThis.CTX = undefined;
     globalThis.VIEWPORT = new Viewport(0, 0, 33, 33);
+    globalThis.SENSECACHE = [];
 }
 
 window.addEventListener("load", (event) => {

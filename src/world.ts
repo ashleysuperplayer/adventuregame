@@ -255,7 +255,7 @@ class Limb {
     }
 }
 
-//there should be a drop function oops
+// there should be a drop function oops
 export abstract class Mob {
     name: string;
     pos: Vector2;
@@ -316,6 +316,8 @@ export abstract class Mob {
             default:
                 dir = new Vector2(0, 0);
         }
+        SENSECACHE.push(new Scent("cheese", 100));
+        SENSECACHE.push(new Sound("cheese", 100));
         if (changeFacing) this.facing = dir;
         dest = Vector2.Add(this.pos, dir);
         if (CELLMAP[`${dest}`].isBlocked()) return;
@@ -489,6 +491,37 @@ abstract class Animal extends Mob {
         this.inventory.items[0].luminescence = new Colour(Math.random()*255, Math.random()*255, Math.random()*255);
 
         this.executeAction();
+    }
+}
+
+export abstract class Sense {
+    name:      string;
+    intensity: number;
+    constructor(name: string, intensity: number) {
+        this.name = name;
+        this.intensity = intensity;
+    }
+
+    abstract toString(): string; // basically return the verb form of the sense i.e "smell" or "touch"
+}
+
+class Scent extends Sense {
+    constructor(name: string, intensity: number) {
+        super(name, intensity);
+    }
+
+    toString(): string {
+        return "smell";
+    }
+}
+
+class Sound extends Sense {
+    constructor(name: string, intensity: number) {
+        super(name, intensity);
+    }
+
+    toString(): string {
+        return "hear";
     }
 }
 
